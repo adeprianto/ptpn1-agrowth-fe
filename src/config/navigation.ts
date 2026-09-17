@@ -65,6 +65,34 @@ export const navigationConfig: NavGroup[] = [
       },
     ],
   },
+  {
+    label: "Program Pengembangan",
+    items: [
+      {
+        label: "Penyelenggara Pelatihan",
+        href: "/penyelenggara-pelatihan",
+        icon: Users,
+        roles: ["HO", "REGIONAL", "UNIT"],
+      },
+      {
+        label: "Program Pelatihan",
+        href: "/program-pelatihan",
+        icon: Users,
+        roles: ["HO", "REGIONAL", "UNIT"],
+      },
+    ],
+  },
+  {
+    label: "Realisasi Pengembangan",
+    items: [
+      {
+        label: "Laporan Pelatihan",
+        href: "/laporan-pelatihan",
+        icon: Users,
+        roles: ["HO", "REGIONAL", "UNIT"],
+      },
+    ],
+  },
   // {
   //   label: "Validasi",
   //   items: [
