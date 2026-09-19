@@ -57,8 +57,8 @@ export default function TambahPenyelenggaraForm() {
                                     Pilih...
                                 </option>
                                 <option value="lpp">Lembaga Pendidikan Perkebunan (LPP)</option>
-                                <option value="internal">Internal PTPN</option>
-                                <option value="internal">Eksternal PTPN</option>
+                                <option value="internal">Internal PTPN Group</option>
+                                <option value="internal">Eksternal PTPN Group</option>
                             </select>
                         </FormField>
 

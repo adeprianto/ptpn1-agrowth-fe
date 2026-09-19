@@ -86,8 +86,8 @@ export const navigationConfig: NavGroup[] = [
     label: "Realisasi Pengembangan",
     items: [
       {
-        label: "Laporan Pelatihan",
-        href: "/laporan-pelatihan",
+        label: "Laporan PSDM",
+        href: "/laporan-psdm",
         icon: Users,
         roles: ["HO", "REGIONAL", "UNIT"],
       },
