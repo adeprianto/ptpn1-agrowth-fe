@@ -1,20 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import {useState, useTransition} from "react";
 import {
   Bell,
   Search,
   ChevronDown,
   User,
   Settings,
-  LogOut,
+  LogOut, Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import {logout} from "@/app/actions/auth";
+import {useRouter} from "next/navigation";
 
 export function Header() {
+  const router = useRouter();
+
   const { user } = useAuth();
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const [isPending, startTransition] = useTransition();
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logout();
+      router.push("/login");
+    })
+  }
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6">
@@ -109,9 +122,19 @@ export function Header() {
                 <div className="my-1 h-px bg-slate-100" />
                 <button
                   type="button"
+                  onClick={handleLogout}
+                  disabled={isPending}
                   className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
                 >
-                  <LogOut className="h-4 w-4" /> Keluar
+                  {
+                    isPending ?
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" /> Memproses...
+                        </> :
+                        <>
+                          <LogOut className="h-4 w-4" /> Keluar
+                        </>
+                  }
                 </button>
               </div>
             </>
