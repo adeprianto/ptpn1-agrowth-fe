@@ -22,8 +22,6 @@ export function LoginPage() {
 
     // Extract FormData directly from the form element
     const formData = new FormData(event.currentTarget);
-    console.log(formData.get('email'));
-    console.log(formData.get('password'));
 
     startTransition(async () => {
       const callbackUrl = searchParams.get("callbackUrl") || '/dashboard';
