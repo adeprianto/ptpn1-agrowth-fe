@@ -13,7 +13,7 @@ interface PaginationProps {
   className?: string;
 }
 
-function getPageNumbers(
+export function getPageNumbers(
   current: number,
   total: number,
 ): (number | "ellipsis")[] {

@@ -39,7 +39,7 @@ export function PenyelenggaraTable({
             <th className="px-6 py-4">Jenis</th>
             <th className="px-6 py-4">Kontak</th>
             <th className="px-6 py-4">Kota</th>
-            <th className="px-6 py-4">Pelatihan</th>
+
             <th className="px-6 py-4">Status</th>
             <th className="px-6 py-4 text-right">Action</th>
           </tr>
@@ -84,9 +84,7 @@ export function PenyelenggaraTable({
                   </a>
                 )}
               </td>
-              <td className="px-6 py-4 text-slate-500">
-                {row.jumlahPelatihan.toLocaleString("id-ID")}
-              </td>
+
               <td className="px-6 py-4">
                 <span
                   className={`rounded-full whitespace-nowrap px-3 py-1 text-xs font-medium ${

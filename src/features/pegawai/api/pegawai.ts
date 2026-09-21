@@ -1,7 +1,5 @@
 import { apiGet } from "@/lib/api-client";
 import type { MasterRef } from "@/features/organisasi/api/masterData";
-import { getRegionals } from "@/features/organisasi/api/regional";
-import { getUnits } from "@/features/organisasi/api/unit";
 
 type EntityType = "HEAD_OFFICE" | "REGIONAL" | "UNIT";
 
@@ -24,6 +22,14 @@ interface EmployeeApi {
     job_function: MasterRef | null;
   } | null;
   entity: (EntityRefApi & { parent: EntityRefApi | null }) | null;
+  entity_operational?: {
+    id: number;
+    code: string;
+    jenis: MasterRef | null;
+    komoditas: MasterRef | null;
+  } | null;
+  golongan_phdp: string | null;
+  person_grade: string | null;
   status: string | null;
 }
 
@@ -54,8 +60,14 @@ export interface Pegawai {
   penempatanTipe: PenempatanTipe | null;
   jabatan: string | null;
   jobGroup: string | null;
+  jobFunction: string | null;
   /** 1–6, diformat "BOD-{n}" di layer tampilan */
   levelBod: number | null;
+  /** Baris operasional unit tempat pegawai bekerja, mis. jenis EST + komoditas Teh */
+  operasionalJenis: MasterRef | null;
+  operasionalKomoditas: string | null;
+  golonganPhdp: string | null;
+  personGrade: string | null;
   status: string | null;
 }
 
@@ -76,15 +88,50 @@ function toPegawai(e: EmployeeApi): Pegawai {
     penempatanTipe: e.entity ? TIPE_BY_ENTITY[e.entity.type] : null,
     jabatan: e.jabatan?.name ?? null,
     jobGroup: e.jabatan?.job_group?.name ?? null,
+    jobFunction: e.jabatan?.job_function?.name ?? null,
     levelBod: e.jabatan?.level_bod ?? null,
+    operasionalJenis: e.entity_operational?.jenis ?? null,
+    operasionalKomoditas: e.entity_operational?.komoditas?.name ?? null,
+    golonganPhdp: e.golongan_phdp || null,
+    personGrade: e.person_grade || null,
     status: e.status,
   };
 }
 
-export interface PegawaiQuery {
+/** Kolom yang bisa di-sort di tabel pegawai (sama dengan whitelist backend) */
+export type PegawaiSortKey =
+  | "nik"
+  | "name"
+  | "entity"
+  | "operasional"
+  | "posisi"
+  | "job_group"
+  | "job_function"
+  | "level"
+  | "golongan_phdp"
+  | "person_grade";
+
+/** Filter per kolom; list boleh berisi banyak nilai, teks = pencarian "mengandung" */
+export interface PegawaiFilters {
+  nik?: string;
+  name?: string;
+  posisi?: string;
+  entityIds?: string[];
+  operasional?: string[];
+  jobGroupIds?: string[];
+  jobFunctionIds?: string[];
+  levelBod?: string[];
+  golonganPhdp?: string[];
+  personGrade?: string[];
+}
+
+export interface PegawaiQuery extends PegawaiFilters {
+  /** Pencarian nama/NIK sekaligus (dipakai tabel karyawan di detail entity) */
   search?: string;
+  /** Satu entity saja (dipakai tabel karyawan di detail entity) */
   entityId?: string;
-  levelBod?: string;
+  sort?: PegawaiSortKey;
+  direction?: "asc" | "desc";
   page?: number;
   perPage?: number;
 }
@@ -95,14 +142,81 @@ export async function getPegawaiList(params: PegawaiQuery, signal?: AbortSignal)
     "/employees",
     {
       search: params.search,
-      entity_id: params.entityId,
+      nik: params.nik,
+      name: params.name,
+      posisi: params.posisi,
+      // entityId tunggal dan entityIds (filter kolom) sama-sama dikirim sebagai entity_id
+      entity_id: params.entityIds?.length
+        ? params.entityIds
+        : params.entityId,
+      operasional: params.operasional,
+      job_group_id: params.jobGroupIds,
+      job_function_id: params.jobFunctionIds,
       level_bod: params.levelBod,
+      golongan_phdp: params.golonganPhdp,
+      person_grade: params.personGrade,
+      sort: params.sort,
+      direction: params.direction,
       page: params.page,
       per_page: params.perPage,
     },
     signal,
   );
   return { rows: res.data.map(toPegawai), meta: res.meta };
+}
+
+// Bentuk mentah dari GET /employees/filter-options
+interface PegawaiFilterOptionsApi {
+  entities: (MasterRef & { type: EntityType })[];
+  operasional: {
+    key: string;
+    jenis: MasterRef | null;
+    komoditas: { id: number; name: string } | null;
+  }[];
+  job_groups: MasterRef[];
+  job_functions: MasterRef[];
+  level_bod: number[];
+  golongan_phdp: string[];
+  person_grade: string[];
+}
+
+export interface PegawaiFilterOptions {
+  entities: { id: string; nama: string; tipe: PenempatanTipe }[];
+  operasional: { key: string; jenis: MasterRef | null; komoditas: string | null }[];
+  jobGroups: MasterRef[];
+  jobFunctions: MasterRef[];
+  levelBod: number[];
+  golonganPhdp: string[];
+  personGrade: string[];
+}
+
+// GET /api/v1/employees/filter-options — isi checklist di header kolom (sudah di-scope)
+export async function getPegawaiFilterOptions(
+  signal?: AbortSignal,
+): Promise<PegawaiFilterOptions> {
+  const { data } = await apiGet<PegawaiFilterOptionsApi>(
+    "/employees/filter-options",
+    undefined,
+    signal,
+  );
+
+  return {
+    entities: data.entities.map((e) => ({
+      id: String(e.id),
+      nama: e.name,
+      tipe: TIPE_BY_ENTITY[e.type],
+    })),
+    operasional: data.operasional.map((o) => ({
+      key: o.key,
+      jenis: o.jenis,
+      komoditas: o.komoditas?.name ?? null,
+    })),
+    jobGroups: data.job_groups,
+    jobFunctions: data.job_functions,
+    levelBod: data.level_bod,
+    golonganPhdp: data.golongan_phdp,
+    personGrade: data.person_grade,
+  };
 }
 
 // GET /api/v1/employees/summary
@@ -120,29 +234,6 @@ export async function getPegawaiSummary(
     totalRegional: data.total_regional,
     totalUnit: data.total_unit,
   };
-}
-
-export interface PenempatanOption {
-  id: string;
-  nama: string;
-  tipe: PenempatanTipe;
-}
-
-// Opsi filter Penempatan: HO + Regional + Unit (Regional & Unit sudah di-scope backend)
-export async function getPenempatanOptions(
-  signal?: AbortSignal,
-): Promise<PenempatanOption[]> {
-  const [ho, regionals, units] = await Promise.all([
-    apiGet<MasterRef[]>("/entities", { type: "HEAD_OFFICE" }, signal),
-    getRegionals({ perPage: 100 }, signal),
-    getUnits({ perPage: 500 }, signal),
-  ]);
-
-  return [
-    ...ho.data.map((e) => ({ id: String(e.id), nama: e.name, tipe: "HO" as const })),
-    ...regionals.rows.map((r) => ({ id: r.id, nama: r.nama, tipe: "Regional" as const })),
-    ...units.rows.map((u) => ({ id: u.id, nama: u.nama, tipe: "Unit" as const })),
-  ];
 }
 
 // Field tambahan yang ada di GET /employees/{id}
