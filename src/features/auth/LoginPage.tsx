@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import {useRouter, useSearchParams} from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
 import Image from "next/image";
-import type { ApiError } from "@/lib/api-client";
-import { login } from "./api/auth";
 import { useAuthContext } from "./AuthProvider";
+import { ApiError, apiPost } from "@/lib/http-client";
+import type { UserResource } from "@/types/api/user";
+import { toAuthUser } from "@/types/auth";
 
 export function LoginPage() {
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading, setUser } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
@@ -19,9 +21,9 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // sudah punya sesi -> langsung ke dashboard
-  useEffect(() => {
-    if (!loading && user) router.replace("/dashboard");
-  }, [loading, user, router]);
+  // useEffect(() => {
+  //   if (!loading && user) router.replace("/dashboard");
+  // }, [loading, user, router]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -29,16 +31,20 @@ export function LoginPage() {
     setError(null);
 
     try {
-      const loggedIn = await login(email.trim(), password, rememberMe);
-      setUser(loggedIn);
-      router.replace("/dashboard");
+      const { data } = await apiPost<UserResource>("/api/auth/login", {
+        email: email.trim(),
+        password,
+        rememberMe,
+      });
+
+      setUser(toAuthUser(data));
+
+      const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+      router.replace(callbackUrl);
     } catch (err) {
-      // 422 dari backend: email/password salah atau kena rate limit
-      const apiError = err as ApiError;
+      // 401 kredensial salah, 422 validasi, 429 rate limit
       setError(
-        apiError.errors?.email?.[0] ??
-          apiError.message ??
-          "Login gagal, coba lagi.",
+        err instanceof ApiError ? err.message : "Login gagal, coba lagi.",
       );
       setSubmitting(false);
     }

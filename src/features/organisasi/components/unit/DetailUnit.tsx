@@ -11,25 +11,26 @@ import { EntityInfoCard } from "@/components/shared/EntityInforCard";
 import { AnggaranPengembanganChart } from "@/components/shared/AnggaranPengembanganChart";
 import { DistribusiKaryawanChart } from "@/components/shared/DistribusiKaryawanChart";
 import { PengajuanPelatihanList } from "@/components/shared/PengajuanPelatihanList";
-import { ApiError } from "@/lib/api-client";
-import { getUnit, type Unit } from "../../api/unit";
+import { ApiError } from "@/lib/http-client";
+import { getUnit } from "../../api/unit";
+import type { UnitListResource } from "@/types/api/unit";
 import { getUnitDetailDummy } from "./unitDetailDummyData";
 import { UnitPositionTable } from "./UnitPositionTable";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
 import { getJenisDisplay } from "./jenisUnit";
 
 interface DetailUnitProps {
-  id: string;
+  id: number;
 }
 
 type LoadState =
   | { status: "loading" }
   | { status: "error"; code: number | null; message: string }
-  | { status: "ready"; unit: Unit };
+  | { status: "ready"; unit: UnitListResource };
 
 export function DetailUnit({ id }: DetailUnitProps) {
   // Hasil disimpan bersama id-nya; kalau id berubah, otomatis dianggap loading
-  const [loaded, setLoaded] = useState<{ id: string; state: LoadState } | null>(
+  const [loaded, setLoaded] = useState<{ id: number; state: LoadState } | null>(
     null,
   );
   const state: LoadState =
@@ -89,8 +90,8 @@ export function DetailUnit({ id }: DetailUnitProps) {
   const jenisLabel = unit.jenis.map((j) => getJenisDisplay(j).label).join(", ");
   const komoditasLabel = unit.komoditas.map((k) => k.name).join(", ");
   const description = [
-    unit.kode,
-    unit.regionalNama,
+    unit.code,
+    unit.regional?.name,
     jenisLabel,
     komoditasLabel && `Komoditas ${komoditasLabel}`,
   ]
@@ -103,16 +104,16 @@ export function DetailUnit({ id }: DetailUnitProps) {
         items={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Unit", href: "/organisasi/unit" },
-          { label: unit.nama },
+          { label: unit.name },
         ]}
       />
 
-      <PageHeader title={unit.nama} description={description} />
+      <PageHeader title={unit.name} description={description} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Total Karyawan"
-          value={unit.jumlahKaryawan.toLocaleString("id-ID")}
+          value={unit.jumlah_karyawan.toLocaleString("id-ID")}
           icon={Users}
         />
         <MetricCard
@@ -145,7 +146,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
             noHp={detail.noHp}
             alamatKantor={detail.alamat}
             indukOrganisasiLabel="Induk Organisasi"
-            indukOrganisasiValue={unit.regionalNama ?? "-"}
+            indukOrganisasiValue={unit.regional?.name ?? "-"}
           />
         </div>
         <div className="lg:col-span-3">
@@ -156,7 +157,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
       <EntityEmployeeTable
         entityId={unit.id}
         title="Karyawan Unit"
-        subtitle={`${unit.jumlahKaryawan.toLocaleString(
+        subtitle={`${unit.jumlah_karyawan.toLocaleString(
           "id-ID",
         )} pegawai ditempatkan di unit ini`}
       />

@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/api-client";
-import { getPegawaiList, type Pegawai } from "@/features/pegawai/api/pegawai";
+import type { PaginationMeta } from "@/lib/http-client";
+import { getPegawaiList } from "@/features/pegawai/api/pegawai";
+import type { EmployeeResource } from "@/types/api/employee";
 
 const PAGE_SIZE = 10;
 
@@ -20,7 +21,7 @@ function statusBadgeClass(status: string | null) {
 
 interface EntityEmployeeTableProps {
   /** Entity (HO/Regional/Unit) yang karyawannya ditampilkan */
-  entityId: string;
+  entityId: number;
   title?: string;
   subtitle?: string;
 }
@@ -39,7 +40,7 @@ export function EntityEmployeeTable({
   const queryKey = `${entityId}|${debouncedSearch}|${page}`;
   const [result, setResult] = useState<{
     key: string;
-    rows: Pegawai[];
+    rows: EmployeeResource[];
     meta: PaginationMeta | null;
     error: string | null;
   } | null>(null);
@@ -62,7 +63,7 @@ export function EntityEmployeeTable({
     const key = `${entityId}|${debouncedSearch}|${page}`;
 
     getPegawaiList(
-      { entityId, search: debouncedSearch, page, perPage: PAGE_SIZE },
+      { entity_id: entityId, search: debouncedSearch, page, per_page: PAGE_SIZE },
       controller.signal,
     )
       .then((res) =>
@@ -126,15 +127,15 @@ export function EntityEmployeeTable({
                   {startIndex + index}
                 </td>
                 <td className="py-3 pr-4">
-                  <p className="font-medium text-slate-700">{row.nama}</p>
+                  <p className="font-medium text-slate-700">{row.nama_lengkap || row.name}</p>
                   <p className="text-xs text-slate-400">{row.nik}</p>
                 </td>
                 <td className="py-3 pr-4">
-                  <p className="text-slate-700">{row.jabatan ?? "-"}</p>
-                  <p className="text-xs text-slate-400">{row.jobGroup ?? "-"}</p>
+                  <p className="text-slate-700">{row.jabatan?.name ?? "-"}</p>
+                  <p className="text-xs text-slate-400">{row.jabatan?.job_group?.name ?? "-"}</p>
                 </td>
                 <td className="py-3 pr-4 whitespace-nowrap text-slate-500">
-                  {row.levelBod ? `BOD-${row.levelBod}` : "-"}
+                  {row.jabatan?.level_bod ? `BOD-${row.jabatan.level_bod}` : "-"}
                 </td>
                 <td className="py-3 pr-4">
                   <span

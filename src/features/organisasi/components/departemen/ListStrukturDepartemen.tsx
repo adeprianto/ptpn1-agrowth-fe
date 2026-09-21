@@ -7,33 +7,28 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { DepartemenTreeRow } from "./DepartemenTreeRow";
-import {
-  deleteDepartemen,
-  getDepartemenTree,
-  type DepartemenNode,
-} from "../../api/departemen";
-import {
-  getEntityOptions,
-  type EntityOption,
-  type EntityTier,
-} from "../../api/entityOptions";
+import { deleteDepartemen, getDepartemenTree } from "../../api/departemen";
+import { getEntityOptions, type EntityOption } from "../../api/entityOptions";
+import type { EntityType } from "@/types/api/entity";
+import type { OrganizationTreeNode } from "@/types/api/organization";
 
-function collectExpandableIds(node: DepartemenNode): string[] {
+function collectExpandableIds(node: OrganizationTreeNode): number[] {
   const ownId = node.children.length > 0 ? [node.id] : [];
   return [...ownId, ...node.children.flatMap(collectExpandableIds)];
 }
 
-const TIER_LABEL: Record<EntityTier, string> = {
-  HO: "Head Office",
-  Regional: "Regional",
-  Unit: "Unit",
+const ENTITY_TYPE_LABEL: Record<EntityType, string> = {
+  HEAD_OFFICE: "Head Office",
+  REGIONAL: "Regional",
+  UNIT: "Unit",
 };
 
 export function ListStrukturDepartemen() {
   const [entityOptions, setEntityOptions] = useState<EntityOption[]>([]);
   const [entityId, setEntityId] = useState("");
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [deleteTarget, setDeleteTarget] = useState<DepartemenNode | null>(null);
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [deleteTarget, setDeleteTarget] =
+    useState<OrganizationTreeNode | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -41,7 +36,7 @@ export function ListStrukturDepartemen() {
   const queryKey = `${entityId}|${refreshKey}`;
   const [result, setResult] = useState<{
     key: string;
-    nodes: DepartemenNode[];
+    nodes: OrganizationTreeNode[];
     error: string | null;
   } | null>(null);
   const loading = !entityId || result?.key !== queryKey;
@@ -55,9 +50,9 @@ export function ListStrukturDepartemen() {
     getEntityOptions(controller.signal)
       .then((options) => {
         setEntityOptions(options);
-        if (options.length > 0) setEntityId(options[0].id);
+        if (options.length > 0) setEntityId(String(options[0].id));
       })
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!controller.signal.aborted) console.error(e);
       });
 
@@ -70,7 +65,7 @@ export function ListStrukturDepartemen() {
     const controller = new AbortController();
     const key = `${entityId}|${refreshKey}`;
 
-    getDepartemenTree(entityId, controller.signal)
+    getDepartemenTree(Number(entityId), controller.signal)
       .then((tree) => setResult({ key, nodes: tree, error: null }))
       .catch((e: Error) => {
         if (controller.signal.aborted) return;
@@ -80,7 +75,7 @@ export function ListStrukturDepartemen() {
     return () => controller.abort();
   }, [entityId, refreshKey]);
 
-  function handleToggle(id: string) {
+  function handleToggle(id: number) {
     setExpanded((prev) => {
       const next = new Set(prev);
       if (next.has(id)) {
@@ -106,7 +101,7 @@ export function ListStrukturDepartemen() {
     }
   }
 
-  const groups: EntityTier[] = ["HO", "Regional", "Unit"];
+  const groups: EntityType[] = ["HEAD_OFFICE", "REGIONAL", "UNIT"];
 
   return (
     <div className="space-y-5">
@@ -142,15 +137,15 @@ export function ListStrukturDepartemen() {
           className="max-w-xs flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         >
           {entityOptions.length === 0 && <option value="">Memuat entity...</option>}
-          {groups.map((tier) => {
-            const options = entityOptions.filter((e) => e.tier === tier);
+          {groups.map((type) => {
+            const options = entityOptions.filter((e) => e.type === type);
             if (options.length === 0) return null;
 
             return (
-              <optgroup key={tier} label={TIER_LABEL[tier]}>
+              <optgroup key={type} label={ENTITY_TYPE_LABEL[type]}>
                 {options.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.nama}
+                    {e.name}
                   </option>
                 ))}
               </optgroup>
@@ -221,7 +216,7 @@ export function ListStrukturDepartemen() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        title={`Hapus ${deleteTarget?.name}?`}
         description="Departemen yang masih punya sub-departemen tidak bisa dihapus — hapus atau pindahkan anaknya dulu."
         confirmLabel="Hapus"
         variant="danger"

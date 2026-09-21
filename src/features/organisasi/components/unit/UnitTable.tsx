@@ -2,15 +2,15 @@
 
 import { Eye, MapPin, Pencil, Trash2, Users } from "lucide-react";
 import { RowActionMenu } from "@/components/shared/RowActionMenu";
-import type { Unit } from "../../api/unit";
+import type { UnitListResource } from "@/types/api/unit";
 import { getJenisDisplay } from "./jenisUnit";
 
 interface UnitTableProps {
-  rows: Unit[];
+  rows: UnitListResource[];
   /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
   startIndex: number;
   loading?: boolean;
-  onDeleteClick: (row: Unit) => void;
+  onDeleteClick: (row: UnitListResource) => void;
 }
 
 // Warna badge per komoditas (business_types.code) — tinggal tambah baris kalau perlu
@@ -71,15 +71,15 @@ export function UnitTable({
                       <PrimaryIcon className={`h-4 w-4 ${primary.iconColor}`} />
                     </span>
                     <div>
-                      <p className="font-medium text-slate-800">{row.nama}</p>
-                      <p className="text-xs text-slate-400">{row.kode}</p>
+                      <p className="font-medium text-slate-800">{row.name}</p>
+                      <p className="text-xs text-slate-400">{row.code}</p>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4">
                   <span className="flex items-center gap-1.5 text-slate-500">
                     <MapPin className="h-4 w-4 text-slate-300" />
-                    {row.regionalNama ?? "-"}
+                    {row.regional?.name ?? "-"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
@@ -120,13 +120,13 @@ export function UnitTable({
                 <td className="px-6 py-4">
                   <span className="flex items-center gap-1.5 text-slate-500">
                     <Users className="h-4 w-4 text-slate-300" />
-                    {row.jumlahKaryawan.toLocaleString("id-ID")}
+                    {row.jumlah_karyawan.toLocaleString("id-ID")}
                   </span>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end">
                     <RowActionMenu
-                      label={`Aksi untuk ${row.nama}`}
+                      label={`Aksi untuk ${row.name}`}
                       actions={[
                         {
                           label: "Lihat Detail",

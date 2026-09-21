@@ -2,25 +2,20 @@
 
 import { useState, type ReactNode } from "react";
 import { X } from "lucide-react";
-import { ApiError } from "@/lib/api-client";
+import { ApiError } from "@/lib/http-client";
 
+/** Key-nya sama dengan field StoreRegionalRequest supaya error 422 langsung cocok. */
 export interface RegionalFormValues {
-  nama: string;
-  kode: string;
+  name: string;
+  code: string;
 }
 
 const emptyForm: RegionalFormValues = {
-  nama: "",
-  kode: "",
+  name: "",
+  code: "",
 };
 
 type FormErrors = Partial<Record<keyof RegionalFormValues, string>>;
-
-// nama field backend -> field form
-const FIELD_MAP: Record<string, keyof RegionalFormValues> = {
-  name: "nama",
-  code: "kode",
-};
 
 interface RegionalFormModalProps {
   open: boolean;
@@ -56,8 +51,8 @@ export function RegionalFormModal({
 
   function validate(): boolean {
     const nextErrors: FormErrors = {};
-    if (!values.nama.trim()) nextErrors.nama = "Nama Regional wajib diisi";
-    if (!values.kode.trim()) nextErrors.kode = "Kode Regional wajib diisi";
+    if (!values.name.trim()) nextErrors.name = "Nama Regional wajib diisi";
+    if (!values.code.trim()) nextErrors.code = "Kode Regional wajib diisi";
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
@@ -74,8 +69,9 @@ export function RegionalFormModal({
       if (e instanceof ApiError && e.errors) {
         const fieldErrors: FormErrors = {};
         Object.entries(e.errors).forEach(([field, messages]) => {
-          const key = FIELD_MAP[field];
-          if (key) fieldErrors[key] = messages[0];
+          if (field in emptyForm) {
+            fieldErrors[field as keyof RegionalFormValues] = messages[0];
+          }
         });
         setErrors(fieldErrors);
         if (Object.keys(fieldErrors).length === 0) setFormError(e.message);
@@ -111,23 +107,23 @@ export function RegionalFormModal({
         )}
 
         <div className="space-y-4">
-          <Field label="Nama Regional" required error={errors.nama}>
+          <Field label="Nama Regional" required error={errors.name}>
             <input
               type="text"
-              value={values.nama}
-              onChange={(e) => handleChange("nama", e.target.value)}
+              value={values.name}
+              onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Cth. Regional 1"
-              className={inputClass(!!errors.nama)}
+              className={inputClass(!!errors.name)}
             />
           </Field>
 
-          <Field label="Kode Regional" required error={errors.kode}>
+          <Field label="Kode Regional" required error={errors.code}>
             <input
               type="text"
-              value={values.kode}
-              onChange={(e) => handleChange("kode", e.target.value)}
+              value={values.code}
+              onChange={(e) => handleChange("code", e.target.value)}
               placeholder="REG01"
-              className={inputClass(!!errors.kode)}
+              className={inputClass(!!errors.code)}
             />
           </Field>
         </div>

@@ -7,8 +7,9 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { PanelCard } from "@/components/shared/PanelCard";
-import { ApiError } from "@/lib/api-client";
-import { getRegional, type Regional } from "../../api/regional";
+import { ApiError } from "@/lib/http-client";
+import { getRegional } from "../../api/regional";
+import type { RegionalResource } from "@/types/api/regional";
 import { RegionalInfoCard } from "./RegionalInfoCard";
 import { RegionalUnitStructureTable } from "./RegionalUnitStructureTable";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
@@ -18,17 +19,17 @@ import { MenungguValidasiList } from "./MenungguValidasiList";
 import { pendingValidationRows } from "./regionalDetailDummyData";
 
 interface DetailRegionalProps {
-  id: string;
+  id: number;
 }
 
 type LoadState =
   | { status: "loading" }
   | { status: "error"; code: number | null; message: string }
-  | { status: "ready"; regional: Regional };
+  | { status: "ready"; regional: RegionalResource };
 
 export function DetailRegional({ id }: DetailRegionalProps) {
   // Hasil disimpan bersama id-nya; kalau id berubah, otomatis dianggap loading
-  const [loaded, setLoaded] = useState<{ id: string; state: LoadState } | null>(
+  const [loaded, setLoaded] = useState<{ id: number; state: LoadState } | null>(
     null,
   );
   const state: LoadState =
@@ -99,25 +100,25 @@ export function DetailRegional({ id }: DetailRegionalProps) {
           { label: "Dashboard", href: "/dashboard" },
           { label: "Organisasi", href: "/organisasi" },
           { label: "Regional", href: "/organisasi/regional" },
-          { label: regional.nama },
+          { label: regional.name },
         ]}
       />
 
       <PageHeader
-        title={regional.nama}
-        description={`${regional.kode} · Ringkasan organisasi, SDM, dan pengembangan di wilayah kerja ini.`}
+        title={regional.name}
+        description={`${regional.code} · Ringkasan organisasi, SDM, dan pengembangan di wilayah kerja ini.`}
         action={null}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Jumlah Unit"
-          value={regional.jumlahUnit}
+          value={regional.jumlah_unit}
           icon={Network}
         />
         <MetricCard
           label="Total Karyawan"
-          value={regional.jumlahKaryawan.toLocaleString("id-ID")}
+          value={regional.jumlah_karyawan.toLocaleString("id-ID")}
           icon={User}
         />
         <MetricCard
@@ -136,8 +137,8 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <RegionalInfoCard
-            penanggungJawab={regional.kepalaRegional ?? undefined}
-            indukOrganisasi={regional.induk ?? "-"}
+            penanggungJawab={regional.kepala_regional ?? undefined}
+            indukOrganisasi={regional.parent?.name ?? "-"}
           />
         </div>
         <div className="lg:col-span-3">
@@ -148,7 +149,7 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <EntityEmployeeTable
         entityId={regional.id}
         title="Karyawan Kantor Regional"
-        subtitle={`${regional.jumlahKaryawanKantor.toLocaleString(
+        subtitle={`${regional.jumlah_karyawan_kantor.toLocaleString(
           "id-ID",
         )} pegawai ditempatkan langsung di kantor regional (di luar pegawai unit)`}
       />

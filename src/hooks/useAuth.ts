@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthContext } from "@/features/auth/AuthProvider";
-import type { AuthUser } from "@/types/auth";
+import type AuthUser from "@/types/auth";
 
 /**
  * Dipakai komponen di dalam area yang sudah dijaga `RequireAuth`, jadi user

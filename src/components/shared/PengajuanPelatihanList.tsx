@@ -15,7 +15,7 @@ export interface PengajuanPelatihanRow {
   status: PengajuanStatus;
 }
 
-const statusConfig: Record<
+export const statusConfig: Record<
   PengajuanStatus,
   { tone: BadgeTone; label: string }
 > = {

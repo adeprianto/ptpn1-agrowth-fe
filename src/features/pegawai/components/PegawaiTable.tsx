@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { Pegawai } from "../api/pegawai";
+import type { EmployeeResource } from "@/types/api/employee";
 
 interface PegawaiTableProps {
-  rows: Pegawai[];
+  rows: EmployeeResource[];
   /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
   startIndex: number;
   loading?: boolean;
@@ -43,18 +43,18 @@ export function PegawaiTable({ rows, startIndex, loading = false }: PegawaiTable
               </td>
               <td className="px-6 py-4">
                 <div>
-                  <p className="font-medium text-slate-800">{row.nama}</p>
+                  <p className="font-medium text-slate-800">{row.nama_lengkap || row.name}</p>
                   <p className="text-xs text-slate-400">{row.nik}</p>
                 </div>
               </td>
               <td className="px-6 py-4">
                 <div>
                   <p className="font-medium text-slate-800">
-                    {row.penempatanNama}
+                    {row.entity?.name ?? "-"}
                   </p>
-                  {row.penempatanInduk && (
+                  {row.entity?.parent?.name && (
                     <p className="text-xs text-slate-400">
-                      {row.penempatanInduk}
+                      {row.entity.parent.name}
                     </p>
                   )}
                 </div>
@@ -62,14 +62,14 @@ export function PegawaiTable({ rows, startIndex, loading = false }: PegawaiTable
               <td className="px-6 py-4">
                 <div>
                   <p className="font-medium text-slate-800">
-                    {row.jabatan ?? "-"}
+                    {row.jabatan?.name ?? "-"}
                   </p>
-                  <p className="text-xs text-slate-400">{row.jobGroup ?? "-"}</p>
+                  <p className="text-xs text-slate-400">{row.jabatan?.job_group?.name ?? "-"}</p>
                 </div>
               </td>
               <td className="px-6 py-4">
                 <p className="whitespace-nowrap font-medium text-slate-800">
-                  {row.levelBod ? `BOD-${row.levelBod}` : "-"}
+                  {row.jabatan?.level_bod ? `BOD-${row.jabatan.level_bod}` : "-"}
                 </p>
               </td>
               <td className="px-6 py-4">

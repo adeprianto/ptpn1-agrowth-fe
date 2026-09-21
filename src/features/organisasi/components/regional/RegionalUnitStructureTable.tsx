@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/api-client";
+import type { PaginationMeta } from "@/lib/http-client";
 import { getRegionalUnits } from "../../api/regional";
-import type { Unit } from "../../api/unit";
+import type { UnitListResource } from "@/types/api/unit";
 import { getJenisDisplay } from "../unit/jenisUnit";
 
 const PAGE_SIZE = 6;
 
 interface RegionalUnitStructureTableProps {
-  regionalId: string;
+  regionalId: number;
 }
 
 export function RegionalUnitStructureTable({
@@ -23,7 +23,7 @@ export function RegionalUnitStructureTable({
   const queryKey = `${regionalId}|${page}`;
   const [result, setResult] = useState<{
     key: string;
-    rows: Unit[];
+    rows: UnitListResource[];
     meta: PaginationMeta | null;
     error: string | null;
   } | null>(null);
@@ -36,7 +36,7 @@ export function RegionalUnitStructureTable({
     const controller = new AbortController();
     const key = `${regionalId}|${page}`;
 
-    getRegionalUnits(regionalId, { page, perPage: PAGE_SIZE }, controller.signal)
+    getRegionalUnits(regionalId, { page, per_page: PAGE_SIZE }, controller.signal)
       .then((res) =>
         setResult({ key, rows: res.rows, meta: res.meta ?? null, error: null }),
       )
@@ -79,8 +79,8 @@ export function RegionalUnitStructureTable({
                 className="border-b border-slate-50 last:border-0"
               >
                 <td className="py-3 pr-4">
-                  <p className="font-medium text-slate-700">{row.nama}</p>
-                  <p className="text-xs text-slate-400">{row.kode}</p>
+                  <p className="font-medium text-slate-700">{row.name}</p>
+                  <p className="text-xs text-slate-400">{row.code}</p>
                 </td>
                 <td className="py-3 pr-4">
                   <div className="flex flex-wrap gap-1">
@@ -101,7 +101,7 @@ export function RegionalUnitStructureTable({
                   </div>
                 </td>
                 <td className="py-3 pr-4 text-slate-500">
-                  {row.jumlahKaryawan.toLocaleString("id-ID")}
+                  {row.jumlah_karyawan.toLocaleString("id-ID")}
                 </td>
                 <td className="py-3 pr-4 text-slate-600">
                   {row.komoditas.length > 0

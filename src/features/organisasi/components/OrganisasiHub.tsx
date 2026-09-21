@@ -56,8 +56,8 @@ export function OrganisasiHub() {
       .then((s) =>
         setStats((prev) => ({
           ...prev,
-          regional: s.totalRegional,
-          unit: s.totalUnit,
+          regional: s.total_regional,
+          unit: s.total_unit,
         })),
       )
       .catch(() => {});
@@ -66,7 +66,7 @@ export function OrganisasiHub() {
     if (isHo) {
       getHeadOffice(signal)
         .then((ho) =>
-          setStats((prev) => ({ ...prev, karyawanHo: ho.jumlahKaryawan })),
+          setStats((prev) => ({ ...prev, karyawanHo: ho.jumlah_karyawan })),
         )
         .catch(() => {});
     }

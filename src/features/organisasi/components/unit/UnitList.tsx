@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
 import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/api-client";
+import type { PaginationMeta } from "@/lib/http-client";
 import { UnitFilterBar, type FilterOption } from "./UnitFilterBar";
 import { UnitTable } from "./UnitTable";
 import { getJenisDisplay } from "./jenisUnit";
@@ -17,9 +17,8 @@ import {
   deleteUnit,
   getUnits,
   getUnitSummary,
-  type Unit,
-  type UnitSummary,
 } from "../../api/unit";
+import type { UnitListResource, UnitSummary } from "@/types/api/unit";
 import { getRegionals } from "../../api/regional";
 import {
   getBusinessTypes,
@@ -52,7 +51,7 @@ export function UnitList() {
   // dinaikkan setelah hapus supaya list & summary di-fetch ulang
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [deleteTarget, setDeleteTarget] = useState<Unit | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UnitListResource | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
@@ -67,7 +66,7 @@ export function UnitList() {
   ].join("|");
   const [result, setResult] = useState<{
     key: string;
-    rows: Unit[];
+    rows: UnitListResource[];
     meta: PaginationMeta | null;
     error: string | null;
   } | null>(null);
@@ -92,12 +91,12 @@ export function UnitList() {
 
     getUnitSummary(signal)
       .then(setSummary)
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) console.error(e);
       });
 
     Promise.all([
-      getRegionals({ perPage: 100 }, signal),
+      getRegionals({ per_page: 100 }, signal),
       getOperationalCategories(signal),
       getBusinessTypes(signal),
     ])
@@ -110,7 +109,7 @@ export function UnitList() {
         );
 
         setOptions({
-          regional: regionals.rows.map((r) => ({ value: r.id, label: r.nama })),
+          regional: regionals.rows.map((r) => ({ value: String(r.id), label: r.name })),
           jenis: categories.map((c) => ({
             value: String(c.id),
             label: getJenisDisplay(c).label,
@@ -121,7 +120,7 @@ export function UnitList() {
           })),
         });
       })
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) console.error(e);
       });
 
@@ -143,11 +142,11 @@ export function UnitList() {
     getUnits(
       {
         search: debouncedSearch,
-        regionalId: pick(regional),
-        operationalCategoryId: pick(jenis),
-        businessTypeId: pick(komoditas),
+        regional_id: pick(regional),
+        operational_category_id: pick(jenis),
+        business_type_id: pick(komoditas),
         page,
-        perPage: PAGE_SIZE,
+        per_page: PAGE_SIZE,
       },
       controller.signal,
     )
@@ -215,22 +214,22 @@ export function UnitList() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryStatCard
           label="Total Unit"
-          value={formatNumber(summary?.totalUnit)}
+          value={formatNumber(summary?.total_unit)}
           icon={LandPlot}
         />
         <SummaryStatCard
           label="Kebun"
-          value={formatNumber(summary?.totalKebun)}
+          value={formatNumber(summary?.total_kebun)}
           icon={Sprout}
         />
         <SummaryStatCard
           label="Pabrik"
-          value={formatNumber(summary?.totalPabrik)}
+          value={formatNumber(summary?.total_pabrik)}
           icon={Factory}
         />
         <SummaryStatCard
           label="Total Karyawan"
-          value={formatNumber(summary?.totalKaryawan)}
+          value={formatNumber(summary?.total_karyawan)}
           icon={User}
         />
       </div>
@@ -290,7 +289,7 @@ export function UnitList() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        title={`Hapus ${deleteTarget?.name}?`}
         description="Unit hanya bisa dihapus kalau sudah tidak punya pegawai maupun user. Data jenis & komoditasnya ikut terhapus."
         confirmLabel="Hapus"
         variant="danger"

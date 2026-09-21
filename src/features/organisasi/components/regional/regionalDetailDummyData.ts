@@ -1,4 +1,4 @@
-import type { StatusKey } from "@/components/shared/StatusBadge";
+import type { PengajuanStatus } from "@/components/shared/PengajuanPelatihanList";
 
 export interface PendingValidationRow {
   id: string;
@@ -6,7 +6,7 @@ export interface PendingValidationRow {
   namaUnit: string;
   /** Sudah diformat, mis. "12 Agustus 2026" */
   tanggalDiajukan: string;
-  status: StatusKey;
+  status: PengajuanStatus;
 }
 
 // DUMMY DATA — nanti diganti hasil GET /api/v1/organisasi/regional/{id}/validasi-pending

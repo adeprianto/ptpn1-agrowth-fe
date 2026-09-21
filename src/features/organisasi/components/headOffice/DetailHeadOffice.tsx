@@ -7,8 +7,9 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { EntityInfoCard } from "@/components/shared/EntityInforCard";
-import { ApiError } from "@/lib/api-client";
-import { getHeadOffice, type HeadOffice } from "../../api/headOffice";
+import { ApiError } from "@/lib/http-client";
+import { getHeadOffice } from "../../api/headOffice";
+import type { HeadOffice } from "@/types/api/entity";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
 
 type LoadState =
@@ -76,25 +77,25 @@ export function DetailHeadOffice() {
       />
 
       <PageHeader
-        title={headOffice.nama}
-        description={`${headOffice.kode} · Kantor pusat PTPN 1, membawahi seluruh regional dan unit.`}
+        title={headOffice.name}
+        description={`${headOffice.code} · Kantor pusat PTPN 1, membawahi seluruh regional dan unit.`}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <MetricCard
           label="Karyawan Head Office"
-          value={headOffice.jumlahKaryawan.toLocaleString("id-ID")}
+          value={headOffice.jumlah_karyawan.toLocaleString("id-ID")}
           icon={Users}
           variant="featured"
         />
         <MetricCard
           label="Jumlah Regional"
-          value={headOffice.jumlahRegional}
+          value={headOffice.jumlah_regional}
           icon={Flag}
         />
         <MetricCard
           label="Jumlah Unit"
-          value={headOffice.jumlahUnit.toLocaleString("id-ID")}
+          value={headOffice.jumlah_unit.toLocaleString("id-ID")}
           icon={Network}
         />
       </div>

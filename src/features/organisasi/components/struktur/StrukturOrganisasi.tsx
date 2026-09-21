@@ -5,9 +5,10 @@ import { Maximize2, Minimize2, Search } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { OrgTreeRow } from "./OrgTreeRow";
-import { getStrukturOrganisasi, type OrgNode } from "../../api/struktur";
+import { getStrukturOrganisasi } from "../../api/struktur";
+import type { EntityTreeNode } from "@/types/api/entity";
 
-function collectExpandableIds(node: OrgNode): string[] {
+function collectExpandableIds(node: EntityTreeNode): number[] {
   const ownId = node.children.length > 0 ? [node.id] : [];
   return [...ownId, ...node.children.flatMap(collectExpandableIds)];
 }
@@ -15,12 +16,12 @@ function collectExpandableIds(node: OrgNode): string[] {
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; roots: OrgNode[] };
+  | { status: "ready"; roots: EntityTreeNode[] };
 
 export function StrukturOrganisasi() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   // null = belum diatur user -> default hanya root yang terbuka
-  const [expandedState, setExpanded] = useState<Set<string> | null>(null);
+  const [expandedState, setExpanded] = useState<Set<number> | null>(null);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
@@ -38,9 +39,9 @@ export function StrukturOrganisasi() {
   const roots = state.status === "ready" ? state.roots : [];
   const rootIds = roots.map((r) => r.id);
   const expanded = expandedState ?? new Set(rootIds);
-  const totalKaryawan = roots.reduce((sum, r) => sum + r.totalKaryawan, 0);
+  const totalKaryawan = roots.reduce((sum, r) => sum + r.total_karyawan, 0);
 
-  function handleToggle(id: string) {
+  function handleToggle(id: number) {
     const next = new Set(expanded);
     if (next.has(id)) {
       next.delete(id);

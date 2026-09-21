@@ -6,51 +6,47 @@ import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { ApiError } from "@/lib/api-client";
-import {
-  createUnit,
-  getUnit,
-  updateUnit,
-  type UnitPayload,
-} from "../../api/unit";
+import { ApiError } from "@/lib/http-client";
+import { createUnit, getUnit, updateUnit } from "../../api/unit";
 import { getRegionals } from "../../api/regional";
 import {
   getBusinessTypes,
   getOperationalCategories,
-  type MasterRef,
 } from "../../api/masterData";
+import type { MasterRef } from "@/types/api/master-data";
+import type { UnitPayload } from "@/types/api/unit";
 import { getJenisDisplay } from "./jenisUnit";
 
-interface OperasionalRow {
-  jenisId: string;
-  komoditasId: string;
+/** Nilai select selalu string; dikonversi ke number saat dikirim. */
+interface OperationalRow {
+  operational_category_id: string;
+  business_type_id: string;
 }
 
+/** Key form = field StoreUnitRequest, supaya error 422 langsung cocok. */
 interface FormValues {
-  kode: string;
-  nama: string;
-  regionalId: string;
-  operasional: OperasionalRow[];
+  code: string;
+  name: string;
+  parent_id: string;
+  operationals: OperationalRow[];
 }
+
+const emptyRow: OperationalRow = {
+  operational_category_id: "",
+  business_type_id: "",
+};
 
 const emptyForm: FormValues = {
-  kode: "",
-  nama: "",
-  regionalId: "",
-  operasional: [{ jenisId: "", komoditasId: "" }],
+  code: "",
+  name: "",
+  parent_id: "",
+  operationals: [emptyRow],
 };
 
-type FieldErrors = Partial<Record<"kode" | "nama" | "regionalId", string>>;
-
-// nama field backend -> field form
-const FIELD_MAP: Record<string, keyof FieldErrors> = {
-  code: "kode",
-  name: "nama",
-  parent_id: "regionalId",
-};
+type FieldErrors = Partial<Record<"code" | "name" | "parent_id", string>>;
 
 interface Options {
-  regional: { id: string; label: string }[];
+  regional: { id: number; label: string }[];
   jenis: MasterRef[];
   komoditas: MasterRef[];
 }
@@ -58,7 +54,7 @@ interface Options {
 interface UnitFormProps {
   mode: "create" | "edit";
   /** Wajib untuk mode edit */
-  unitId?: string;
+  unitId?: number;
 }
 
 export function UnitForm({ mode, unitId }: UnitFormProps) {
@@ -81,18 +77,18 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     const { signal } = controller;
 
     Promise.all([
-      getRegionals({ perPage: 100 }, signal),
+      getRegionals({ per_page: 100 }, signal),
       getOperationalCategories(signal),
       getBusinessTypes(signal),
     ])
       .then(([regionals, jenis, komoditas]) =>
         setOptions({
-          regional: regionals.rows.map((r) => ({ id: r.id, label: r.nama })),
+          regional: regionals.rows.map((r) => ({ id: r.id, label: r.name })),
           jenis,
           komoditas,
         }),
       )
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) setFormError((e as Error).message);
       });
 
@@ -106,14 +102,16 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     const controller = new AbortController();
     getUnit(unitId, controller.signal)
       .then((unit) => {
+        const operationals = unit.operasional.map((row) => ({
+          operational_category_id: String(row.operational_category_id ?? ""),
+          business_type_id: String(row.business_type_id ?? ""),
+        }));
+
         setValues({
-          kode: unit.kode,
-          nama: unit.nama,
-          regionalId: unit.regionalId ?? "",
-          operasional:
-            unit.operasional.length > 0
-              ? unit.operasional
-              : [{ jenisId: "", komoditasId: "" }],
+          code: unit.code,
+          name: unit.name,
+          parent_id: unit.regional ? String(unit.regional.id) : "",
+          operationals: operationals.length > 0 ? operationals : [emptyRow],
         });
         setLoading(false);
       })
@@ -134,34 +132,34 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function setOperasional(index: number, row: Partial<OperasionalRow>) {
+  function setOperational(index: number, row: Partial<OperationalRow>) {
     setValues((prev) => ({
       ...prev,
-      operasional: prev.operasional.map((r, i) =>
+      operationals: prev.operationals.map((r, i) =>
         i === index ? { ...r, ...row } : r,
       ),
     }));
   }
 
-  function addOperasional() {
+  function addOperational() {
     setValues((prev) => ({
       ...prev,
-      operasional: [...prev.operasional, { jenisId: "", komoditasId: "" }],
+      operationals: [...prev.operationals, emptyRow],
     }));
   }
 
-  function removeOperasional(index: number) {
+  function removeOperational(index: number) {
     setValues((prev) => ({
       ...prev,
-      operasional: prev.operasional.filter((_, i) => i !== index),
+      operationals: prev.operationals.filter((_, i) => i !== index),
     }));
   }
 
   function validate(): boolean {
     const next: FieldErrors = {};
-    if (!values.kode.trim()) next.kode = "Kode Unit wajib diisi";
-    if (!values.nama.trim()) next.nama = "Nama Unit wajib diisi";
-    if (!values.regionalId) next.regionalId = "Regional wajib dipilih";
+    if (!values.code.trim()) next.code = "Kode Unit wajib diisi";
+    if (!values.name.trim()) next.name = "Nama Unit wajib diisi";
+    if (!values.parent_id) next.parent_id = "Regional wajib dipilih";
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -171,14 +169,16 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
 
     // baris kosong diabaikan; unit boleh tidak punya data operasional
     const payload: UnitPayload = {
-      code: values.kode.trim(),
-      name: values.nama.trim(),
-      parent_id: values.regionalId,
-      operationals: values.operasional
-        .filter((row) => row.jenisId)
+      code: values.code.trim(),
+      name: values.name.trim(),
+      parent_id: Number(values.parent_id),
+      operationals: values.operationals
+        .filter((row) => row.operational_category_id)
         .map((row) => ({
-          operational_category_id: Number(row.jenisId),
-          business_type_id: row.komoditasId ? Number(row.komoditasId) : null,
+          operational_category_id: Number(row.operational_category_id),
+          business_type_id: row.business_type_id
+            ? Number(row.business_type_id)
+            : null,
         })),
     };
 
@@ -196,9 +196,11 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
         const fieldErrors: FieldErrors = {};
         const others: string[] = [];
         Object.entries(e.errors).forEach(([field, messages]) => {
-          const key = FIELD_MAP[field];
-          if (key) fieldErrors[key] = messages[0];
-          else others.push(messages[0]);
+          if (field === "code" || field === "name" || field === "parent_id") {
+            fieldErrors[field] = messages[0];
+          } else {
+            others.push(messages[0]);
+          }
         });
         setErrors(fieldErrors);
         setFormError(others[0] ?? (Object.keys(fieldErrors).length ? null : e.message));
@@ -240,32 +242,32 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
       ) : (
         <div className="space-y-5 rounded-2xl border border-slate-300 bg-white p-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Kode Unit" required error={errors.kode}>
+            <Field label="Kode Unit" required error={errors.code}>
               <input
                 type="text"
-                value={values.kode}
-                onChange={(e) => setField("kode", e.target.value)}
+                value={values.code}
+                onChange={(e) => setField("code", e.target.value)}
                 placeholder="Cth. UNIT101"
-                className={inputClass(!!errors.kode)}
+                className={inputClass(!!errors.code)}
               />
             </Field>
 
-            <Field label="Nama Unit" required error={errors.nama}>
+            <Field label="Nama Unit" required error={errors.name}>
               <input
                 type="text"
-                value={values.nama}
-                onChange={(e) => setField("nama", e.target.value)}
+                value={values.name}
+                onChange={(e) => setField("name", e.target.value)}
                 placeholder="Cth. Kebun Sei Rokan"
-                className={inputClass(!!errors.nama)}
+                className={inputClass(!!errors.name)}
               />
             </Field>
           </div>
 
-          <Field label="Regional" required error={errors.regionalId}>
+          <Field label="Regional" required error={errors.parent_id}>
             <select
-              value={values.regionalId}
-              onChange={(e) => setField("regionalId", e.target.value)}
-              className={inputClass(!!errors.regionalId)}
+              value={values.parent_id}
+              onChange={(e) => setField("parent_id", e.target.value)}
+              className={inputClass(!!errors.parent_id)}
             >
               <option value="">Pilih Regional</option>
               {options.regional.map((opt) => (
@@ -283,7 +285,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
               </label>
               <button
                 type="button"
-                onClick={addOperasional}
+                onClick={addOperational}
                 className="flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -292,12 +294,14 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
             </div>
 
             <div className="space-y-2">
-              {values.operasional.map((row, index) => (
+              {values.operationals.map((row, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <select
-                    value={row.jenisId}
+                    value={row.operational_category_id}
                     onChange={(e) =>
-                      setOperasional(index, { jenisId: e.target.value })
+                      setOperational(index, {
+                        operational_category_id: e.target.value,
+                      })
                     }
                     className={`${inputClass(false)} flex-1`}
                   >
@@ -310,9 +314,9 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
                   </select>
 
                   <select
-                    value={row.komoditasId}
+                    value={row.business_type_id}
                     onChange={(e) =>
-                      setOperasional(index, { komoditasId: e.target.value })
+                      setOperational(index, { business_type_id: e.target.value })
                     }
                     className={`${inputClass(false)} flex-1`}
                   >
@@ -326,8 +330,8 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
 
                   <button
                     type="button"
-                    onClick={() => removeOperasional(index)}
-                    disabled={values.operasional.length === 1}
+                    onClick={() => removeOperational(index)}
+                    disabled={values.operationals.length === 1}
                     aria-label="Hapus baris"
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-slate-400"
                   >

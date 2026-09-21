@@ -1,5 +1,5 @@
 import { Building2, Factory, Sprout, type LucideIcon } from "lucide-react";
-import type { MasterRef } from "../../api/masterData";
+import type { MasterRef } from "@/types/api/master-data";
 
 // Tampilan per kategori operasional (operational_categories.code).
 // Kategori yang belum didaftarkan di sini pakai nama dari master + warna netral.

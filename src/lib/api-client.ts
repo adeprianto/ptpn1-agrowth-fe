@@ -1,128 +1,79 @@
-// Klien HTTP tipis di atas fetch untuk backend Laravel (Sanctum SPA cookie).
-// - credentials: "include" supaya cookie sesi & XSRF-TOKEN ikut terkirim
-// - header X-XSRF-TOKEN diisi dari cookie terbaru di setiap request yang mengubah data
-// - response dibongkar dari wrapper ApiResponse { success, message, data, meta? }
+/**
+ * Jembatan ke backend Laravel. HANYA dipakai di route handler (src/app/api/**),
+ * karena membaca cookie HttpOnly lewat next/headers.
+ *
+ * Komponen client tidak boleh mengimpor file ini — pakai @/lib/http-client.
+ */
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
-// Origin backend tanpa /api/v1, dipakai untuk /sanctum/csrf-cookie
-const BACKEND_ORIGIN = new URL(API_URL).origin;
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8000/api/v1";
 
-export interface PaginationMeta {
-  current_page: number;
-  per_page: number;
-  total: number;
-  last_page: number;
-  from: number | null;
-  to: number | null;
-}
+export const SESSION_COOKIE = "session_token";
 
-export interface ApiResult<T> {
-  data: T;
-  message: string;
-  meta?: PaginationMeta;
-}
+/** Header standar + token dari cookie kalau user sudah login. */
+async function backendHeaders(): Promise<HeadersInit> {
+    const token = (await cookies()).get(SESSION_COOKIE)?.value;
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public errors?: Record<string, string[]>,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
-
-type QueryValue = string | number | boolean | null | undefined;
-
-function buildUrl(path: string, query?: Record<string, QueryValue>) {
-  const url = new URL(`${API_URL}${path}`);
-  Object.entries(query ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      url.searchParams.set(key, String(value));
-    }
-  });
-  return url.toString();
-}
-
-function readXsrfToken() {
-  if (typeof document === "undefined") return null;
-  const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+    return {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
 }
 
 /**
- * Panggil sebelum POST/PUT/DELETE, kalau tidak kena 419.
- * `force` mengambil token baru walau cookie-nya sudah ada — dipakai saat retry,
- * karena token bisa tidak cocok lagi setelah sesi berganti.
+ * Panggil backend dan kembalikan hasilnya sebagai objek biasa.
+ * Dipakai route handler yang masih perlu mengolah hasilnya (mis. login).
  */
-export async function ensureCsrfCookie(force = false) {
-  if (!force && readXsrfToken()) return;
-  await fetch(`${BACKEND_ORIGIN}/sanctum/csrf-cookie`, {
-    credentials: "include",
-    headers: { Accept: "application/json" },
-  });
+export async function callBackend<T>(
+    endpoint: string,
+    init: RequestInit = {},
+): Promise<{ status: number; body: T }> {
+    const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+        ...init,
+        headers: { ...(await backendHeaders()), ...init.headers },
+    });
+
+    return { status: response.status, body: (await response.json()) as T };
 }
 
-interface RequestOptions {
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  query?: Record<string, QueryValue>;
-  body?: unknown;
-  signal?: AbortSignal;
+/**
+ * Teruskan request dari browser ke backend apa adanya: method, query string,
+ * dan body-nya ikut. Ini yang dipakai hampir semua route handler.
+ *
+ *   export async function GET(request: NextRequest) {
+ *       return forward(request, "/regionals");
+ *   }
+ */
+export async function forward(request: NextRequest, endpoint: string) {
+    const hasBody = request.method !== "GET" && request.method !== "DELETE";
+
+    try {
+        const response = await fetch(
+            `${BACKEND_URL}${endpoint}${request.nextUrl.search}`,
+            {
+                method: request.method,
+                headers: await backendHeaders(),
+                body: hasBody ? await request.text() : undefined,
+            },
+        );
+
+        // Diteruskan sebagai teks supaya envelope backend tidak berubah bentuk.
+        return new NextResponse(await response.text(), {
+            status: response.status,
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error(`[backend] ${request.method} ${endpoint} gagal:`, error);
+
+        return NextResponse.json(
+            {
+                success: false,
+                message: "Tidak dapat terhubung ke server backend.",
+                data: null,
+            },
+            { status: 502 },
+        );
+    }
 }
-
-export async function apiRequest<T>(
-  path: string,
-  { method = "GET", query, body, signal }: RequestOptions = {},
-  retryOn419 = true,
-): Promise<ApiResult<T>> {
-  const headers: Record<string, string> = { Accept: "application/json" };
-
-  if (method !== "GET") {
-    await ensureCsrfCookie();
-    const token = readXsrfToken();
-    if (token) headers["X-XSRF-TOKEN"] = token;
-  }
-  if (body !== undefined) headers["Content-Type"] = "application/json";
-
-  const res = await fetch(buildUrl(path, query), {
-    method,
-    headers,
-    credentials: "include",
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-    signal,
-  });
-
-  // 419 = token CSRF tidak cocok (mis. sesi baru berganti). Ambil token baru, coba sekali lagi.
-  if (res.status === 419 && retryOn419 && method !== "GET") {
-    await ensureCsrfCookie(true);
-    return apiRequest<T>(path, { method, query, body, signal }, false);
-  }
-
-  const json = await res.json().catch(() => null);
-
-  if (!res.ok || json?.success === false) {
-    throw new ApiError(
-      res.status,
-      json?.message ?? `Request gagal (${res.status})`,
-      json?.errors,
-    );
-  }
-
-  return { data: json.data as T, message: json.message, meta: json.meta };
-}
-
-export const apiGet = <T>(
-  path: string,
-  query?: Record<string, QueryValue>,
-  signal?: AbortSignal,
-) => apiRequest<T>(path, { query, signal });
-
-export const apiPost = <T>(path: string, body: unknown) =>
-  apiRequest<T>(path, { method: "POST", body });
-
-export const apiPut = <T>(path: string, body: unknown) =>
-  apiRequest<T>(path, { method: "PUT", body });
-
-export const apiDelete = <T>(path: string) =>
-  apiRequest<T>(path, { method: "DELETE" });

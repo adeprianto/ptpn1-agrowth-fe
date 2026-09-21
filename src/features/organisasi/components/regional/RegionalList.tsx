@@ -20,10 +20,9 @@ import {
   getRegionals,
   getRegionalSummary,
   updateRegional,
-  type Regional,
-  type RegionalSummary,
 } from "../../api/regional";
-import type { PaginationMeta } from "@/lib/api-client";
+import type { RegionalResource, RegionalSummary } from "@/types/api/regional";
+import type { PaginationMeta } from "@/lib/http-client";
 
 const PAGE_SIZE = 10;
 
@@ -38,10 +37,10 @@ export function RegionalList() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [formOpen, setFormOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<Regional | null>(null);
+  const [editingRow, setEditingRow] = useState<RegionalResource | null>(null);
   // dipakai sebagai `key` modal supaya state form fresh tiap dibuka
   const [formKey, setFormKey] = useState(0);
-  const [deleteTarget, setDeleteTarget] = useState<Regional | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<RegionalResource | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
@@ -49,7 +48,7 @@ export function RegionalList() {
   const queryKey = `${debouncedSearch}|${page}|${refreshKey}`;
   const [result, setResult] = useState<{
     key: string;
-    rows: Regional[];
+    rows: RegionalResource[];
     meta: PaginationMeta | null;
     error: string | null;
   } | null>(null);
@@ -71,7 +70,7 @@ export function RegionalList() {
     const controller = new AbortController();
     getRegionalSummary(controller.signal)
       .then(setSummary)
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!controller.signal.aborted) console.error(e);
       });
     return () => controller.abort();
@@ -82,7 +81,7 @@ export function RegionalList() {
     const key = `${debouncedSearch}|${page}|${refreshKey}`;
 
     getRegionals(
-      { search: debouncedSearch, page, perPage: PAGE_SIZE },
+      { search: debouncedSearch, page, per_page: PAGE_SIZE },
       controller.signal,
     )
       .then((res) =>
@@ -99,7 +98,7 @@ export function RegionalList() {
   const formatNumber = (n?: number) =>
     n === undefined ? "-" : n.toLocaleString("id-ID");
 
-  function openForm(row: Regional | null) {
+  function openForm(row: RegionalResource | null) {
     setEditingRow(row);
     setFormOpen(true);
     setFormKey((k) => k + 1);
@@ -107,7 +106,7 @@ export function RegionalList() {
 
   // Error dibiarkan naik ke modal supaya pesan validasi tampil di field-nya
   async function handleFormSubmit(values: RegionalFormValues) {
-    const payload = { code: values.kode.trim(), name: values.nama.trim() };
+    const payload = { code: values.code.trim(), name: values.name.trim() };
 
     if (editingRow) {
       await updateRegional(editingRow.id, payload);
@@ -164,17 +163,17 @@ export function RegionalList() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryStatCard
           label="Total Regional"
-          value={formatNumber(summary?.totalRegional)}
+          value={formatNumber(summary?.total_regional)}
           icon={Flag}
         />
         <SummaryStatCard
           label="Total Unit"
-          value={formatNumber(summary?.totalUnit)}
+          value={formatNumber(summary?.total_unit)}
           icon={Network}
         />
         <SummaryStatCard
           label="Total Karyawan"
-          value={formatNumber(summary?.totalKaryawan)}
+          value={formatNumber(summary?.total_karyawan)}
           icon={User}
         />
       </div>
@@ -227,7 +226,7 @@ export function RegionalList() {
         mode={editingRow ? "edit" : "create"}
         initialValues={
           editingRow
-            ? { nama: editingRow.nama, kode: editingRow.kode }
+            ? { name: editingRow.name, code: editingRow.code }
             : undefined
         }
         onClose={() => setFormOpen(false)}
@@ -236,7 +235,7 @@ export function RegionalList() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        title={`Hapus ${deleteTarget?.name}?`}
         description="Regional hanya bisa dihapus kalau sudah tidak punya unit, pegawai, maupun user."
         confirmLabel="Hapus"
         variant="danger"

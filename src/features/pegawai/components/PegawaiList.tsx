@@ -7,23 +7,21 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
 import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/api-client";
+import type { PaginationMeta } from "@/lib/http-client";
 import { PegawaiFilterBar } from "./PegawaiFilterBar";
 import { PegawaiTable } from "./PegawaiTable";
+import { getPegawaiList, getPegawaiSummary } from "../api/pegawai";
 import {
-  getPegawaiList,
-  getPegawaiSummary,
-  getPenempatanOptions,
-  type Pegawai,
-  type PegawaiSummary,
-  type PenempatanOption,
-} from "../api/pegawai";
+  getEntityOptions,
+  type EntityOption,
+} from "@/features/organisasi/api/entityOptions";
+import type { EmployeeResource, EmployeeSummary } from "@/types/api/employee";
 
 const PAGE_SIZE = 20;
 
 export function PegawaiList() {
-  const [summary, setSummary] = useState<PegawaiSummary | null>(null);
-  const [penempatanOptions, setPenempatanOptions] = useState<PenempatanOption[]>([]);
+  const [summary, setSummary] = useState<EmployeeSummary | null>(null);
+  const [penempatanOptions, setPenempatanOptions] = useState<EntityOption[]>([]);
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -36,7 +34,7 @@ export function PegawaiList() {
   const queryKey = [debouncedSearch, penempatan, level, page].join("|");
   const [result, setResult] = useState<{
     key: string;
-    rows: Pegawai[];
+    rows: EmployeeResource[];
     meta: PaginationMeta | null;
     error: string | null;
   } | null>(null);
@@ -61,13 +59,13 @@ export function PegawaiList() {
 
     getPegawaiSummary(signal)
       .then(setSummary)
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) console.error(e);
       });
 
-    getPenempatanOptions(signal)
+    getEntityOptions(signal)
       .then(setPenempatanOptions)
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) console.error(e);
       });
 
@@ -82,10 +80,10 @@ export function PegawaiList() {
     getPegawaiList(
       {
         search: debouncedSearch,
-        entityId: pick(penempatan),
-        levelBod: pick(level),
+        entity_id: pick(penempatan),
+        level_bod: pick(level),
         page,
-        perPage: PAGE_SIZE,
+        per_page: PAGE_SIZE,
       },
       controller.signal,
     )
@@ -135,22 +133,22 @@ export function PegawaiList() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <SummaryStatCard
           label="Total Karyawan"
-          value={formatNumber(summary?.totalKaryawan)}
+          value={formatNumber(summary?.total_karyawan)}
           icon={Boxes}
         />
         <SummaryStatCard
           label="Karyawan HO"
-          value={formatNumber(summary?.totalHo)}
+          value={formatNumber(summary?.total_head_office)}
           icon={Landmark}
         />
         <SummaryStatCard
           label="Karyawan REG"
-          value={formatNumber(summary?.totalRegional)}
+          value={formatNumber(summary?.total_regional)}
           icon={Building2}
         />
         <SummaryStatCard
           label="Karyawan UNIT"
-          value={formatNumber(summary?.totalUnit)}
+          value={formatNumber(summary?.total_unit)}
           icon={Factory}
         />
       </div>

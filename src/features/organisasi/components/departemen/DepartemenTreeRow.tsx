@@ -2,14 +2,14 @@
 
 import { ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { RowActionMenu } from "@/components/shared/RowActionMenu";
-import type { DepartemenNode } from "../../api/departemen";
+import type { OrganizationTreeNode } from "@/types/api/organization";
 
 interface DepartemenTreeRowProps {
-  node: DepartemenNode;
+  node: OrganizationTreeNode;
   depth: number;
-  expanded: Set<string>;
-  onToggle: (id: string) => void;
-  onDeleteClick: (node: DepartemenNode) => void;
+  expanded: Set<number>;
+  onToggle: (id: number) => void;
+  onDeleteClick: (node: OrganizationTreeNode) => void;
 }
 
 export function DepartemenTreeRow({
@@ -46,25 +46,25 @@ export function DepartemenTreeRow({
         )}
 
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
-          {node.nama}
+          {node.name}
           <span className="ml-2 text-xs font-normal text-slate-400">
-            {node.kode}
+            {node.code}
           </span>
         </span>
 
-        {node.tipe && (
+        {node.organization_type && (
           <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-            {node.tipe}
+            {node.organization_type.name}
           </span>
         )}
 
         <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
-          {node.jobFunction ?? "-"}
+          {node.job_function?.name ?? "-"}
         </span>
 
         <div className="ml-2 shrink-0">
           <RowActionMenu
-            label={`Aksi untuk ${node.nama}`}
+            label={`Aksi untuk ${node.name}`}
             actions={[
               {
                 label: "Edit",

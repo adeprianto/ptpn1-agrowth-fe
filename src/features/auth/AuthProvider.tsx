@@ -8,12 +8,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { me as fetchMe, logout as apiLogout } from "./api/auth";
-import type { AuthUser } from "@/types/auth";
+
+import AuthUser, { toAuthUser } from "@/types/auth";
+import { apiGet, apiPost } from "@/lib/http-client";
+import type { UserResource } from "@/types/api/user";
 
 interface AuthContextValue {
   user: AuthUser | null;
-  /** true selama pengecekan sesi pertama ke /me */
+  /** true selama pengecekan sesi pertama ke /api/auth/me */
   loading: boolean;
   /** Dipanggil setelah login berhasil supaya context langsung terisi */
   setUser: (user: AuthUser) => void;
@@ -23,8 +25,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Menyimpan sesi Sanctum untuk seluruh app. Sesi ada di cookie HttpOnly,
- * jadi satu-satunya cara tahu user sedang login adalah memanggil /me.
+ * Menyimpan sesi untuk seluruh app. Token ada di cookie HttpOnly, jadi
+ * satu-satunya cara tahu user sedang login adalah memanggil route handler
+ * `/api/auth/me` — browser tidak pernah menyentuh backend langsung.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<{ user: AuthUser | null; loading: boolean }>(
@@ -34,11 +37,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetchMe(controller.signal)
-      .then((user) => setState({ user, loading: false }))
-      // 401 = belum login; penjaga rute yang menangani pengalihannya
+    apiGet<UserResource>("/api/auth/me", undefined, controller.signal)
+      .then(({ data }) => {
+        setState({ user: toAuthUser(data), loading: false });
+      })
       .catch(() => {
-        if (!controller.signal.aborted) setState({ user: null, loading: false });
+        // 401 = belum login. Error lain juga diperlakukan sebagai "tidak login"
+        // supaya app tidak menggantung di layar loading.
+        if (!controller.signal.aborted) {
+          setState({ user: null, loading: false });
+        }
       });
 
     return () => controller.abort();
@@ -50,7 +58,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiLogout();
+      await apiPost("/api/auth/logout");
+    } catch (error) {
+      // Cookie tetap dibuang di sisi server pada kasus apa pun; kalaupun
+      // request gagal total, user tetap dikeluarkan dari state lokal.
+      console.error("Logout gagal dikirim ke server:", error);
     } finally {
       setState({ user: null, loading: false });
     }

@@ -8,20 +8,20 @@ import {
   Network,
   Users,
 } from "lucide-react";
-import type { OrgNode } from "../../api/struktur";
+import type { EntityTreeNode } from "@/types/api/entity";
 import { getJenisDisplay } from "../unit/jenisUnit";
 
-function nodeMatches(node: OrgNode, query: string): boolean {
+function nodeMatches(node: EntityTreeNode, query: string): boolean {
   if (!query) return true;
   const q = query.toLowerCase();
-  if (node.nama.toLowerCase().includes(q) || node.kode.toLowerCase().includes(q)) {
+  if (node.name.toLowerCase().includes(q) || node.code.toLowerCase().includes(q)) {
     return true;
   }
   return node.children.some((child) => nodeMatches(child, query));
 }
 
 // HO & Regional punya icon tetap; Unit mengikuti kategori operasional pertamanya
-function getNodeIcon(node: OrgNode) {
+function getNodeIcon(node: EntityTreeNode) {
   if (node.type === "HEAD_OFFICE") {
     return { Icon: Landmark, className: "bg-emerald-950 text-white" };
   }
@@ -32,16 +32,16 @@ function getNodeIcon(node: OrgNode) {
   return { Icon: jenis.icon, className: `${jenis.iconBg} ${jenis.iconColor}` };
 }
 
-const detailHref: Partial<Record<OrgNode["type"], (id: string) => string>> = {
+const detailHref: Partial<Record<EntityTreeNode["type"], (id: number) => string>> = {
   REGIONAL: (id) => `/organisasi/regional/${id}`,
   UNIT: (id) => `/organisasi/unit/${id}`,
 };
 
 interface OrgTreeRowProps {
-  node: OrgNode;
+  node: EntityTreeNode;
   level: number;
-  expanded: Set<string>;
-  onToggle: (id: string) => void;
+  expanded: Set<number>;
+  onToggle: (id: number) => void;
   query: string;
 }
 
@@ -58,7 +58,7 @@ export function OrgTreeRow({
   const hasChildren = node.children.length > 0;
   const isOpen = query !== "" ? true : expanded.has(node.id);
   const highlighted =
-    query !== "" && node.nama.toLowerCase().includes(query.toLowerCase());
+    query !== "" && node.name.toLowerCase().includes(query.toLowerCase());
   const href = detailHref[node.type]?.(node.id);
 
   return (
@@ -93,9 +93,9 @@ export function OrgTreeRow({
               : "text-slate-700"
           }`}
         >
-          {node.nama}
+          {node.name}
         </span>
-        <span className="text-xs text-slate-400">{node.kode}</span>
+        <span className="text-xs text-slate-400">{node.code}</span>
 
         {node.type === "UNIT" &&
           node.jenis.map((j) => {
@@ -128,7 +128,7 @@ export function OrgTreeRow({
           )}
           <span className="flex items-center gap-1 text-xs text-slate-400">
             <Users className="h-3 w-3" />
-            {node.totalKaryawan.toLocaleString("id-ID")}
+            {node.total_karyawan.toLocaleString("id-ID")}
           </span>
         </span>
       </div>

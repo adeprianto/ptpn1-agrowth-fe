@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import type { PenempatanOption } from "../api/pegawai";
+import type { EntityOption } from "@/features/organisasi/api/entityOptions";
 
 // BOD level tetap 1–6 (enum BodLevel di backend), aman di-hardcode
 const LEVEL_BOD_OPTIONS = [1, 2, 3, 4, 5, 6];
@@ -9,7 +9,7 @@ const LEVEL_BOD_OPTIONS = [1, 2, 3, 4, 5, 6];
 interface PegawaiFilterBarProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
-  penempatanOptions: PenempatanOption[];
+  penempatanOptions: EntityOption[];
   penempatanValue: string;
   onPenempatanChange: (value: string) => void;
   levelValue: string;
@@ -30,10 +30,10 @@ export function PegawaiFilterBar({
 }: PegawaiFilterBarProps) {
   // Dikelompokkan per tipe (HO/Regional/Unit) biar 1 dropdown ini tetap rapi
   // walau daftar Unit-nya panjang (ratusan).
-  const groups: { label: string; options: PenempatanOption[] }[] = [
-    { label: "Head Office", options: penempatanOptions.filter((p) => p.tipe === "HO") },
-    { label: "Regional", options: penempatanOptions.filter((p) => p.tipe === "Regional") },
-    { label: "Unit", options: penempatanOptions.filter((p) => p.tipe === "Unit") },
+  const groups: { label: string; options: EntityOption[] }[] = [
+    { label: "Head Office", options: penempatanOptions.filter((p) => p.type === "HEAD_OFFICE") },
+    { label: "Regional", options: penempatanOptions.filter((p) => p.type === "REGIONAL") },
+    { label: "Unit", options: penempatanOptions.filter((p) => p.type === "UNIT") },
   ];
 
   return (
@@ -61,7 +61,7 @@ export function PegawaiFilterBar({
               <optgroup key={group.label} label={group.label}>
                 {group.options.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.nama}
+                    {p.name}
                   </option>
                 ))}
               </optgroup>

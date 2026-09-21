@@ -6,62 +6,52 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { FormField, formInputClass } from "@/components/shared/FormField";
-import { ApiError } from "@/lib/api-client";
+import { ApiError } from "@/lib/http-client";
 import {
   createDepartemen,
   getDepartemen,
   getDepartemenOptions,
   updateDepartemen,
-  type DepartemenPayload,
 } from "../../api/departemen";
-import {
-  getJobFunctions,
-  getOrganizationTypes,
-  type MasterRef,
-} from "../../api/masterData";
-import {
-  getEntityOptions,
-  type EntityOption,
-  type EntityTier,
-} from "../../api/entityOptions";
+import { getJobFunctions, getOrganizationTypes } from "../../api/masterData";
+import { getEntityOptions, type EntityOption } from "../../api/entityOptions";
+import type { EntityType } from "@/types/api/entity";
+import type { MasterRef } from "@/types/api/master-data";
+import type {
+  OrganizationPayload,
+  OrganizationResource,
+} from "@/types/api/organization";
 
+/**
+ * Key form = field StoreOrganizationRequest, supaya error 422 langsung cocok.
+ * Semua bernilai string karena isinya dari <input>/<select>.
+ */
 interface FormValues {
-  kode: string;
-  nama: string;
+  code: string;
+  name: string;
   level: string;
-  tipeId: string;
-  entityId: string;
-  jobFunctionId: string;
-  parentId: string;
+  organization_type_id: string;
+  entity_id: string;
+  job_function_id: string;
+  parent_id: string;
 }
 
 const emptyValues: FormValues = {
-  kode: "",
-  nama: "",
+  code: "",
+  name: "",
   level: "1",
-  tipeId: "",
-  entityId: "",
-  jobFunctionId: "",
-  parentId: "",
+  organization_type_id: "",
+  entity_id: "",
+  job_function_id: "",
+  parent_id: "",
 };
 
 type FieldErrors = Partial<Record<keyof FormValues, string>>;
 
-// nama field backend -> field form
-const FIELD_MAP: Record<string, keyof FormValues> = {
-  code: "kode",
-  name: "nama",
-  level: "level",
-  organization_type_id: "tipeId",
-  entity_id: "entityId",
-  job_function_id: "jobFunctionId",
-  parent_id: "parentId",
-};
-
-const TIER_LABEL: Record<EntityTier, string> = {
-  HO: "Head Office",
-  Regional: "Regional",
-  Unit: "Unit",
+const ENTITY_TYPE_LABEL: Record<EntityType, string> = {
+  HEAD_OFFICE: "Head Office",
+  REGIONAL: "Regional",
+  UNIT: "Unit",
 };
 
 interface StrukturDepartemenFormProps {
@@ -69,7 +59,7 @@ interface StrukturDepartemenFormProps {
   /** Dipakai saat mode "create" buat prefill Entity dari halaman List */
   defaultEntityId?: string;
   /** Wajib untuk mode edit */
-  departemenId?: string;
+  departemenId?: number;
 }
 
 export function StrukturDepartemenForm({
@@ -82,14 +72,12 @@ export function StrukturDepartemenForm({
 
   const [values, setValues] = useState<FormValues>({
     ...emptyValues,
-    entityId: defaultEntityId ?? "",
+    entity_id: defaultEntityId ?? "",
   });
   const [entityOptions, setEntityOptions] = useState<EntityOption[]>([]);
   const [tipeOptions, setTipeOptions] = useState<MasterRef[]>([]);
   const [functionOptions, setFunctionOptions] = useState<MasterRef[]>([]);
-  const [parentOptions, setParentOptions] = useState<
-    { id: string; nama: string; kode: string }[]
-  >([]);
+  const [parentOptions, setParentOptions] = useState<OrganizationResource[]>([]);
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -112,12 +100,12 @@ export function StrukturDepartemenForm({
         setFunctionOptions(functions);
         // create tanpa prefill: pakai entity pertama
         setValues((prev) =>
-          prev.entityId || entities.length === 0
+          prev.entity_id || entities.length === 0
             ? prev
-            : { ...prev, entityId: entities[0].id },
+            : { ...prev, entity_id: String(entities[0].id) },
         );
       })
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!signal.aborted) setFormError((e as Error).message);
       });
 
@@ -132,13 +120,13 @@ export function StrukturDepartemenForm({
     getDepartemen(departemenId, controller.signal)
       .then((d) => {
         setValues({
-          kode: d.kode,
-          nama: d.nama,
+          code: d.code,
+          name: d.name,
           level: String(d.level),
-          tipeId: d.tipeId,
-          entityId: d.entityId,
-          jobFunctionId: d.jobFunctionId,
-          parentId: d.parentId,
+          organization_type_id: String(d.organization_type?.id ?? ""),
+          entity_id: String(d.entity?.id ?? ""),
+          job_function_id: String(d.job_function?.id ?? ""),
+          parent_id: String(d.parent?.id ?? ""),
         });
         setLoading(false);
       })
@@ -157,17 +145,17 @@ export function StrukturDepartemenForm({
 
   // Induk HARUS dari entity yang sama, jadi daftarnya ikut entity terpilih
   useEffect(() => {
-    if (!values.entityId) return;
+    if (!values.entity_id) return;
 
     const controller = new AbortController();
-    getDepartemenOptions(values.entityId, controller.signal)
+    getDepartemenOptions(Number(values.entity_id), controller.signal)
       .then(setParentOptions)
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (!controller.signal.aborted) console.error(e);
       });
 
     return () => controller.abort();
-  }, [values.entityId]);
+  }, [values.entity_id]);
 
   function handleChange<K extends keyof FormValues>(
     key: K,
@@ -177,21 +165,23 @@ export function StrukturDepartemenForm({
       ...prev,
       [key]: value,
       // pindah entity = induk lama tidak valid lagi
-      ...(key === "entityId" ? { parentId: "" } : {}),
+      ...(key === "entity_id" ? { parent_id: "" } : {}),
     }));
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    const payload: DepartemenPayload = {
-      code: values.kode.trim(),
-      name: values.nama.trim(),
+    const payload: OrganizationPayload = {
+      code: values.code.trim(),
+      name: values.name.trim(),
       level: Number(values.level),
-      organization_type_id: Number(values.tipeId),
-      entity_id: Number(values.entityId),
-      job_function_id: values.jobFunctionId ? Number(values.jobFunctionId) : null,
-      parent_id: values.parentId ? Number(values.parentId) : null,
+      organization_type_id: Number(values.organization_type_id),
+      entity_id: Number(values.entity_id),
+      job_function_id: values.job_function_id
+        ? Number(values.job_function_id)
+        : null,
+      parent_id: values.parent_id ? Number(values.parent_id) : null,
     };
 
     setSaving(true);
@@ -209,8 +199,9 @@ export function StrukturDepartemenForm({
       if (err instanceof ApiError && err.errors) {
         const fieldErrors: FieldErrors = {};
         Object.entries(err.errors).forEach(([field, messages]) => {
-          const key = FIELD_MAP[field];
-          if (key) fieldErrors[key] = messages[0];
+          if (field in emptyValues) {
+            fieldErrors[field as keyof FormValues] = messages[0];
+          }
         });
         setErrors(fieldErrors);
         if (Object.keys(fieldErrors).length === 0) setFormError(err.message);
@@ -221,7 +212,7 @@ export function StrukturDepartemenForm({
     }
   }
 
-  const tiers: EntityTier[] = ["HO", "Regional", "Unit"];
+  const entityTypes: EntityType[] = ["HEAD_OFFICE", "REGIONAL", "UNIT"];
 
   return (
     <div className="space-y-5">
@@ -268,25 +259,25 @@ export function StrukturDepartemenForm({
           onSubmit={handleSubmit}
           className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6"
         >
-          <FormField label="Entity" required error={errors.entityId}>
+          <FormField label="Entity" required error={errors.entity_id}>
             <select
               required
-              value={values.entityId}
-              onChange={(e) => handleChange("entityId", e.target.value)}
+              value={values.entity_id}
+              onChange={(e) => handleChange("entity_id", e.target.value)}
               className={formInputClass}
             >
               <option value="" disabled>
                 Pilih...
               </option>
-              {tiers.map((tier) => {
-                const options = entityOptions.filter((e) => e.tier === tier);
+              {entityTypes.map((type) => {
+                const options = entityOptions.filter((e) => e.type === type);
                 if (options.length === 0) return null;
 
                 return (
-                  <optgroup key={tier} label={TIER_LABEL[tier]}>
+                  <optgroup key={type} label={ENTITY_TYPE_LABEL[type]}>
                     {options.map((e) => (
                       <option key={e.id} value={e.id}>
-                        {e.nama}
+                        {e.name}
                       </option>
                     ))}
                   </optgroup>
@@ -296,33 +287,39 @@ export function StrukturDepartemenForm({
           </FormField>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <FormField label="Kode" required error={errors.kode}>
+            <FormField label="Kode" required error={errors.code}>
               <input
                 type="text"
                 required
-                value={values.kode}
-                onChange={(e) => handleChange("kode", e.target.value)}
+                value={values.code}
+                onChange={(e) => handleChange("code", e.target.value)}
                 placeholder="Cth. HO-SDM-REK"
                 className={formInputClass}
               />
             </FormField>
 
-            <FormField label="Nama Departemen" required error={errors.nama}>
+            <FormField label="Nama Departemen" required error={errors.name}>
               <input
                 type="text"
                 required
-                value={values.nama}
-                onChange={(e) => handleChange("nama", e.target.value)}
+                value={values.name}
+                onChange={(e) => handleChange("name", e.target.value)}
                 placeholder="Cth. Bagian Rekrutmen"
                 className={formInputClass}
               />
             </FormField>
 
-            <FormField label="Tipe" required error={errors.tipeId}>
+            <FormField
+              label="Tipe"
+              required
+              error={errors.organization_type_id}
+            >
               <select
                 required
-                value={values.tipeId}
-                onChange={(e) => handleChange("tipeId", e.target.value)}
+                value={values.organization_type_id}
+                onChange={(e) =>
+                  handleChange("organization_type_id", e.target.value)
+                }
                 className={formInputClass}
               >
                 <option value="" disabled>
@@ -356,7 +353,7 @@ export function StrukturDepartemenForm({
 
           <FormField
             label="Job Function"
-            error={errors.jobFunctionId}
+            error={errors.job_function_id}
             hint={
               functionOptions.length === 0
                 ? "Master Job Function masih kosong, jadi field ini belum bisa diisi"
@@ -364,8 +361,8 @@ export function StrukturDepartemenForm({
             }
           >
             <select
-              value={values.jobFunctionId}
-              onChange={(e) => handleChange("jobFunctionId", e.target.value)}
+              value={values.job_function_id}
+              onChange={(e) => handleChange("job_function_id", e.target.value)}
               disabled={functionOptions.length === 0}
               className={formInputClass}
             >
@@ -380,12 +377,12 @@ export function StrukturDepartemenForm({
 
           <FormField
             label="Induk Departemen"
-            error={errors.parentId}
+            error={errors.parent_id}
             hint="Kosongkan kalau ini departemen paling atas (root) di entity tersebut"
           >
             <select
-              value={values.parentId}
-              onChange={(e) => handleChange("parentId", e.target.value)}
+              value={values.parent_id}
+              onChange={(e) => handleChange("parent_id", e.target.value)}
               className={formInputClass}
             >
               <option value="">Tidak ada (root)</option>
@@ -393,7 +390,7 @@ export function StrukturDepartemenForm({
                 .filter((p) => p.id !== departemenId)
                 .map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.nama} ({p.kode})
+                    {p.name} ({p.code})
                   </option>
                 ))}
             </select>

@@ -1,14 +1,13 @@
-import { apiGet } from "@/lib/api-client";
-import type { MasterRef } from "./masterData";
+import { apiGet } from "@/lib/http-client";
+import type { EntityResource, EntityType } from "@/types/api/entity";
 import { getRegionals } from "./regional";
 import { getUnits } from "./unit";
 
-export type EntityTier = "HO" | "Regional" | "Unit";
-
+/** Satu opsi dropdown penempatan: Head Office, Regional, atau Unit. */
 export interface EntityOption {
-  id: string;
-  nama: string;
-  tier: EntityTier;
+  id: number;
+  name: string;
+  type: EntityType;
 }
 
 /**
@@ -16,30 +15,28 @@ export interface EntityOption {
  * Semua sumbernya sudah di-scope backend, jadi akun Regional/Unit otomatis
  * hanya mendapat entity miliknya sendiri.
  */
-export async function getEntityOptions(
-  signal?: AbortSignal,
-): Promise<EntityOption[]> {
-  const [ho, regionals, units] = await Promise.all([
-    apiGet<MasterRef[]>("/entities", { type: "HEAD_OFFICE" }, signal),
-    getRegionals({ perPage: 100 }, signal),
-    getUnits({ perPage: 500 }, signal),
+export async function getEntityOptions(signal?: AbortSignal): Promise<EntityOption[]> {
+  const [headOffice, regionals, units] = await Promise.all([
+    apiGet<EntityResource[]>("/api/entities", { type: "HEAD_OFFICE" }, signal),
+    getRegionals({ per_page: 100 }, signal),
+    getUnits({ per_page: 500 }, signal),
   ]);
 
   return [
-    ...ho.data.map((e) => ({
-      id: String(e.id),
-      nama: e.name,
-      tier: "HO" as const,
+    ...headOffice.data.map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: "HEAD_OFFICE" as const,
     })),
     ...regionals.rows.map((r) => ({
       id: r.id,
-      nama: r.nama,
-      tier: "Regional" as const,
+      name: r.name,
+      type: "REGIONAL" as const,
     })),
     ...units.rows.map((u) => ({
       id: u.id,
-      nama: u.nama,
-      tier: "Unit" as const,
+      name: u.name,
+      type: "UNIT" as const,
     })),
   ];
 }

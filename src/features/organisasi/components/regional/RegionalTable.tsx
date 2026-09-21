@@ -1,15 +1,15 @@
 import { Eye, Pencil, Trash2, Users } from "lucide-react";
 import { RowActionMenu } from "@/components/shared/RowActionMenu";
-import type { Regional } from "../../api/regional";
+import type { RegionalResource } from "@/types/api/regional";
 
 interface RegionalTableProps {
-  rows: Regional[];
+  rows: RegionalResource[];
   /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
   startIndex: number;
   loading?: boolean;
   emptyMessage?: string;
-  onEditClick: (row: Regional) => void;
-  onDeleteClick: (row: Regional) => void;
+  onEditClick: (row: RegionalResource) => void;
+  onDeleteClick: (row: RegionalResource) => void;
 }
 
 export function RegionalTable({
@@ -39,24 +39,24 @@ export function RegionalTable({
                 <p className="font-medium text-slate-800">{startIndex + index}</p>
               </td>
               <td className="px-6 py-4">
-                <p className="font-medium text-slate-800">{row.nama}</p>
-                <p className="text-xs text-slate-400">{row.kode}</p>
+                <p className="font-medium text-slate-800">{row.name}</p>
+                <p className="text-xs text-slate-400">{row.code}</p>
               </td>
               <td className="px-6 py-4">
                 <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                  {row.jumlahUnit} Unit
+                  {row.jumlah_unit} Unit
                 </span>
               </td>
               <td className="px-6 py-4">
                 <span className="flex items-center gap-1.5 text-slate-500">
                   <Users className="h-4 w-4 text-slate-300" />
-                  {row.jumlahKaryawan.toLocaleString("id-ID")}
+                  {row.jumlah_karyawan.toLocaleString("id-ID")}
                 </span>
               </td>
               <td className="px-6 py-4">
                 <div className="flex justify-end">
                   <RowActionMenu
-                    label={`Aksi untuk ${row.nama}`}
+                    label={`Aksi untuk ${row.name}`}
                     actions={[
                       {
                         label: "Lihat Detail",

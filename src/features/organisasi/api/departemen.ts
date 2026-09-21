@@ -1,145 +1,59 @@
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api-client";
-import type { MasterRef } from "./masterData";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/http-client";
+import type {
+  OrganizationPayload,
+  OrganizationResource,
+  OrganizationTreeNode,
+} from "@/types/api/organization";
 
-// Bentuk mentah dari backend (OrganizationController@tree)
-interface DepartemenTreeApi {
-  id: number;
-  code: string;
-  name: string;
-  level: number;
-  organization_type: MasterRef | null;
-  job_function: MasterRef | null;
-  children: DepartemenTreeApi[];
-}
-
-// Bentuk mentah dari backend (OrganizationResource)
-interface DepartemenApi {
-  id: number;
-  code: string;
-  name: string;
-  level?: number;
-  organization_type?: MasterRef | null;
-  entity?: MasterRef | null;
-  job_function?: MasterRef | null;
-  parent?: MasterRef | null;
-}
-
-export interface DepartemenNode {
-  id: string;
-  kode: string;
-  nama: string;
-  level: number;
-  tipe: string | null;
-  jobFunction: string | null;
-  children: DepartemenNode[];
-}
-
-export interface Departemen {
-  id: string;
-  kode: string;
-  nama: string;
-  level: number;
-  tipeId: string;
-  entityId: string;
-  jobFunctionId: string;
-  parentId: string;
-}
-
-function toNode(d: DepartemenTreeApi): DepartemenNode {
-  return {
-    id: String(d.id),
-    kode: d.code,
-    nama: d.name,
-    level: d.level,
-    tipe: d.organization_type?.name ?? null,
-    jobFunction: d.job_function?.name ?? null,
-    children: d.children.map(toNode),
-  };
-}
-
-// GET /api/v1/organizations/tree?entity_id=
-export async function getDepartemenTree(
-  entityId: string,
-  signal?: AbortSignal,
-): Promise<DepartemenNode[]> {
-  const { data } = await apiGet<DepartemenTreeApi[]>(
-    "/organizations/tree",
+/** GET /api/organizations/tree?entity_id= */
+export async function getDepartemenTree(entityId: number, signal?: AbortSignal) {
+  const { data } = await apiGet<OrganizationTreeNode[]>(
+    "/api/organizations/tree",
     { entity_id: entityId },
     signal,
   );
-  return data.map(toNode);
+  return data;
 }
 
-// GET /api/v1/organizations/{id}
-export async function getDepartemen(
-  id: string,
-  signal?: AbortSignal,
-): Promise<Departemen> {
-  const { data } = await apiGet<DepartemenApi>(
-    `/organizations/${encodeURIComponent(id)}`,
+/** GET /api/organizations/{id} */
+export async function getDepartemen(id: number, signal?: AbortSignal) {
+  const { data } = await apiGet<OrganizationResource>(
+    `/api/organizations/${id}`,
     undefined,
     signal,
   );
-
-  return {
-    id: String(data.id),
-    kode: data.code,
-    nama: data.name,
-    level: data.level ?? 1,
-    tipeId: data.organization_type ? String(data.organization_type.id) : "",
-    entityId: data.entity ? String(data.entity.id) : "",
-    jobFunctionId: data.job_function ? String(data.job_function.id) : "",
-    parentId: data.parent ? String(data.parent.id) : "",
-  };
+  return data;
 }
 
-/** Daftar datar departemen dalam satu entity — dipakai untuk dropdown induk */
-export async function getDepartemenOptions(
-  entityId: string,
-  signal?: AbortSignal,
-) {
-  const { data } = await apiGet<DepartemenApi[]>(
-    "/organizations",
+/** Daftar datar departemen dalam satu entity — untuk dropdown induk */
+export async function getDepartemenOptions(entityId: number, signal?: AbortSignal) {
+  const { data } = await apiGet<OrganizationResource[]>(
+    "/api/organizations",
     { entity_id: entityId, per_page: 300 },
     signal,
   );
-  return data.map((d) => ({ id: String(d.id), nama: d.name, kode: d.code }));
+  return data;
 }
 
 /** Total departemen sesuai cakupan akun — untuk kartu di hub Organisasi */
 export async function getDepartemenCount(signal?: AbortSignal) {
-  const { meta } = await apiGet<unknown[]>(
-    "/organizations",
-    { per_page: 1 },
-    signal,
-  );
+  const { meta } = await apiGet<unknown[]>("/api/organizations", { per_page: 1 }, signal);
   return meta?.total ?? 0;
 }
 
-export interface DepartemenPayload {
-  code: string;
-  name: string;
-  level: number;
-  organization_type_id: number;
-  entity_id: number;
-  job_function_id: number | null;
-  parent_id: number | null;
+/** POST /api/organizations */
+export async function createDepartemen(payload: OrganizationPayload) {
+  const { data } = await apiPost<OrganizationResource>("/api/organizations", payload);
+  return data;
 }
 
-// POST /api/v1/organizations
-export async function createDepartemen(payload: DepartemenPayload) {
-  await apiPost<DepartemenApi>("/organizations", payload);
+/** PUT /api/organizations/{id} */
+export async function updateDepartemen(id: number, payload: OrganizationPayload) {
+  const { data } = await apiPut<OrganizationResource>(`/api/organizations/${id}`, payload);
+  return data;
 }
 
-// PUT /api/v1/organizations/{id}
-export async function updateDepartemen(id: string, payload: DepartemenPayload) {
-  await apiPut<DepartemenApi>(
-    `/organizations/${encodeURIComponent(id)}`,
-    payload,
-  );
-}
-
-// DELETE /api/v1/organizations/{id}
-export async function deleteDepartemen(id: string) {
-  await apiDelete(`/organizations/${encodeURIComponent(id)}`);
+/** DELETE /api/organizations/{id} */
+export async function deleteDepartemen(id: number) {
+  await apiDelete(`/api/organizations/${id}`);
 }

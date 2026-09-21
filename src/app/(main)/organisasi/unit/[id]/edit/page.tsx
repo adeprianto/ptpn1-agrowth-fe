@@ -7,5 +7,5 @@ interface EditUnitPageProps {
 export default async function EditUnitPage({ params }: EditUnitPageProps) {
   const { id } = await params;
 
-  return <UnitForm mode="edit" unitId={id} />;
+  return <UnitForm mode="edit" unitId={Number(id)} />;
 }

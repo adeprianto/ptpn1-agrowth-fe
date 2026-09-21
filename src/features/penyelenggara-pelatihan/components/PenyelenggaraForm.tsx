@@ -3,80 +3,62 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
+
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { FormField, formInputClass } from "@/components/shared/FormField";
-import { ApiError } from "@/lib/api-client";
 import {
-  createOrganizer,
-  getOrganizer,
-  ORGANIZER_TYPE_LABEL,
-  updateOrganizer,
-  type OrganizerPayload,
-  type OrganizerStatus,
-  type OrganizerType,
-} from "../api/organizer";
+  createVendor,
+  getVendor,
+  updateVendor,
+} from "@/features/penyelenggara-pelatihan/api/vendor";
+import { ApiError } from "@/lib/http-client";
+import {
+  VENDOR_TYPE_LABEL,
+  type VendorPayload,
+  type VendorType,
+} from "@/types/api/vendor";
 
-interface FormValues {
-  nama: string;
-  tipe: OrganizerType | "";
-  status: OrganizerStatus;
-  telepon: string;
-  email: string;
-  website: string;
-  kota: string;
-  alamat: string;
-  picNama: string;
-  picTelepon: string;
-  picEmail: string;
-  picJabatan: string;
-}
+/**
+ * Key form dibuat sama persis dengan field di StoreVendorRequest, supaya error
+ * validasi 422 bisa langsung dipetakan ke input tanpa tabel penerjemah.
+ * `is_lpp` tidak ada di sini karena backend menurunkannya dari classification.
+ */
+type FormValues = Omit<VendorPayload, "classification" | "status"> & {
+  classification: VendorType | "";
+  status: boolean;
+};
 
 const emptyForm: FormValues = {
-  nama: "",
-  tipe: "",
-  status: "ACTIVE",
-  telepon: "",
+  name: "",
+  classification: "",
+  phone: "",
   email: "",
   website: "",
-  kota: "",
-  alamat: "",
-  picNama: "",
-  picTelepon: "",
-  picEmail: "",
-  picJabatan: "",
+  city: "",
+  address: "",
+  pic_name: "",
+  pic_phone: "",
+  pic_email: "",
+  pic_position: "",
+  status: true,
 };
 
 type FieldErrors = Partial<Record<keyof FormValues, string>>;
 
-// nama field backend -> field form
-const FIELD_MAP: Record<string, keyof FormValues> = {
-  name: "nama",
-  type: "tipe",
-  status: "status",
-  phone: "telepon",
-  email: "email",
-  website: "website",
-  city: "kota",
-  address: "alamat",
-  pic_name: "picNama",
-  pic_phone: "picTelepon",
-  pic_email: "picEmail",
-  pic_position: "picJabatan",
+/** Input kosong dikirim sebagai null, bukan "" (kolomnya nullable di backend). */
+const orNull = (value: string | null) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 };
-
-const orNull = (value: string) => (value.trim() === "" ? null : value.trim());
 
 interface PenyelenggaraFormProps {
   mode: "create" | "edit";
   /** Wajib untuk mode edit */
-  organizerId?: string;
+  vendorId?: number;
 }
 
-export function PenyelenggaraForm({
-  mode,
-  organizerId,
-}: PenyelenggaraFormProps) {
+export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
   const router = useRouter();
   const isEdit = mode === "edit";
 
@@ -87,39 +69,43 @@ export function PenyelenggaraForm({
   const [loading, setLoading] = useState(isEdit);
 
   useEffect(() => {
-    if (!isEdit || !organizerId) return;
+    if (!isEdit || !vendorId) return;
 
     const controller = new AbortController();
-    getOrganizer(organizerId, controller.signal)
-      .then((o) => {
+
+    getVendor(vendorId, controller.signal)
+      .then((vendor) => {
         setValues({
-          nama: o.nama,
-          tipe: o.tipe,
-          status: o.status,
-          telepon: o.telepon ?? "",
-          email: o.email ?? "",
-          website: o.website ?? "",
-          kota: o.kota ?? "",
-          alamat: o.alamat ?? "",
-          picNama: o.picNama ?? "",
-          picTelepon: o.picTelepon ?? "",
-          picEmail: o.picEmail ?? "",
-          picJabatan: o.picJabatan ?? "",
+          name: vendor.name,
+          classification: vendor.classification ?? "",
+          phone: vendor.phone ?? "",
+          email: vendor.email ?? "",
+          website: vendor.website ?? "",
+          city: vendor.city ?? "",
+          address: vendor.address ?? "",
+          pic_name: vendor.pic_name ?? "",
+          pic_phone: vendor.pic_phone ?? "",
+          pic_email: vendor.pic_email ?? "",
+          pic_position: vendor.pic_position ?? "",
+          status: vendor.status,
         });
         setLoading(false);
       })
-      .catch((e: Error) => {
+      .catch((err: unknown) => {
         if (controller.signal.aborted) return;
+
         setFormError(
-          e instanceof ApiError && e.status === 404
+          err instanceof ApiError && err.status === 404
             ? "Penyelenggara tidak ditemukan."
-            : e.message,
+            : err instanceof Error
+              ? err.message
+              : "Gagal memuat data penyelenggara.",
         );
         setLoading(false);
       });
 
     return () => controller.abort();
-  }, [isEdit, organizerId]);
+  }, [isEdit, vendorId]);
 
   function setField<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -127,21 +113,21 @@ export function PenyelenggaraForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!values.tipe) return;
+    if (!values.classification) return;
 
-    const payload: OrganizerPayload = {
-      name: values.nama.trim(),
-      type: values.tipe,
-      status: values.status,
-      phone: orNull(values.telepon),
+    const payload: VendorPayload = {
+      name: values.name.trim(),
+      classification: values.classification,
+      phone: orNull(values.phone),
       email: orNull(values.email),
       website: orNull(values.website),
-      city: orNull(values.kota),
-      address: orNull(values.alamat),
-      pic_name: orNull(values.picNama),
-      pic_phone: orNull(values.picTelepon),
-      pic_email: orNull(values.picEmail),
-      pic_position: orNull(values.picJabatan),
+      city: orNull(values.city),
+      address: orNull(values.address),
+      pic_name: orNull(values.pic_name),
+      pic_phone: orNull(values.pic_phone),
+      pic_email: orNull(values.pic_email),
+      pic_position: orNull(values.pic_position),
+      status: values.status,
     };
 
     setSaving(true);
@@ -149,24 +135,31 @@ export function PenyelenggaraForm({
     setFormError(null);
 
     try {
-      if (isEdit && organizerId) {
-        await updateOrganizer(organizerId, payload);
+      if (isEdit && vendorId) {
+        await updateVendor(vendorId, payload);
       } else {
-        await createOrganizer(payload);
+        await createVendor(payload);
       }
+
       router.push("/penyelenggara-pelatihan");
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         const fieldErrors: FieldErrors = {};
-        Object.entries(err.errors).forEach(([field, messages]) => {
-          const key = FIELD_MAP[field];
-          if (key) fieldErrors[key] = messages[0];
-        });
+
+        for (const [field, messages] of Object.entries(err.errors)) {
+          if (field in emptyForm) {
+            fieldErrors[field as keyof FormValues] = messages[0];
+          }
+        }
+
         setErrors(fieldErrors);
         if (Object.keys(fieldErrors).length === 0) setFormError(err.message);
       } else {
-        setFormError((err as Error).message);
+        setFormError(
+          err instanceof Error ? err.message : "Gagal menyimpan data penyelenggara.",
+        );
       }
+
       setSaving(false);
     }
   }
@@ -220,101 +213,109 @@ export function PenyelenggaraForm({
             </h2>
 
             <div className="space-y-5">
-              <FormField label="Nama Penyelenggara" required error={errors.nama}>
+              <FormField label="Nama Penyelenggara" required error={errors.name}>
                 <input
                   type="text"
                   required
-                  value={values.nama}
-                  onChange={(e) => setField("nama", e.target.value)}
+                  disabled={saving}
+                  value={values.name}
+                  onChange={(e) => setField("name", e.target.value)}
                   placeholder="Cth. PT. MarkPlus Indonesia"
-                  className={formInputClass}
+                  className={`${formInputClass} disabled:opacity-60`}
                 />
               </FormField>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <FormField label="Jenis Penyelenggara" required error={errors.tipe}>
+                <FormField
+                  label="Jenis Penyelenggara"
+                  required
+                  error={errors.classification}
+                >
                   <select
                     required
-                    value={values.tipe}
+                    disabled={saving}
+                    value={values.classification}
                     onChange={(e) =>
-                      setField("tipe", e.target.value as OrganizerType)
+                      setField("classification", e.target.value as VendorType)
                     }
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   >
                     <option value="" disabled>
                       Pilih...
                     </option>
-                    {(
-                      Object.keys(ORGANIZER_TYPE_LABEL) as OrganizerType[]
-                    ).map((key) => (
+                    {(Object.keys(VENDOR_TYPE_LABEL) as VendorType[]).map((key) => (
                       <option key={key} value={key}>
-                        {ORGANIZER_TYPE_LABEL[key]}
+                        {VENDOR_TYPE_LABEL[key]}
                       </option>
                     ))}
                   </select>
                 </FormField>
 
-                <FormField label="Status" required error={errors.status}>
+                <FormField label="Status" error={errors.status}>
                   <select
-                    value={values.status}
-                    onChange={(e) =>
-                      setField("status", e.target.value as OrganizerStatus)
-                    }
-                    className={formInputClass}
+                    disabled={saving}
+                    value={values.status ? "1" : "0"}
+                    onChange={(e) => setField("status", e.target.value === "1")}
+                    className={`${formInputClass} disabled:opacity-60`}
                   >
-                    <option value="ACTIVE">Aktif</option>
-                    <option value="INACTIVE">Non-aktif</option>
+                    <option value="1">Aktif</option>
+                    <option value="0">Non-aktif</option>
                   </select>
                 </FormField>
 
-                <FormField label="Nomor Telpon" error={errors.telepon}>
+                <FormField label="Nomor Telpon" error={errors.phone}>
                   <input
                     type="text"
-                    value={values.telepon}
-                    onChange={(e) => setField("telepon", e.target.value)}
+                    disabled={saving}
+                    value={values.phone ?? ""}
+                    onChange={(e) => setField("phone", e.target.value)}
                     placeholder="0812-xxxx-xxxx"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
 
                 <FormField label="E-Mail" error={errors.email}>
                   <input
                     type="email"
-                    value={values.email}
+                    disabled={saving}
+                    value={values.email ?? ""}
                     onChange={(e) => setField("email", e.target.value)}
                     placeholder="markpxxxx@gmxx.com"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
 
-                <FormField label="Kota" error={errors.kota}>
+                <FormField label="Kota" error={errors.city}>
                   <input
                     type="text"
-                    value={values.kota}
-                    onChange={(e) => setField("kota", e.target.value)}
+                    disabled={saving}
+                    value={values.city ?? ""}
+                    onChange={(e) => setField("city", e.target.value)}
                     placeholder="Cth. Jakarta"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
 
                 <FormField label="Website" error={errors.website}>
                   <input
                     type="text"
-                    value={values.website}
+                    disabled={saving}
+                    value={values.website ?? ""}
                     onChange={(e) => setField("website", e.target.value)}
                     placeholder="https://markplus.com"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
               </div>
 
-              <FormField label="Alamat" error={errors.alamat}>
+              <FormField label="Alamat" error={errors.address}>
                 <textarea
                   rows={3}
-                  value={values.alamat}
-                  onChange={(e) => setField("alamat", e.target.value)}
+                  disabled={saving}
+                  value={values.address ?? ""}
+                  onChange={(e) => setField("address", e.target.value)}
                   placeholder="Alamat lengkap kantor penyelenggara"
-                  className={formInputClass}
+                  className={`${formInputClass} disabled:opacity-60`}
                 />
               </FormField>
             </div>
@@ -322,50 +323,52 @@ export function PenyelenggaraForm({
 
           {/* ---------- Informasi PIC ---------- */}
           <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-5 text-lg font-bold text-slate-900">
-              Informasi PIC
-            </h2>
+            <h2 className="mb-5 text-lg font-bold text-slate-900">Informasi PIC</h2>
 
             <div className="space-y-5">
-              <FormField label="Nama PIC" error={errors.picNama}>
+              <FormField label="Nama PIC" error={errors.pic_name}>
                 <input
                   type="text"
-                  value={values.picNama}
-                  onChange={(e) => setField("picNama", e.target.value)}
+                  disabled={saving}
+                  value={values.pic_name ?? ""}
+                  onChange={(e) => setField("pic_name", e.target.value)}
                   placeholder="Cth. Budi Santoso"
-                  className={formInputClass}
+                  className={`${formInputClass} disabled:opacity-60`}
                 />
               </FormField>
 
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <FormField label="Nomor Telpon PIC" error={errors.picTelepon}>
+                <FormField label="Nomor Telpon PIC" error={errors.pic_phone}>
                   <input
                     type="text"
-                    value={values.picTelepon}
-                    onChange={(e) => setField("picTelepon", e.target.value)}
+                    disabled={saving}
+                    value={values.pic_phone ?? ""}
+                    onChange={(e) => setField("pic_phone", e.target.value)}
                     placeholder="0812-xxxx-xxxx"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
 
-                <FormField label="E-Mail PIC" error={errors.picEmail}>
+                <FormField label="E-Mail PIC" error={errors.pic_email}>
                   <input
                     type="email"
-                    value={values.picEmail}
-                    onChange={(e) => setField("picEmail", e.target.value)}
+                    disabled={saving}
+                    value={values.pic_email ?? ""}
+                    onChange={(e) => setField("pic_email", e.target.value)}
                     placeholder="markpxxxx@gmxx.com"
-                    className={formInputClass}
+                    className={`${formInputClass} disabled:opacity-60`}
                   />
                 </FormField>
               </div>
 
-              <FormField label="Jabatan PIC" error={errors.picJabatan}>
+              <FormField label="Jabatan PIC" error={errors.pic_position}>
                 <input
                   type="text"
-                  value={values.picJabatan}
-                  onChange={(e) => setField("picJabatan", e.target.value)}
-                  placeholder="Cth. Sales & Marketing"
-                  className={formInputClass}
+                  disabled={saving}
+                  value={values.pic_position ?? ""}
+                  onChange={(e) => setField("pic_position", e.target.value)}
+                  placeholder="Cth. Sales and Marketing"
+                  className={`${formInputClass} disabled:opacity-60`}
                 />
               </FormField>
             </div>
@@ -374,15 +377,16 @@ export function PenyelenggaraForm({
           <div className="flex justify-end gap-2">
             <Link
               href="/penyelenggara-pelatihan"
-              className="rounded-xl bg-slate-400 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-500"
+              className="flex items-center justify-center rounded-xl bg-slate-400 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-500"
             >
               Batal
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
               {saving
                 ? "Menyimpan..."
                 : isEdit
