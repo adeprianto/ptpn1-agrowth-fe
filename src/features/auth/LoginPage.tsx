@@ -1,18 +1,47 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
 import Image from "next/image";
+import type { ApiError } from "@/lib/api-client";
+import { login } from "./api/auth";
+import { useAuthContext } from "./AuthProvider";
 
 export function LoginPage() {
   const router = useRouter();
+  const { user, loading, setUser } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  // sudah punya sesi -> langsung ke dashboard
+  useEffect(() => {
+    if (!loading && user) router.replace("/dashboard");
+  }, [loading, user, router]);
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    router.push("/dashboard");
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const loggedIn = await login(email.trim(), password, rememberMe);
+      setUser(loggedIn);
+      router.replace("/dashboard");
+    } catch (err) {
+      // 422 dari backend: email/password salah atau kena rate limit
+      const apiError = err as ApiError;
+      setError(
+        apiError.errors?.email?.[0] ??
+          apiError.message ??
+          "Login gagal, coba lagi.",
+      );
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -31,7 +60,15 @@ export function LoginPage() {
         <div className="absolute inset-0 bg-linear-to-br from-emerald-500/85 via-emerald-800/70 to-emerald-950/90" />
 
         <div className="relative flex items-center gap-3">
-          <div className="h-12 w-12 shrink-0 rounded-xl bg-white/20" />
+          <div className="relative h-12 w-12 shrink-0 rounded-xl bg-white p-2">
+            <Image
+              src="/images/ptpn1.png"
+              alt=""
+              fill
+              priority
+              className="object-contain p-1"
+            />
+          </div>
           <div>
             <p className="text-lg font-bold leading-tight">PTPN 1</p>
             <p className="text-sm text-emerald-100">
@@ -51,18 +88,19 @@ export function LoginPage() {
 
           <div className="mt-8 flex gap-10 border-t border-white/20 pt-6">
             <div>
-              <p className="text-2xl font-bold">6 Regional</p>
+              <p className="text-2xl font-bold">7 Regional</p>
               <p className="text-sm text-emerald-200">Unit Operasional Aktif</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">4,500+</p>
+              <p className="text-2xl font-bold">30,000+</p>
               <p className="text-sm text-emerald-200">SDM Terhubung</p>
             </div>
           </div>
         </div>
 
         <p className="relative text-xs text-emerald-200/70">
-          2026 PTPN 1 [Nama Sistem]. All Right Reserved
+          © {new Date().getFullYear()} PTPN1 Sistem Informasi Pengembangan SDM ·
+          v0.1.0
         </p>
       </div>
 
@@ -73,18 +111,28 @@ export function LoginPage() {
             Selamat Datang Kembali
           </h2>
           <p className="mt-2 text-sm text-slate-500">
-            Silakan masukkan NIK / Email Perusahaan dan kata sandi Anda untuk
+            Silakan masukkan Email Perusahaan dan kata sandi Anda untuk
             mengakses portal Pengembangan SDM.
           </p>
+
+          {error && (
+            <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
-                NIK/Email Akun <span className="text-rose-500">*</span>
+                Email Akun <span className="text-rose-500">*</span>
               </label>
               <input
-                type="text"
+                type="email"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="username"
+                placeholder="nama@ptpn1.test"
                 className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
             </div>
@@ -97,6 +145,9 @@ export function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2.5 pr-10 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                 />
                 <button
@@ -134,10 +185,11 @@ export function LoginPage() {
 
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900"
+              disabled={submitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60"
             >
-              Masuk ke Dashboard
-              <ArrowRight className="h-4 w-4" />
+              {submitting ? "Memproses..." : "Masuk ke Dashboard"}
+              {!submitting && <ArrowRight className="h-4 w-4" />}
             </button>
           </form>
 

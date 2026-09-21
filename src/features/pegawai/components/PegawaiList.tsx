@@ -1,54 +1,113 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Boxes, Building2, Factory, Landmark, Plus } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
-import { PegawaiFilterBar, type PenempatanOption } from "./PegawaiFilterBar";
+import { Pagination } from "@/components/shared/Pagination";
+import type { PaginationMeta } from "@/lib/api-client";
+import { PegawaiFilterBar } from "./PegawaiFilterBar";
 import { PegawaiTable } from "./PegawaiTable";
-import { pegawaiRows } from "./pegawaiDummyData";
+import {
+  getPegawaiList,
+  getPegawaiSummary,
+  getPenempatanOptions,
+  type Pegawai,
+  type PegawaiSummary,
+  type PenempatanOption,
+} from "../api/pegawai";
+
+const PAGE_SIZE = 20;
 
 export function PegawaiList() {
+  const [summary, setSummary] = useState<PegawaiSummary | null>(null);
+  const [penempatanOptions, setPenempatanOptions] = useState<PenempatanOption[]>([]);
+
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [penempatan, setPenempatan] = useState("all");
   const [level, setLevel] = useState("all");
+  const [page, setPage] = useState(1);
 
-  const penempatanOptions = useMemo<PenempatanOption[]>(() => {
-    const seen = new Map<string, PenempatanOption>();
-    for (const row of pegawaiRows) {
-      if (!seen.has(row.penempatanNama)) {
-        seen.set(row.penempatanNama, {
-          nama: row.penempatanNama,
-          tipe: row.penempatanTipe,
-        });
-      }
-    }
-    return Array.from(seen.values());
+  // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
+  // Baris lama tetap tampil (redup) selama halaman/filter baru dimuat.
+  const queryKey = [debouncedSearch, penempatan, level, page].join("|");
+  const [result, setResult] = useState<{
+    key: string;
+    rows: Pegawai[];
+    meta: PaginationMeta | null;
+    error: string | null;
+  } | null>(null);
+  const loading = result?.key !== queryKey;
+  const rows = result?.rows ?? [];
+  const meta = result?.meta ?? null;
+  const error = result?.key === queryKey ? result.error : null;
+
+  // Tunda pencarian 400ms supaya tidak hit API di setiap ketikan
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Ringkasan + opsi penempatan cukup diambil sekali
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    getPegawaiSummary(signal)
+      .then(setSummary)
+      .catch((e) => {
+        if (!signal.aborted) console.error(e);
+      });
+
+    getPenempatanOptions(signal)
+      .then(setPenempatanOptions)
+      .catch((e) => {
+        if (!signal.aborted) console.error(e);
+      });
+
+    return () => controller.abort();
   }, []);
 
-  const levelOptions = useMemo(
-    () => Array.from(new Set(pegawaiRows.map((r) => r.level))).sort(),
-    [],
-  );
+  useEffect(() => {
+    const controller = new AbortController();
+    const key = [debouncedSearch, penempatan, level, page].join("|");
+    const pick = (v: string) => (v === "all" ? undefined : v);
 
-  const filteredRows = useMemo(() => {
-    return pegawaiRows.filter((row) => {
-      const keyword = search.trim().toLowerCase();
-      const matchSearch =
-        keyword === "" ||
-        row.nama.toLowerCase().includes(keyword) ||
-        row.nik.toLowerCase().includes(keyword);
+    getPegawaiList(
+      {
+        search: debouncedSearch,
+        entityId: pick(penempatan),
+        levelBod: pick(level),
+        page,
+        perPage: PAGE_SIZE,
+      },
+      controller.signal,
+    )
+      .then((res) =>
+        setResult({ key, rows: res.rows, meta: res.meta ?? null, error: null }),
+      )
+      .catch((e: Error) => {
+        if (controller.signal.aborted) return;
+        setResult({ key, rows: [], meta: null, error: e.message });
+      });
 
-      const matchPenempatan =
-        penempatan === "all" || row.penempatanNama === penempatan;
+    return () => controller.abort();
+  }, [debouncedSearch, penempatan, level, page]);
 
-      const matchLevel = level === "all" || row.level === level;
+  // Ganti filter selalu balik ke halaman 1
+  const withPageReset = (setter: (v: string) => void) => (value: string) => {
+    setter(value);
+    setPage(1);
+  };
 
-      return matchSearch && matchPenempatan && matchLevel;
-    });
-  }, [search, penempatan, level]);
+  const formatNumber = (n?: number) =>
+    n === undefined ? "-" : n.toLocaleString("id-ID");
 
   return (
     <div className="space-y-4">
@@ -74,10 +133,26 @@ export function PegawaiList() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <SummaryStatCard label="Total Karyawan" value="4.200" icon={Boxes} />
-        <SummaryStatCard label="Karyawan HO" value="300" icon={Landmark} />
-        <SummaryStatCard label="Karyawan REG" value="600" icon={Building2} />
-        <SummaryStatCard label="Karyawan UNIT" value="3.300" icon={Factory} />
+        <SummaryStatCard
+          label="Total Karyawan"
+          value={formatNumber(summary?.totalKaryawan)}
+          icon={Boxes}
+        />
+        <SummaryStatCard
+          label="Karyawan HO"
+          value={formatNumber(summary?.totalHo)}
+          icon={Landmark}
+        />
+        <SummaryStatCard
+          label="Karyawan REG"
+          value={formatNumber(summary?.totalRegional)}
+          icon={Building2}
+        />
+        <SummaryStatCard
+          label="Karyawan UNIT"
+          value={formatNumber(summary?.totalUnit)}
+          icon={Factory}
+        />
       </div>
 
       <PegawaiFilterBar
@@ -85,13 +160,28 @@ export function PegawaiList() {
         onSearchChange={setSearch}
         penempatanOptions={penempatanOptions}
         penempatanValue={penempatan}
-        onPenempatanChange={setPenempatan}
-        levelOptions={levelOptions}
+        onPenempatanChange={withPageReset(setPenempatan)}
         levelValue={level}
-        onLevelChange={setLevel}
+        onLevelChange={withPageReset(setLevel)}
       />
 
-      <PegawaiTable rows={filteredRows} />
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          Gagal memuat data pegawai: {error}
+        </div>
+      )}
+
+      <PegawaiTable rows={rows} startIndex={meta?.from ?? 1} loading={loading} />
+
+      {meta && meta.total > 0 && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.last_page}
+          onPageChange={setPage}
+          totalItems={meta.total}
+          pageSize={meta.per_page}
+        />
+      )}
     </div>
   );
 }

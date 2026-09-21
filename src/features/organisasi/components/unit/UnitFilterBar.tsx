@@ -2,31 +2,39 @@
 
 import { Search } from "lucide-react";
 
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
 interface UnitFilterBarProps {
   searchValue: string;
   onSearchChange: (value: string) => void;
-  RegionalOptions: string[];
-  RegionalValue: string;
+  regionalOptions: FilterOption[];
+  regionalValue: string;
   onRegionalChange: (value: string) => void;
-  JenisOptions: string[];
-  JenisValue: string;
+  jenisOptions: FilterOption[];
+  jenisValue: string;
   onJenisChange: (value: string) => void;
-  KomoditasOptions: string[];
-  KomoditasValue: string;
+  komoditasOptions: FilterOption[];
+  komoditasValue: string;
   onKomoditasChange: (value: string) => void;
 }
+
+const selectClass =
+  "rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20";
 
 export function UnitFilterBar({
   searchValue,
   onSearchChange,
-  RegionalOptions,
-  RegionalValue,
+  regionalOptions,
+  regionalValue,
   onRegionalChange,
-  JenisOptions,
-  JenisValue,
+  jenisOptions,
+  jenisValue,
   onJenisChange,
-  KomoditasOptions,
-  KomoditasValue,
+  komoditasOptions,
+  komoditasValue,
   onKomoditasChange,
 }: UnitFilterBarProps) {
   return (
@@ -37,46 +45,46 @@ export function UnitFilterBar({
           type="text"
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Cari nama unit atau code..."
+          placeholder="Cari nama atau kode unit..."
           className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         />
       </div>
 
       <select
-        value={RegionalValue}
+        value={regionalValue}
         onChange={(e) => onRegionalChange(e.target.value)}
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        className={selectClass}
       >
         <option value="all">Semua Regional</option>
-        {RegionalOptions.map((w) => (
-          <option key={w} value={w}>
-            {w}
+        {regionalOptions.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>
 
       <select
-        value={JenisValue}
+        value={jenisValue}
         onChange={(e) => onJenisChange(e.target.value)}
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        className={selectClass}
       >
         <option value="all">Semua Jenis</option>
-        {JenisOptions.map((w) => (
-          <option key={w} value={w}>
-            {w}
+        {jenisOptions.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>
 
       <select
-        value={KomoditasValue}
+        value={komoditasValue}
         onChange={(e) => onKomoditasChange(e.target.value)}
-        className="rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        className={selectClass}
       >
         <option value="all">Semua Komoditas</option>
-        {KomoditasOptions.map((w) => (
-          <option key={w} value={w}>
-            {w}
+        {komoditasOptions.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
           </option>
         ))}
       </select>

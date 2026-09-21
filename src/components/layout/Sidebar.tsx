@@ -6,6 +6,7 @@ import { Sprout } from "lucide-react";
 import { navigationConfig } from "@/config/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import type { Role } from "@/types/auth";
+import Image from "next/image";
 
 const roleLabel: Record<Role, string> = {
   HO: "Head Office",
@@ -34,8 +35,14 @@ export function Sidebar() {
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-emerald-950 text-emerald-50">
       {/* Brand */}
       <div className="flex items-center gap-3 px-6 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/20">
-          <Sprout className="h-5 w-5 text-emerald-400" />
+        <div className="relative h-9 w-9 shrink-0 rounded-xl bg-white p-2">
+          <Image
+            src="/images/ptpn1.png"
+            alt=""
+            fill
+            priority
+            className="object-contain p-1"
+          />
         </div>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold leading-tight text-white">

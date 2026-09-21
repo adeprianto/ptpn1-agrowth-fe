@@ -3,16 +3,19 @@ import { ChevronLeft, Pencil } from "lucide-react";
 
 interface PegawaiProfileHeaderProps {
   nama: string;
+  /** Kode SAP */
   nik: string;
-  jabatan: string;
+  jabatan: string | null;
   penempatanNama: string;
-  penempatanInduk: string;
+  penempatanInduk: string | null;
   backHref: string;
-  editHref: string;
+  /** Kosongkan untuk menyembunyikan tombol Edit (belum ada endpoint ubah pegawai) */
+  editHref?: string;
 }
 
 function getInitials(nama: string): string {
   return nama
+    .replace(/[^A-Za-z\s]/g, " ")
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
@@ -30,6 +33,8 @@ export function PegawaiProfileHeader({
   backHref,
   editHref,
 }: PegawaiProfileHeaderProps) {
+  const penempatan = [penempatanNama, penempatanInduk].filter(Boolean).join(", ");
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5">
       <div className="flex items-center gap-4">
@@ -49,18 +54,20 @@ export function PegawaiProfileHeader({
           <p className="text-lg font-bold text-slate-900">{nama}</p>
           <p className="text-sm text-slate-400">{nik}</p>
           <p className="text-sm text-slate-500">
-            {jabatan} . {penempatanNama}, {penempatanInduk}
+            {[jabatan, penempatan].filter(Boolean).join(" · ")}
           </p>
         </div>
       </div>
 
-      <Link
-        href={editHref}
-        className="flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600"
-      >
-        <Pencil className="h-4 w-4" />
-        Edit Karyawan
-      </Link>
+      {editHref && (
+        <Link
+          href={editHref}
+          className="flex items-center gap-2 rounded-xl bg-blue-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-600"
+        >
+          <Pencil className="h-4 w-4" />
+          Edit Karyawan
+        </Link>
+      )}
     </div>
   );
 }

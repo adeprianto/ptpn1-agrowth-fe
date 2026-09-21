@@ -10,4 +10,6 @@ export interface AuthUser {
   role: Role;
   /** Nama kantor tempat user bertugas, mis. "Regional I" atau "Kebun Anak Setia" */
   officeName: string;
+  /** Entity tempat user bertugas — dasar scope data di backend */
+  entityId: string | null;
 }

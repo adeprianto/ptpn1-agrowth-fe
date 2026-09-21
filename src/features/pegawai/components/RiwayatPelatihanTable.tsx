@@ -1,16 +1,14 @@
 import { StatusBadge, type BadgeTone } from "@/components/shared/StatusBadge";
-import type {
-  TrainingHistoryRow,
-  TrainingStatus,
-} from "./pegawaiDetailDummyData";
+import type { RiwayatPelatihan } from "../api/pegawai";
+import { formatTanggal } from "./formatTanggal";
 
-const trainingStatusTone: Record<TrainingStatus, BadgeTone> = {
+const trainingStatusTone: Record<RiwayatPelatihan["status"], BadgeTone> = {
   Berjalan: "amber",
   Selesai: "emerald",
 };
 
 interface RiwayatPelatihanTableProps {
-  rows: TrainingHistoryRow[];
+  rows: RiwayatPelatihan[];
 }
 
 export function RiwayatPelatihanTable({ rows }: RiwayatPelatihanTableProps) {
@@ -40,8 +38,12 @@ export function RiwayatPelatihanTable({ rows }: RiwayatPelatihanTableProps) {
                 <td className="py-3 pr-4 font-medium text-slate-700">
                   {row.nama}
                 </td>
-                <td className="py-3 pr-4 text-slate-500">{row.provider}</td>
-                <td className="py-3 pr-4 text-slate-500">{row.tanggal}</td>
+                <td className="py-3 pr-4 text-slate-500">
+                  {row.penyelenggara ?? "-"}
+                </td>
+                <td className="py-3 pr-4 whitespace-nowrap text-slate-500">
+                  {formatTanggal(row.tanggalMulai, "short")}
+                </td>
                 <td className="py-3 pr-4 text-slate-500">{row.jam} Jam</td>
                 <td className="py-3">
                   <StatusBadge

@@ -6,5 +6,6 @@ export default async function TambahDepartemenPage({
   searchParams: Promise<{ entity?: string }>;
 }) {
   const { entity } = await searchParams;
-  return <StrukturDepartemenForm mode="create" defaultEntityCode={entity} />;
+
+  return <StrukturDepartemenForm mode="create" defaultEntityId={entity} />;
 }

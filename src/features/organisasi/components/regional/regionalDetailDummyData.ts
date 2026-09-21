@@ -1,59 +1,5 @@
 import type { StatusKey } from "@/components/shared/StatusBadge";
 
-export interface UnitStructureRow {
-  id: string;
-  nama: string;
-  jenis: "Kebun" | "Pabrik";
-  karyawan: number;
-  kepalaUnit: string;
-}
-
-// DUMMY DATA — nanti diganti hasil GET /api/v1/organisasi/regional/{id}/unit
-export const unitStructureRows: UnitStructureRow[] = [
-  {
-    id: "1",
-    nama: "Kebun Sei Lakitan",
-    jenis: "Kebun",
-    karyawan: 120,
-    kepalaUnit: "Rudi Hartono",
-  },
-  {
-    id: "2",
-    nama: "Pabrik Tebenan",
-    jenis: "Pabrik",
-    karyawan: 80,
-    kepalaUnit: "Sartono",
-  },
-  {
-    id: "3",
-    nama: "Kebun Tebenan",
-    jenis: "Kebun",
-    karyawan: 320,
-    kepalaUnit: "Wibowo",
-  },
-  {
-    id: "4",
-    nama: "Kebun Sei Lakitan",
-    jenis: "Kebun",
-    karyawan: 76,
-    kepalaUnit: "Deni Kurniawan",
-  },
-  {
-    id: "5",
-    nama: "Pabrik Subar Eji",
-    jenis: "Pabrik",
-    karyawan: 223,
-    kepalaUnit: "Herman",
-  },
-  {
-    id: "6",
-    nama: "Pabrik Kemuning",
-    jenis: "Pabrik",
-    karyawan: 74,
-    kepalaUnit: "Bambang",
-  },
-];
-
 export interface PendingValidationRow {
   id: string;
   namaPelatihan: string;

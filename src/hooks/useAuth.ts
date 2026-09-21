@@ -1,27 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useAuthContext } from "@/features/auth/AuthProvider";
 import type { AuthUser } from "@/types/auth";
 
 /**
- * TODO: ganti dengan auth sesungguhnya (session/JWT dari backend Laravel).
- * Untuk sekarang di-hardcode supaya layout (sidebar, header, role filtering)
- * bisa langsung dipakai & dipreview tanpa menunggu integrasi auth selesai.
- *
- * Ganti `role` di bawah ke "REGIONAL" atau "UNIT" untuk mengetes tampilan
- * menu sidebar sesuai tier lain.
+ * Dipakai komponen di dalam area yang sudah dijaga `RequireAuth`, jadi user
+ * dijamin ada. Untuk halaman publik (mis. /login) pakai `useAuthContext`
+ * langsung karena di sana user bisa null.
  */
-export function useAuth(): { user: AuthUser } {
-  const user = useMemo<AuthUser>(
-    () => ({
-      id: "1",
-      name: "Rafli Aditrya",
-      email: "rafli@ptpn1.co.id",
-      role: "HO",
-      officeName: "Kantor Pusat (Head Office)",
-    }),
-    [],
-  );
+export function useAuth(): { user: AuthUser; logout: () => Promise<void> } {
+  const { user, logout } = useAuthContext();
 
-  return { user };
+  if (!user) {
+    throw new Error("useAuth dipakai di luar area yang dijaga RequireAuth");
+  }
+
+  return { user, logout };
 }

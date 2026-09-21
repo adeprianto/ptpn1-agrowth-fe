@@ -1,11 +1,10 @@
 "use client";
 
 import { Search } from "lucide-react";
+import type { PenempatanOption } from "../api/pegawai";
 
-export interface PenempatanOption {
-  nama: string;
-  tipe: "HO" | "Regional" | "Unit";
-}
+// BOD level tetap 1–6 (enum BodLevel di backend), aman di-hardcode
+const LEVEL_BOD_OPTIONS = [1, 2, 3, 4, 5, 6];
 
 interface PegawaiFilterBarProps {
   searchValue: string;
@@ -13,7 +12,6 @@ interface PegawaiFilterBarProps {
   penempatanOptions: PenempatanOption[];
   penempatanValue: string;
   onPenempatanChange: (value: string) => void;
-  levelOptions: string[];
   levelValue: string;
   onLevelChange: (value: string) => void;
 }
@@ -27,17 +25,16 @@ export function PegawaiFilterBar({
   penempatanOptions,
   penempatanValue,
   onPenempatanChange,
-  levelOptions,
   levelValue,
   onLevelChange,
 }: PegawaiFilterBarProps) {
   // Dikelompokkan per tipe (HO/Regional/Unit) biar 1 dropdown ini tetap rapi
-  // walau nanti daftar Unit-nya panjang (puluhan).
-  const hoOptions = penempatanOptions.filter((p) => p.tipe === "HO");
-  const regionalOptions = penempatanOptions.filter(
-    (p) => p.tipe === "Regional",
-  );
-  const unitOptions = penempatanOptions.filter((p) => p.tipe === "Unit");
+  // walau daftar Unit-nya panjang (ratusan).
+  const groups: { label: string; options: PenempatanOption[] }[] = [
+    { label: "Head Office", options: penempatanOptions.filter((p) => p.tipe === "HO") },
+    { label: "Regional", options: penempatanOptions.filter((p) => p.tipe === "Regional") },
+    { label: "Unit", options: penempatanOptions.filter((p) => p.tipe === "Unit") },
+  ];
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -47,7 +44,7 @@ export function PegawaiFilterBar({
           type="text"
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Cari nama atau NIK..."
+          placeholder="Cari nama atau kode SAP..."
           className="w-full rounded-xl border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         />
       </div>
@@ -58,32 +55,17 @@ export function PegawaiFilterBar({
         className={selectClass}
       >
         <option value="all">Semua Penempatan</option>
-        {hoOptions.length > 0 && (
-          <optgroup label="Head Office">
-            {hoOptions.map((p) => (
-              <option key={p.nama} value={p.nama}>
-                {p.nama}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {regionalOptions.length > 0 && (
-          <optgroup label="Regional">
-            {regionalOptions.map((p) => (
-              <option key={p.nama} value={p.nama}>
-                {p.nama}
-              </option>
-            ))}
-          </optgroup>
-        )}
-        {unitOptions.length > 0 && (
-          <optgroup label="Unit">
-            {unitOptions.map((p) => (
-              <option key={p.nama} value={p.nama}>
-                {p.nama}
-              </option>
-            ))}
-          </optgroup>
+        {groups.map(
+          (group) =>
+            group.options.length > 0 && (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nama}
+                  </option>
+                ))}
+              </optgroup>
+            ),
         )}
       </select>
 
@@ -93,9 +75,9 @@ export function PegawaiFilterBar({
         className={selectClass}
       >
         <option value="all">Semua Level</option>
-        {levelOptions.map((level) => (
+        {LEVEL_BOD_OPTIONS.map((level) => (
           <option key={level} value={level}>
-            {level}
+            BOD-{level}
           </option>
         ))}
       </select>
