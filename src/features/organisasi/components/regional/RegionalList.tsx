@@ -1,133 +1,137 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Flag, Network, Plus, User } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
+import { Pagination } from "@/components/shared/Pagination";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { RegionalFilterBar, type UnitRangeFilter } from "./RegionalFilterBar";
+import { useAuth } from "@/hooks/useAuth";
+import { RegionalFilterBar } from "./RegionalFilterBar";
 import { RegionalTable } from "./RegionalTable";
 import {
   RegionalFormModal,
   type RegionalFormValues,
 } from "./RegionalFormModal";
 import {
-  regionalRows as initialRegionalRows,
-  type RegionalRow,
-} from "./regionalDummyData";
-import { Pagination } from "@/components/shared/Pagination";
-import { usePagination } from "@/hooks/usePagination";
+  createRegional,
+  deleteRegional,
+  getRegionals,
+  getRegionalSummary,
+  updateRegional,
+  type Regional,
+  type RegionalSummary,
+} from "../../api/regional";
+import type { PaginationMeta } from "@/lib/api-client";
+
+const PAGE_SIZE = 10;
 
 export function RegionalList() {
-  // DUMMY DATA sebagai state lokal — belum ada backend, jadi "Simpan" cuma
-  // update state di sini. Begitu API siap, ganti jadi fetch + mutate.
-  const [rows, setRows] = useState<RegionalRow[]>(initialRegionalRows);
+  const { user } = useAuth();
+  const [summary, setSummary] = useState<RegionalSummary | null>(null);
 
   const [search, setSearch] = useState("");
-  const [wilayah, setWilayah] = useState("all");
-  const [unitRange, setUnitRange] = useState<UnitRangeFilter>("all");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
+  // dinaikkan tiap selesai simpan/hapus supaya list & summary di-fetch ulang
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const [deleteTarget, setDeleteTarget] = useState<RegionalRow | null>(null);
   const [formOpen, setFormOpen] = useState(false);
-  const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [editingRow, setEditingRow] = useState<RegionalRow | null>(null);
-  // Dinaikkan tiap modal dibuka, dipakai sebagai `key` supaya RegionalFormModal
-  // di-remount (state form fresh) tanpa perlu useEffect buat reset.
+  const [editingRow, setEditingRow] = useState<Regional | null>(null);
+  // dipakai sebagai `key` modal supaya state form fresh tiap dibuka
   const [formKey, setFormKey] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Regional | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const wilayahOptions = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.wilayah))),
-    [rows],
-  );
+  // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
+  // Baris lama tetap tampil (redup) selama halaman/pencarian baru dimuat.
+  const queryKey = `${debouncedSearch}|${page}|${refreshKey}`;
+  const [result, setResult] = useState<{
+    key: string;
+    rows: Regional[];
+    meta: PaginationMeta | null;
+    error: string | null;
+  } | null>(null);
+  const loading = result?.key !== queryKey;
+  const rows = result?.rows ?? [];
+  const meta = result?.meta ?? null;
+  const error = result?.key === queryKey ? result.error : null;
 
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const keyword = search.trim().toLowerCase();
-      const matchSearch =
-        keyword === "" ||
-        row.nama.toLowerCase().includes(keyword) ||
-        row.wilayah.toLowerCase().includes(keyword);
+  // Tunda pencarian 400ms supaya tidak hit API di setiap ketikan
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
-      const matchWilayah = wilayah === "all" || row.wilayah === wilayah;
+  useEffect(() => {
+    const controller = new AbortController();
+    getRegionalSummary(controller.signal)
+      .then(setSummary)
+      .catch((e) => {
+        if (!controller.signal.aborted) console.error(e);
+      });
+    return () => controller.abort();
+  }, [refreshKey]);
 
-      const matchUnitRange =
-        unitRange === "all" ||
-        (unitRange === "under10" && row.jumlahUnit < 10) ||
-        (unitRange === "10to20" &&
-          row.jumlahUnit >= 10 &&
-          row.jumlahUnit <= 20) ||
-        (unitRange === "over20" && row.jumlahUnit > 20);
+  useEffect(() => {
+    const controller = new AbortController();
+    const key = `${debouncedSearch}|${page}|${refreshKey}`;
 
-      return matchSearch && matchWilayah && matchUnitRange;
-    });
-  }, [rows, search, wilayah, unitRange]);
+    getRegionals(
+      { search: debouncedSearch, page, perPage: PAGE_SIZE },
+      controller.signal,
+    )
+      .then((res) =>
+        setResult({ key, rows: res.rows, meta: res.meta ?? null, error: null }),
+      )
+      .catch((e: Error) => {
+        if (controller.signal.aborted) return;
+        setResult({ key, rows: [], meta: null, error: e.message });
+      });
 
-  const { paginatedData, currentPage, totalPages, setCurrentPage, pageSize } =
-    usePagination({ data: filteredRows, pageSize: 5 });
+    return () => controller.abort();
+  }, [debouncedSearch, page, refreshKey]);
 
-  const totalUnit = rows.reduce((sum, r) => sum + r.jumlahUnit, 0);
-  const totalKaryawan = rows.reduce((sum, r) => sum + r.jumlahKaryawan, 0);
+  const formatNumber = (n?: number) =>
+    n === undefined ? "-" : n.toLocaleString("id-ID");
 
-  function openCreateModal() {
-    setFormMode("create");
-    setEditingRow(null);
-    setFormOpen(true);
-    setFormKey((k) => k + 1);
-  }
-
-  function openEditModal(row: RegionalRow) {
-    setFormMode("edit");
+  function openForm(row: Regional | null) {
     setEditingRow(row);
     setFormOpen(true);
     setFormKey((k) => k + 1);
   }
 
-  function handleFormSubmit(values: RegionalFormValues) {
-    if (formMode === "create") {
-      const newRow: RegionalRow = {
-        id: `local-${Date.now()}`,
-        kode: values.kode,
-        nama: values.nama,
-        wilayah: values.wilayah,
-        jumlahUnit: 0,
-        jumlahKaryawan: 0,
-        kepalaRegional: "-",
-      };
-      setRows((prev) => [...prev, newRow]);
-    } else if (editingRow) {
-      setRows((prev) =>
-        prev.map((row) =>
-          row.id === editingRow.id
-            ? {
-                ...row,
-                kode: values.kode,
-                nama: values.nama,
-                wilayah: values.wilayah,
-              }
-            : row,
-        ),
-      );
+  // Error dibiarkan naik ke modal supaya pesan validasi tampil di field-nya
+  async function handleFormSubmit(values: RegionalFormValues) {
+    const payload = { code: values.kode.trim(), name: values.nama.trim() };
+
+    if (editingRow) {
+      await updateRegional(editingRow.id, payload);
+    } else {
+      await createRegional(payload);
     }
+
     setFormOpen(false);
+    setRefreshKey((k) => k + 1);
   }
 
-  function handleConfirmDelete() {
-    if (deleteTarget) {
-      setRows((prev) => prev.filter((row) => row.id !== deleteTarget.id));
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+
+    try {
+      await deleteRegional(deleteTarget.id);
+      setDeleteTarget(null);
+      setRefreshKey((k) => k + 1);
+    } catch (e) {
+      // mis. 409 karena masih punya unit atau pegawai
+      setDeleteError((e as Error).message);
+      setDeleteTarget(null);
     }
-    setDeleteTarget(null);
   }
-
-  const editingFormValues: RegionalFormValues | undefined = editingRow
-    ? {
-        nama: editingRow.nama,
-        kode: editingRow.kode,
-        wilayah: editingRow.wilayah,
-        // noTelepon: "",
-        // alamat: "",
-      }
-    : undefined;
 
   return (
     <div className="space-y-4">
@@ -143,60 +147,89 @@ export function RegionalList() {
         title="Regional"
         description="Struktur wilayah kerja PTPN 1 di bawah Head Office"
         action={
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-          >
-            <Plus className="h-4 w-4" />
-            Tambah Regional
-          </button>
+          // hanya akun Head Office yang boleh menambah regional
+          user.role === "HO" ? (
+            <button
+              type="button"
+              onClick={() => openForm(null)}
+              className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
+            >
+              <Plus className="h-4 w-4" />
+              Tambah Regional
+            </button>
+          ) : null
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <SummaryStatCard
           label="Total Regional"
-          value={rows.length}
+          value={formatNumber(summary?.totalRegional)}
           icon={Flag}
         />
-        <SummaryStatCard label="Total Unit" value={totalUnit} icon={Network} />
+        <SummaryStatCard
+          label="Total Unit"
+          value={formatNumber(summary?.totalUnit)}
+          icon={Network}
+        />
         <SummaryStatCard
           label="Total Karyawan"
-          value={totalKaryawan.toLocaleString("id-ID")}
+          value={formatNumber(summary?.totalKaryawan)}
           icon={User}
         />
       </div>
 
-      <RegionalFilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        wilayahOptions={wilayahOptions}
-        wilayahValue={wilayah}
-        onWilayahChange={setWilayah}
-        unitRangeValue={unitRange}
-        onUnitRangeChange={setUnitRange}
-      />
+      <RegionalFilterBar searchValue={search} onSearchChange={setSearch} />
+
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          Gagal memuat data regional: {error}
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          <span>{deleteError}</span>
+          <button
+            type="button"
+            onClick={() => setDeleteError(null)}
+            className="font-medium hover:underline"
+          >
+            Tutup
+          </button>
+        </div>
+      )}
 
       <RegionalTable
-        rows={paginatedData}
-        onEditClick={openEditModal}
-        onDeleteClick={setDeleteTarget}
+        rows={rows}
+        startIndex={meta?.from ?? 1}
+        loading={loading}
+        onEditClick={openForm}
+        onDeleteClick={(row) => {
+          setDeleteError(null);
+          setDeleteTarget(row);
+        }}
       />
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-        totalItems={filteredRows.length}
-        pageSize={pageSize}
-      />
+      {meta && meta.total > 0 && (
+        <Pagination
+          currentPage={meta.current_page}
+          totalPages={meta.last_page}
+          onPageChange={setPage}
+          totalItems={meta.total}
+          pageSize={meta.per_page}
+        />
+      )}
 
       <RegionalFormModal
         key={formKey}
         open={formOpen}
-        mode={formMode}
-        initialValues={editingFormValues}
+        mode={editingRow ? "edit" : "create"}
+        initialValues={
+          editingRow
+            ? { nama: editingRow.nama, kode: editingRow.kode }
+            : undefined
+        }
         onClose={() => setFormOpen(false)}
         onSubmit={handleFormSubmit}
       />
@@ -204,7 +237,7 @@ export function RegionalList() {
       <ConfirmDialog
         open={deleteTarget !== null}
         title={`Hapus ${deleteTarget?.nama}?`}
-        description="Data regional beserta unit di bawahnya tidak bisa dikembalikan setelah dihapus."
+        description="Regional hanya bisa dihapus kalau sudah tidak punya unit, pegawai, maupun user."
         confirmLabel="Hapus"
         variant="danger"
         onConfirm={handleConfirmDelete}

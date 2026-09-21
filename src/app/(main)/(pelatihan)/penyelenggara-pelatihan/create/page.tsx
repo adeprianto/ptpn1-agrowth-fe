@@ -1,5 +1,5 @@
-import TambahPenyelenggaraForm from "@/features/penyelenggara-pelatihan/components/TambahPenyelenggaraForm";
+import { PenyelenggaraForm } from "@/features/penyelenggara-pelatihan/components/PenyelenggaraForm";
 
 export default function TambahPenyelenggaraPelatihanPage() {
-    return <TambahPenyelenggaraForm />
+  return <PenyelenggaraForm mode="create" />;
 }

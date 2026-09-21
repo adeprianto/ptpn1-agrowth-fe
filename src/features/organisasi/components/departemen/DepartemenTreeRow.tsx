@@ -1,31 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { ChevronDown, ChevronRight } from "lucide-react";
-import {
-  getFunctionName,
-  type StrukturDepartemenNode,
-} from "./masterJabatanDummyData";
+import { ChevronDown, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { RowActionMenu } from "@/components/shared/RowActionMenu";
+import type { DepartemenNode } from "../../api/departemen";
 
 interface DepartemenTreeRowProps {
-  node: StrukturDepartemenNode;
-  allNodes: StrukturDepartemenNode[];
+  node: DepartemenNode;
   depth: number;
   expanded: Set<string>;
   onToggle: (id: string) => void;
-  onDeleteClick: (node: StrukturDepartemenNode) => void;
+  onDeleteClick: (node: DepartemenNode) => void;
 }
 
 export function DepartemenTreeRow({
   node,
-  allNodes,
   depth,
   expanded,
   onToggle,
   onDeleteClick,
 }: DepartemenTreeRowProps) {
-  const children = allNodes.filter((n) => n.parentId === node.id);
-  const hasChildren = children.length > 0;
+  const hasChildren = node.children.length > 0;
   const isOpen = expanded.has(node.id);
 
   return (
@@ -52,41 +46,48 @@ export function DepartemenTreeRow({
         )}
 
         <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700">
-          {node.name}
+          {node.nama}
+          <span className="ml-2 text-xs font-normal text-slate-400">
+            {node.kode}
+          </span>
         </span>
 
-        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-          {node.type}
-        </span>
+        {node.tipe && (
+          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+            {node.tipe}
+          </span>
+        )}
 
         <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
-          {node.functionCode ? getFunctionName(node.functionCode) : "-"}
+          {node.jobFunction ?? "-"}
         </span>
 
-        <div className="ml-2 flex shrink-0 gap-1.5">
-          <Link
-            href={`/organisasi/departemen/${node.id}/edit`}
-            className="rounded-lg bg-blue-500 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-blue-600"
-          >
-            Edit
-          </Link>
-          <button
-            type="button"
-            onClick={() => onDeleteClick(node)}
-            className="rounded-lg bg-rose-500 px-2.5 py-1 text-[11px] font-medium text-white hover:bg-rose-600"
-          >
-            Hapus
-          </button>
+        <div className="ml-2 shrink-0">
+          <RowActionMenu
+            label={`Aksi untuk ${node.nama}`}
+            actions={[
+              {
+                label: "Edit",
+                icon: Pencil,
+                href: `/organisasi/departemen/${node.id}/edit`,
+              },
+              {
+                label: "Hapus",
+                icon: Trash2,
+                variant: "danger",
+                onClick: () => onDeleteClick(node),
+              },
+            ]}
+          />
         </div>
       </div>
 
       {hasChildren && isOpen && (
         <div>
-          {children.map((child) => (
+          {node.children.map((child) => (
             <DepartemenTreeRow
               key={child.id}
               node={child}
-              allNodes={allNodes}
               depth={depth + 1}
               expanded={expanded}
               onToggle={onToggle}

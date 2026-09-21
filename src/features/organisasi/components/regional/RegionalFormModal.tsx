@@ -2,27 +2,33 @@
 
 import { useState, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { ApiError } from "@/lib/api-client";
 
 export interface RegionalFormValues {
   nama: string;
   kode: string;
-  wilayah: string;
 }
 
 const emptyForm: RegionalFormValues = {
   nama: "",
   kode: "",
-  wilayah: "",
 };
 
 type FormErrors = Partial<Record<keyof RegionalFormValues, string>>;
+
+// nama field backend -> field form
+const FIELD_MAP: Record<string, keyof RegionalFormValues> = {
+  name: "nama",
+  code: "kode",
+};
 
 interface RegionalFormModalProps {
   open: boolean;
   mode: "create" | "edit";
   initialValues?: RegionalFormValues;
   onClose: () => void;
-  onSubmit: (values: RegionalFormValues) => void;
+  /** Lempar error (mis. ApiError 422) untuk menampilkan pesannya di form */
+  onSubmit: (values: RegionalFormValues) => Promise<void>;
 }
 
 export function RegionalFormModal({
@@ -36,6 +42,8 @@ export function RegionalFormModal({
     initialValues ?? emptyForm,
   );
   const [errors, setErrors] = useState<FormErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   if (!open) return null;
 
@@ -50,20 +58,38 @@ export function RegionalFormModal({
     const nextErrors: FormErrors = {};
     if (!values.nama.trim()) nextErrors.nama = "Nama Regional wajib diisi";
     if (!values.kode.trim()) nextErrors.kode = "Kode Regional wajib diisi";
-    if (!values.wilayah.trim())
-      nextErrors.wilayah = "Wilayah/Provinsi wajib diisi";
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!validate()) return;
-    onSubmit(values);
+
+    setSaving(true);
+    setFormError(null);
+    try {
+      await onSubmit(values);
+    } catch (e) {
+      // error validasi dari backend dipetakan ke field-nya masing-masing
+      if (e instanceof ApiError && e.errors) {
+        const fieldErrors: FormErrors = {};
+        Object.entries(e.errors).forEach(([field, messages]) => {
+          const key = FIELD_MAP[field];
+          if (key) fieldErrors[key] = messages[0];
+        });
+        setErrors(fieldErrors);
+        if (Object.keys(fieldErrors).length === 0) setFormError(e.message);
+      } else {
+        setFormError((e as Error).message);
+      }
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-      <div className="max-h- w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900">
             {mode === "create" ? "Tambah Regional" : "Edit Regional"}
@@ -77,6 +103,12 @@ export function RegionalFormModal({
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {formError && (
+          <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            {formError}
+          </div>
+        )}
 
         <div className="space-y-4">
           <Field label="Nama Regional" required error={errors.nama}>
@@ -94,40 +126,10 @@ export function RegionalFormModal({
               type="text"
               value={values.kode}
               onChange={(e) => handleChange("kode", e.target.value)}
-              placeholder="REG-01"
+              placeholder="REG01"
               className={inputClass(!!errors.kode)}
             />
           </Field>
-
-          <Field label="Wilayah/Provinsi" required error={errors.wilayah}>
-            <input
-              type="text"
-              value={values.wilayah}
-              onChange={(e) => handleChange("wilayah", e.target.value)}
-              placeholder="Cth. Medan"
-              className={inputClass(!!errors.wilayah)}
-            />
-          </Field>
-
-          {/* <Field label="Nomor Telpon Kantor">
-            <input
-              type="text"
-              value={values.noTelepon}
-              onChange={(e) => handleChange("noTelepon", e.target.value)}
-              placeholder="(+123) xxx xxx"
-              className={inputClass(false)}
-            />
-          </Field> */}
-
-          {/* <Field label="Alamat Kantor">
-            <textarea
-              value={values.alamat}
-              onChange={(e) => handleChange("alamat", e.target.value)}
-              placeholder="Alamat lengkap kantor regional"
-              rows={3}
-              className={inputClass(false)}
-            />
-          </Field> */}
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
@@ -141,9 +143,14 @@ export function RegionalFormModal({
           <button
             type="button"
             onClick={handleSubmit}
-            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600"
+            disabled={saving}
+            className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-60"
           >
-            {mode === "create" ? "Simpan Regional" : "Simpan Perubahan"}
+            {saving
+              ? "Menyimpan..."
+              : mode === "create"
+                ? "Simpan Regional"
+                : "Simpan Perubahan"}
           </button>
         </div>
       </div>

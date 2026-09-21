@@ -24,12 +24,14 @@ export interface UnitDetailExtra {
   riwayatPengajuan: PengajuanPelatihanRow[];
 }
 
-// DUMMY DATA — baru lengkap untuk unit id "u1" (Kebun Sei Lakitan). Unit
-// lain di unitDummyData.ts belum punya detail dummy selengkap ini.
-// Nanti diganti hasil GET /api/v1/organisasi/unit/{id}
-const unitDetailById: Record<string, UnitDetailExtra> = {
+// DUMMY DATA — placeholder yang sama untuk semua unit. Header, total karyawan,
+// dan induk regional sudah dari GET /api/v1/units/{id}; sisanya (struktur
+// posisi, anggaran, distribusi, pengajuan) menunggu fiturnya ada di backend.
+// Struktur posisi nanti diatur PIC saat edit unit (daftar jabatan + kuota).
+type UnitDetailDummy = Omit<UnitDetailExtra, "totalKaryawan">;
+
+const unitDetailById: Record<string, UnitDetailDummy> = {
   u1: {
-    totalKaryawan: 142,
     posisiTerisi: 15,
     posisiKuota: 18,
     realisasiAnggaran: 38_000_000,
@@ -141,6 +143,6 @@ const unitDetailById: Record<string, UnitDetailExtra> = {
   },
 };
 
-export function getUnitDetail(id: string): UnitDetailExtra | undefined {
-  return unitDetailById[id];
+export function getUnitDetailDummy(): UnitDetailDummy {
+  return unitDetailById.u1;
 }

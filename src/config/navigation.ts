@@ -50,7 +50,9 @@ export const navigationConfig: NavGroup[] = [
         label: "Organisasi",
         href: "/organisasi",
         icon: Network,
-        roles: ["HO", "REGIONAL"],
+        // semua tier bisa membuka Organisasi; isinya otomatis dibatasi backend
+        // sesuai cakupan akun (akun Unit hanya melihat unitnya sendiri)
+        roles: ["HO", "REGIONAL", "UNIT"],
       },
     ],
   },
@@ -71,13 +73,13 @@ export const navigationConfig: NavGroup[] = [
       {
         label: "Penyelenggara Pelatihan",
         href: "/penyelenggara-pelatihan",
-        icon: Users,
+        icon: GraduationCap,
         roles: ["HO", "REGIONAL", "UNIT"],
       },
       {
         label: "Program Pelatihan",
         href: "/program-pelatihan",
-        icon: Users,
+        icon: BookOpen,
         roles: ["HO", "REGIONAL", "UNIT"],
       },
     ],
@@ -88,7 +90,7 @@ export const navigationConfig: NavGroup[] = [
       {
         label: "Laporan PSDM",
         href: "/laporan-psdm",
-        icon: Users,
+        icon: FileText,
         roles: ["HO", "REGIONAL", "UNIT"],
       },
     ],

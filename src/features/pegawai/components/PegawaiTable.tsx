@@ -1,18 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import type { PegawaiRow } from "./pegawaiDummyData";
+import type { Pegawai } from "../api/pegawai";
 
 interface PegawaiTableProps {
-  rows: PegawaiRow[];
+  rows: Pegawai[];
+  /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
+  startIndex: number;
+  loading?: boolean;
 }
 
-const statusBadgeClass: Record<PegawaiRow["status"], string> = {
-  Aktif: "bg-emerald-100 text-emerald-700",
-  "Non-aktif": "bg-rose-100 text-rose-700",
-};
+// Status dari SAP tidak cuma Aktif/Non-aktif (ada Penugasan KSO, MBT, CDT, dst),
+// jadi ditampilkan apa adanya dengan warna per kelompok.
+function statusBadgeClass(status: string | null) {
+  const s = status?.toLowerCase() ?? "";
+  if (s === "aktif" || s === "active") return "bg-emerald-100 text-emerald-700";
+  if (s === "inactive" || s === "non-aktif") return "bg-rose-100 text-rose-700";
+  if (s === "") return "bg-slate-100 text-slate-500";
+  return "bg-amber-100 text-amber-700";
+}
 
-export function PegawaiTable({ rows }: PegawaiTableProps) {
+export function PegawaiTable({ rows, startIndex, loading = false }: PegawaiTableProps) {
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white">
       <table className="w-full min-w-200 text-left text-sm">
@@ -27,11 +35,11 @@ export function PegawaiTable({ rows }: PegawaiTableProps) {
             <th className="px-6 py-4 text-right">Action</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className={loading ? "opacity-50" : undefined}>
           {rows.map((row, index) => (
             <tr key={row.id} className="border-b border-slate-50 last:border-0">
               <td className="px-6 py-4">
-                <p className="font-medium text-slate-800">{index + 1}</p>
+                <p className="font-medium text-slate-800">{startIndex + index}</p>
               </td>
               <td className="px-6 py-4">
                 <div>
@@ -44,25 +52,31 @@ export function PegawaiTable({ rows }: PegawaiTableProps) {
                   <p className="font-medium text-slate-800">
                     {row.penempatanNama}
                   </p>
-                  <p className="text-xs text-slate-400">
-                    {row.penempatanInduk}
-                  </p>
+                  {row.penempatanInduk && (
+                    <p className="text-xs text-slate-400">
+                      {row.penempatanInduk}
+                    </p>
+                  )}
                 </div>
               </td>
               <td className="px-6 py-4">
                 <div>
-                  <p className="font-medium text-slate-800">{row.jabatan}</p>
-                  <p className="text-xs text-slate-400">{row.departemen}</p>
+                  <p className="font-medium text-slate-800">
+                    {row.jabatan ?? "-"}
+                  </p>
+                  <p className="text-xs text-slate-400">{row.jobGroup ?? "-"}</p>
                 </div>
               </td>
               <td className="px-6 py-4">
-                <p className="font-medium text-slate-800">{row.level}</p>
+                <p className="whitespace-nowrap font-medium text-slate-800">
+                  {row.levelBod ? `BOD-${row.levelBod}` : "-"}
+                </p>
               </td>
               <td className="px-6 py-4">
                 <span
-                  className={`rounded-full whitespace-nowrap px-3 py-1 text-xs font-medium ${statusBadgeClass[row.status]}`}
+                  className={`rounded-full whitespace-nowrap px-3 py-1 text-xs font-medium ${statusBadgeClass(row.status)}`}
                 >
-                  {row.status}
+                  {row.status ?? "-"}
                 </span>
               </td>
               <td className="px-6 py-4">
@@ -73,18 +87,6 @@ export function PegawaiTable({ rows }: PegawaiTableProps) {
                   >
                     Detail
                   </Link>
-                  <button
-                    type="button"
-                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
-                  >
-                    Delete
-                  </button>
                 </div>
               </td>
             </tr>
@@ -96,7 +98,9 @@ export function PegawaiTable({ rows }: PegawaiTableProps) {
                 colSpan={7}
                 className="px-6 py-10 text-center text-sm text-slate-400"
               >
-                Tidak ada pegawai yang cocok dengan pencarian/filter.
+                {loading
+                  ? "Memuat data pegawai..."
+                  : "Tidak ada pegawai yang cocok dengan pencarian/filter."}
               </td>
             </tr>
           )}

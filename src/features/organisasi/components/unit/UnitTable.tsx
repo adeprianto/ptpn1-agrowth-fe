@@ -1,64 +1,36 @@
 "use client";
 
-import Link from "next/link";
-import { Factory, Sprout, Users, MapPin, Building2 } from "lucide-react";
-import type { UnitRow } from "./unitDummyData"; // sesuaikan path import-nya
+import { Eye, MapPin, Pencil, Trash2, Users } from "lucide-react";
+import { RowActionMenu } from "@/components/shared/RowActionMenu";
+import type { Unit } from "../../api/unit";
+import { getJenisDisplay } from "./jenisUnit";
 
 interface UnitTableProps {
-  rows: UnitRow[];
-  onEditClick: (row: UnitRow) => void;
-  onDeleteClick: (row: UnitRow) => void;
+  rows: Unit[];
+  /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
+  startIndex: number;
+  loading?: boolean;
+  onDeleteClick: (row: Unit) => void;
 }
 
-// Konfigurasi tampilan per tipe unit (icon + warna icon + warna badge)
-type TipeConfig = {
-  icon: typeof Factory;
-  iconBg: string;
-  iconColor: string;
-  badgeBg: string;
-  badgeText: string;
-};
-
-const TIPE_CONFIG: Record<string, TipeConfig> = {
-  Pabrik: {
-    icon: Factory,
-    iconBg: "bg-amber-100",
-    iconColor: "text-amber-600",
-    badgeBg: "bg-amber-100",
-    badgeText: "text-amber-700",
-  },
-  Kebun: {
-    icon: Sprout,
-    iconBg: "bg-emerald-100",
-    iconColor: "text-emerald-600",
-    badgeBg: "bg-emerald-100",
-    badgeText: "text-emerald-700",
-  },
-};
-
-// Fallback kalau ada tipe baru yang belum didaftarkan di atas
-const DEFAULT_TIPE_CONFIG: TipeConfig = {
-  icon: Building2,
-  iconBg: "bg-slate-100",
-  iconColor: "text-slate-500",
-  badgeBg: "bg-slate-100",
-  badgeText: "text-slate-600",
-};
-
-// Warna badge per komoditas — tinggal tambah baris baru kalau ada komoditas lain
+// Warna badge per komoditas (business_types.code) — tinggal tambah baris kalau perlu
 const KOMODITAS_COLOR: Record<string, string> = {
-  Teh: "bg-teal-100 text-teal-700",
-  Kopi: "bg-orange-100 text-orange-700",
-  Coklat: "bg-stone-100 text-stone-700",
-  Tembakau: "bg-lime-100 text-lime-700",
-  Sawit: "bg-yellow-100 text-yellow-700",
+  TEH: "bg-teal-100 text-teal-700",
+  KOPI: "bg-orange-100 text-orange-700",
+  KAKAO: "bg-stone-100 text-stone-700",
+  TEMBAKAU: "bg-lime-100 text-lime-700",
+  SAWIT: "bg-yellow-100 text-yellow-700",
+  KELAPA: "bg-yellow-100 text-yellow-700",
+  KARET: "bg-sky-100 text-sky-700",
+  TEBU: "bg-green-100 text-green-700",
 };
 
 const DEFAULT_KOMODITAS_COLOR = "bg-slate-100 text-slate-600";
 
 export function UnitTable({
   rows,
-  onEditClick,
+  startIndex,
+  loading = false,
   onDeleteClick,
 }: UnitTableProps) {
   return (
@@ -75,12 +47,11 @@ export function UnitTable({
             <th className="px-6 py-4 text-right">Action</th>
           </tr>
         </thead>
-        <tbody>
-          {rows.map((row) => {
-            const tipeConfig = TIPE_CONFIG[row.tipe] ?? DEFAULT_TIPE_CONFIG;
-            const TipeIcon = tipeConfig.icon;
-            const komoditasColor =
-              KOMODITAS_COLOR[row.komoditas] ?? DEFAULT_KOMODITAS_COLOR;
+        <tbody className={loading ? "opacity-50" : undefined}>
+          {rows.map((row, index) => {
+            // Icon unit mengikuti kategori operasional pertamanya
+            const primary = getJenisDisplay(row.jenis[0]);
+            const PrimaryIcon = primary.icon;
 
             return (
               <tr
@@ -88,17 +59,19 @@ export function UnitTable({
                 className="border-b border-slate-50 last:border-0"
               >
                 <td className="px-6 py-4">
-                  <p className="font-medium text-slate-800">{row.id}</p>
+                  <p className="font-medium text-slate-800">
+                    {startIndex + index}
+                  </p>
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <span
-                      className={`flex h-9 w-9 items-center justify-center rounded-xl ${tipeConfig.iconBg}`}
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${primary.iconBg}`}
                     >
-                      <TipeIcon className={`h-4 w-4 ${tipeConfig.iconColor}`} />
+                      <PrimaryIcon className={`h-4 w-4 ${primary.iconColor}`} />
                     </span>
-                    <div className="">
-                      <p className="font-medium text-slate-800">{row.name}</p>
+                    <div>
+                      <p className="font-medium text-slate-800">{row.nama}</p>
                       <p className="text-xs text-slate-400">{row.kode}</p>
                     </div>
                   </div>
@@ -106,51 +79,73 @@ export function UnitTable({
                 <td className="px-6 py-4">
                   <span className="flex items-center gap-1.5 text-slate-500">
                     <MapPin className="h-4 w-4 text-slate-300" />
-                    {row.regional}
+                    {row.regionalNama ?? "-"}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${tipeConfig.badgeBg} ${tipeConfig.badgeText}`}
-                  >
-                    {row.tipe}
-                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {row.jenis.length === 0 && (
+                      <span className="text-slate-300">-</span>
+                    )}
+                    {row.jenis.map((j) => {
+                      const display = getJenisDisplay(j);
+                      return (
+                        <span
+                          key={j.id}
+                          className={`rounded-full px-3 py-1 text-xs font-medium ${display.badgeClass}`}
+                        >
+                          {display.label}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${komoditasColor}`}
-                  >
-                    {row.komoditas}
-                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {row.komoditas.length === 0 && (
+                      <span className="text-slate-300">-</span>
+                    )}
+                    {row.komoditas.map((k) => (
+                      <span
+                        key={k.id}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          KOMODITAS_COLOR[k.code] ?? DEFAULT_KOMODITAS_COLOR
+                        }`}
+                      >
+                        {k.name}
+                      </span>
+                    ))}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <span className="flex items-center gap-1.5 text-slate-500">
                     <Users className="h-4 w-4 text-slate-300" />
-                    {row.jumlahKaryawan}
+                    {row.jumlahKaryawan.toLocaleString("id-ID")}
                   </span>
                 </td>
-                {/* <td className="px-6 py-4 text-slate-600">{row.kepalaUnit}</td> */}
                 <td className="px-6 py-4">
-                  <div className="flex justify-end gap-2">
-                    <Link
-                      href={`/organisasi/unit/${row.id}`}
-                      className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-200"
-                    >
-                      Detail
-                    </Link>
-                    <button
-                      onClick={() => onEditClick(row)}
-                      className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteClick(row)}
-                      className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
-                    >
-                      Delete
-                    </button>
+                  <div className="flex justify-end">
+                    <RowActionMenu
+                      label={`Aksi untuk ${row.nama}`}
+                      actions={[
+                        {
+                          label: "Lihat Detail",
+                          icon: Eye,
+                          href: `/organisasi/unit/${row.id}`,
+                        },
+                        {
+                          label: "Edit",
+                          icon: Pencil,
+                          href: `/organisasi/unit/${row.id}/edit`,
+                        },
+                        {
+                          label: "Hapus",
+                          icon: Trash2,
+                          variant: "danger",
+                          onClick: () => onDeleteClick(row),
+                        },
+                      ]}
+                    />
                   </div>
                 </td>
               </tr>
@@ -163,7 +158,9 @@ export function UnitTable({
                 colSpan={7}
                 className="px-6 py-10 text-center text-sm text-slate-400"
               >
-                Tidak ada unit yang cocok dengan pencarian/filter.
+                {loading
+                  ? "Memuat data unit..."
+                  : "Tidak ada unit yang cocok dengan pencarian/filter."}
               </td>
             </tr>
           )}

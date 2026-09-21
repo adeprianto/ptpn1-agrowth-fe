@@ -1,17 +1,25 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   Briefcase,
   Flag,
   GitBranch,
+  Landmark,
   Network,
   Layers,
   type LucideIcon,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { regionalRows } from "./regional/regionalDummyData";
-import { strukturDepartemen } from "./departemen/masterJabatanDummyData";
+import { useAuth } from "@/hooks/useAuth";
+import type { Role } from "@/types/auth";
+import { getRegionalSummary } from "../api/regional";
+import { getHeadOffice } from "../api/headOffice";
+import { getPositionTitleCount } from "../api/masterData";
+import { getDepartemenCount } from "../api/departemen";
 
 interface HubCardData {
   id: string;
@@ -21,18 +29,82 @@ interface HubCardData {
   desc: string;
   stat: string;
   colorClass: string;
+  /** Kartu hanya tampil untuk tier ini */
+  roles?: Role[];
+}
+
+interface HubStats {
+  karyawanHo?: number;
+  regional?: number;
+  unit?: number;
+  jabatan?: number;
+  departemen?: number;
 }
 
 export function OrganisasiHub() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState<HubStats>({});
+  const isHo = user.role === "HO";
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    // tiap sumber dipasang terpisah supaya satu yang gagal tidak
+    // menghilangkan angka kartu lain
+    getRegionalSummary(signal)
+      .then((s) =>
+        setStats((prev) => ({
+          ...prev,
+          regional: s.totalRegional,
+          unit: s.totalUnit,
+        })),
+      )
+      .catch(() => {});
+
+    // Head Office hanya bisa diakses akun HO
+    if (isHo) {
+      getHeadOffice(signal)
+        .then((ho) =>
+          setStats((prev) => ({ ...prev, karyawanHo: ho.jumlahKaryawan })),
+        )
+        .catch(() => {});
+    }
+
+    getPositionTitleCount(signal)
+      .then((total) => setStats((prev) => ({ ...prev, jabatan: total })))
+      .catch(() => {});
+
+    getDepartemenCount(signal)
+      .then((total) => setStats((prev) => ({ ...prev, departemen: total })))
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [isHo]);
+
+  const stat = (value: number | undefined, suffix: string) =>
+    value === undefined ? "…" : `${value.toLocaleString("id-ID")} ${suffix}`;
+
   const hubCards: HubCardData[] = [
+    {
+      id: "head-office",
+      href: "/organisasi/head-office",
+      icon: Landmark,
+      title: "Head Office",
+      desc: "Kantor pusat PTPN 1 - ringkasan dan daftar karyawan yang ditempatkan di HO.",
+      stat: stat(stats.karyawanHo, "Karyawan"),
+      colorClass: "bg-slate-200 text-slate-700",
+      roles: ["HO"],
+    },
     {
       id: "regional",
       href: "/organisasi/regional",
       icon: Flag,
       title: "Regional",
       desc: "Kelola wilayah regional di bawah Head Office, termasuk kepala regional dan ringkasan SDM-nya.",
-      stat: `${regionalRows.length} Regional`,
+      stat: stat(stats.regional, "Regional"),
       colorClass: "bg-emerald-100 text-emerald-700",
+      roles: ["HO", "REGIONAL"],
     },
     {
       id: "unit",
@@ -40,7 +112,7 @@ export function OrganisasiHub() {
       icon: Network,
       title: "Unit",
       desc: "Kebun dan pabrik di seluruh wilayah kerja, dikelompokkan per regional dan komoditas.",
-      stat: "46 Unit", // TODO: ganti dinamis begitu dummy data Unit dibuat
+      stat: stat(stats.unit, "Unit"),
       colorClass: "bg-amber-100 text-amber-700",
     },
     {
@@ -48,8 +120,8 @@ export function OrganisasiHub() {
       href: "/organisasi/jabatan",
       icon: Briefcase,
       title: "Master Jabatan",
-      desc: "Daftar jabatan beserta Job Family, Job Group, Job Function, dan Level BOD.",
-      stat: "24 Jabatan", // TODO: ganti dinamis begitu dummy data Jabatan dibuat
+      desc: "Daftar jabatan beserta Job Group, Job Function, dan Level BOD.",
+      stat: stat(stats.jabatan, "Jabatan"),
       colorClass: "bg-blue-100 text-blue-700",
     },
     {
@@ -66,8 +138,8 @@ export function OrganisasiHub() {
       href: "/organisasi/departemen",
       icon: Layers,
       title: "Struktur Departemen",
-      desc: "Susunan divisi/bagian di dalam tiap entity (HO, Regional, Unit) — referensi Job Function untuk Master Jabatan.",
-      stat: `${strukturDepartemen.length} Departemen`,
+      desc: "Susunan direktorat, divisi, bagian dan seterusnya di dalam tiap entity (HO, Regional, Unit).",
+      stat: stat(stats.departemen, "Departemen"),
       colorClass: "bg-rose-100 text-rose-700",
     },
   ];
@@ -87,9 +159,11 @@ export function OrganisasiHub() {
       />
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        {hubCards.map((card) => (
-          <HubCard key={card.id} {...card} />
-        ))}
+        {hubCards
+          .filter((card) => !card.roles || card.roles.includes(user.role))
+          .map((card) => (
+            <HubCard key={card.id} {...card} />
+          ))}
       </div>
     </div>
   );
