@@ -33,12 +33,16 @@ export class ApiError extends Error {
   }
 }
 
-type QueryValue = string | number | boolean | null | undefined;
+type QueryScalar = string | number | boolean | null | undefined;
+/** Array dikirim sebagai `key[]=a&key[]=b` (format yang dibaca Laravel) */
+type QueryValue = QueryScalar | ReadonlyArray<string | number>;
 
 function buildUrl(path: string, query?: Record<string, QueryValue>) {
   const url = new URL(`${API_URL}${path}`);
   Object.entries(query ?? {}).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
+    if (Array.isArray(value)) {
+      value.forEach((item) => url.searchParams.append(`${key}[]`, String(item)));
+    } else if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, String(value));
     }
   });

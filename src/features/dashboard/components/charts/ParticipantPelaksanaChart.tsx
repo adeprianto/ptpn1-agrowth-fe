@@ -15,9 +15,9 @@ const data = [
   { regional: "1", target: 100 },
   { regional: "2", target: 158 },
   { regional: "3", target: 160 },
-  { regional: "4", target: 175 },
+
   { regional: "5", target: 33 },
-  { regional: "6", target: 31 },
+
   { regional: "7", target: 70 },
   { regional: "8", target: 165 },
 ];
