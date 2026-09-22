@@ -4,12 +4,12 @@ import { StatCard } from "./StatCard";
 import { DashboardCard } from "./DashboardCard";
 import { ChartPlaceholder } from "./ChartPlaceholder";
 import { RegionalCostChart } from "./charts/RegionalCostChart";
-import { DevelopmentTypeChart } from "./charts/DevelopmentTypeChart";
 import { DevelopmentCostTrendChart } from "./charts/DevelopmentCostTrendChart";
 import { RegionalParticipantsChart } from "./charts/RegionalParticipantsChart";
 import { ParticipantKartimChart } from "./charts/ParticipantKartimChart";
 import { ParticipantPelaksanaChart } from "./charts/ParticipantPelaksanaChart";
 import { TrainingHourChart } from "./charts/TrainingHourChart";
+import { BudgetConsolidationCard } from "./charts/BudgetConsolidationChart";
 
 export function DashboardOverview() {
   return (
@@ -42,21 +42,23 @@ export function DashboardOverview() {
         />
       </div>
 
+      <div className="grid grid-cols-1">
+        <DashboardCard
+          title="Total Konsolidasi PTPN1"
+          subtitle="Menampilkan Total pengembangan SDM"
+        >
+          <BudgetConsolidationCard />
+        </DashboardCard>
+      </div>
+
       {/* Biaya per region + Jenis pengembangan */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DashboardCard
           title="Biaya Pengembangan SDM Per-Region"
           subtitle="Menampilkan perbandingan total biaya yang dialokasikan"
           className="lg:col-span-2"
         >
           <RegionalCostChart />
-        </DashboardCard>
-
-        <DashboardCard
-          title="Jenis Pengembangan"
-          subtitle="Menampilkan distribusi kegiatan berdasarkan jenis"
-        >
-          <DevelopmentTypeChart />
         </DashboardCard>
       </div>
 
@@ -69,14 +71,7 @@ export function DashboardOverview() {
       </DashboardCard>
 
       {/* Status pengembangan + peserta per regional */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <DashboardCard
-          title="Status Pengembangan"
-          subtitle="Status kegiatan yang sedang berjalan"
-        >
-          <ChartPlaceholder label="StatusPengembanganProgress" />
-        </DashboardCard>
-
+      <div className="grid grid-cols-1">
         <DashboardCard
           title="Peserta Per-Regional"
           subtitle="Membandingkan coverage pengembangan antar regional"
@@ -89,14 +84,14 @@ export function DashboardOverview() {
       {/* Peserta kartim + pelaksana */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DashboardCard
-          title="Peserta Kartim"
+          title="Peserta Karpim"
           subtitle="Membandingkan coverage pengembangan antar regional"
         >
           <ParticipantKartimChart />
         </DashboardCard>
 
         <DashboardCard
-          title="Peserta Pelaksana"
+          title="Peserta Karpel"
           subtitle="Membandingkan coverage pengembangan antar regional"
         >
           <ParticipantPelaksanaChart />
@@ -104,12 +99,15 @@ export function DashboardOverview() {
       </div>
 
       {/* Jam pembelajaran - full width */}
-      <DashboardCard
-        title="Jam Pembelajaran"
-        subtitle="Membandingkan coverage pengembangan antar regional"
-      >
-        <TrainingHourChart />
-      </DashboardCard>
+      <div className="grid grid-cols-1">
+        <DashboardCard
+          title="Jam Pembelajaran"
+          subtitle="Membandingkan coverage pengembangan antar regional"
+          className="lg:col-span-2"
+        >
+          <TrainingHourChart />
+        </DashboardCard>
+      </div>
 
       {/* Riwayat pendaftaran + recent activity */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">

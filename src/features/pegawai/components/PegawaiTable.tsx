@@ -1,111 +1,217 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
-import type { EmployeeResource } from "@/types/api/employee";
+import {
+  createDataTableColumnHelper,
+  DataTable,
+  type DataTableState,
+} from "@/components/shared/data-table";
+import { getJenisDisplay } from "@/features/organisasi/components/unit/jenisUnit";
+import type { Pegawai, PegawaiFilterOptions } from "../api/pegawai";
 
 interface PegawaiTableProps {
-  rows: EmployeeResource[];
-  /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
-  startIndex: number;
+  rows: Pegawai[];
+  /** Total baris dari API (mode server) */
+  rowCount: number;
+  tableState: DataTableState;
   loading?: boolean;
+  options: PegawaiFilterOptions | null;
 }
 
-// Status dari SAP tidak cuma Aktif/Non-aktif (ada Penugasan KSO, MBT, CDT, dst),
-// jadi ditampilkan apa adanya dengan warna per kelompok.
-function statusBadgeClass(status: string | null) {
-  const s = status?.toLowerCase() ?? "";
-  if (s === "aktif" || s === "active") return "bg-emerald-100 text-emerald-700";
-  if (s === "inactive" || s === "non-aktif") return "bg-rose-100 text-rose-700";
-  if (s === "") return "bg-slate-100 text-slate-500";
-  return "bg-amber-100 text-amber-700";
+const ENTITY_GROUP_LABEL = {
+  HO: "Head Office",
+  Regional: "Regional",
+  Unit: "Unit",
+} as const;
+
+/** Label "Kebun · Teh" untuk satu baris operasional */
+export function operasionalLabel(
+  jenis: { code: string; name: string } | null,
+  komoditas: string | null,
+) {
+  const jenisLabel = jenis ? getJenisDisplay({ id: 0, ...jenis }).label : null;
+  return [jenisLabel, komoditas].filter(Boolean).join(" · ") || "-";
 }
 
-export function PegawaiTable({ rows, startIndex, loading = false }: PegawaiTableProps) {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white">
-      <table className="w-full min-w-200 text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-300 text-xs font-medium uppercase tracking-wide text-slate-400">
-            <th className="px-6 py-4">No</th>
-            <th className="px-6 py-4">Pegawai</th>
-            <th className="px-6 py-4">Penempatan</th>
-            <th className="px-6 py-4">Posisi</th>
-            <th className="px-6 py-4">Level</th>
-            <th className="px-6 py-4">Status</th>
-            <th className="px-6 py-4 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody className={loading ? "opacity-50" : undefined}>
-          {rows.map((row, index) => (
-            <tr key={row.id} className="border-b border-slate-50 last:border-0">
-              <td className="px-6 py-4">
-                <p className="font-medium text-slate-800">{startIndex + index}</p>
-              </td>
-              <td className="px-6 py-4">
-                <div>
-                  <p className="font-medium text-slate-800">{row.nama_lengkap || row.name}</p>
-                  <p className="text-xs text-slate-400">{row.nik}</p>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div>
-                  <p className="font-medium text-slate-800">
-                    {row.entity?.name ?? "-"}
-                  </p>
-                  {row.entity?.parent?.name && (
-                    <p className="text-xs text-slate-400">
-                      {row.entity.parent.name}
-                    </p>
-                  )}
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <div>
-                  <p className="font-medium text-slate-800">
-                    {row.jabatan?.name ?? "-"}
-                  </p>
-                  <p className="text-xs text-slate-400">{row.jabatan?.job_group?.name ?? "-"}</p>
-                </div>
-              </td>
-              <td className="px-6 py-4">
-                <p className="whitespace-nowrap font-medium text-slate-800">
-                  {row.jabatan?.level_bod ? `BOD-${row.jabatan.level_bod}` : "-"}
-                </p>
-              </td>
-              <td className="px-6 py-4">
-                <span
-                  className={`rounded-full whitespace-nowrap px-3 py-1 text-xs font-medium ${statusBadgeClass(row.status)}`}
-                >
-                  {row.status ?? "-"}
-                </span>
-              </td>
-              <td className="px-6 py-4">
-                <div className="flex justify-end gap-2">
-                  <Link
-                    href={`/pegawai/${row.id}`}
-                    className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-200"
-                  >
-                    Detail
-                  </Link>
-                </div>
-              </td>
-            </tr>
-          ))}
+const col = createDataTableColumnHelper<Pegawai>();
 
-          {rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={7}
-                className="px-6 py-10 text-center text-sm text-slate-400"
-              >
-                {loading
-                  ? "Memuat data pegawai..."
-                  : "Tidak ada pegawai yang cocok dengan pencarian/filter."}
-              </td>
-            </tr>
+/**
+ * Id kolom sengaja sama dengan nilai `sort` di backend (lihat PegawaiSortKey),
+ * jadi `PegawaiList` bisa langsung meneruskannya ke API.
+ */
+function buildColumns(options: PegawaiFilterOptions | null) {
+  const masterOptions = (list: { id: number; name: string }[] | undefined) =>
+    list?.map((item) => ({ value: String(item.id), label: item.name })) ?? [];
+  const valueOptions = (list: string[] | undefined) =>
+    list?.map((v) => ({ value: v, label: v })) ?? [];
+
+  return col.columns([
+    col.accessor("nik", {
+      header: "NIK (SAP)",
+      meta: {
+        filter: { type: "text", placeholder: "Cari kode SAP..." },
+        cellClassName: "whitespace-nowrap font-mono text-xs text-slate-600",
+      },
+    }),
+    col.accessor("nama", {
+      id: "name",
+      header: "Nama Pegawai",
+      meta: { filter: { type: "text", placeholder: "Cari nama..." } },
+      cell: ({ getValue }) => (
+        <span className="font-medium text-slate-800">{getValue()}</span>
+      ),
+    }),
+    col.accessor("penempatanNama", {
+      id: "entity",
+      header: "Entity",
+      meta: {
+        filter: {
+          type: "options",
+          options:
+            options?.entities.map((e) => ({
+              value: e.id,
+              label: e.nama,
+              group: ENTITY_GROUP_LABEL[e.tipe],
+            })) ?? [],
+        },
+      },
+      cell: ({ row }) => (
+        <>
+          <p className="text-slate-700">{row.original.penempatanNama}</p>
+          {row.original.penempatanInduk && (
+            <p className="text-xs text-slate-400">{row.original.penempatanInduk}</p>
           )}
-        </tbody>
-      </table>
-    </div>
+        </>
+      ),
+    }),
+    col.accessor(
+      (row) => operasionalLabel(row.operasionalJenis, row.operasionalKomoditas),
+      {
+        id: "operasional",
+        header: "Entity Operational",
+        meta: {
+          filter: {
+            type: "options",
+            options:
+              options?.operasional.map((o) => ({
+                value: o.key,
+                label: operasionalLabel(o.jenis, o.komoditas),
+              })) ?? [],
+          },
+        },
+        cell: ({ row, getValue }) =>
+          row.original.operasionalJenis || row.original.operasionalKomoditas ? (
+            <span
+              className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                getJenisDisplay(row.original.operasionalJenis ?? undefined).badgeClass
+              }`}
+            >
+              {getValue()}
+            </span>
+          ) : (
+            <span className="text-slate-300">-</span>
+          ),
+      },
+    ),
+    col.accessor("jabatan", {
+      id: "posisi",
+      header: "Posisi",
+      meta: {
+        filter: { type: "text", placeholder: "Cari nama jabatan..." },
+        cellClassName: "text-slate-700",
+      },
+      cell: ({ getValue }) => getValue() ?? "-",
+    }),
+    col.accessor("jobGroup", {
+      id: "job_group",
+      header: "Job Group",
+      meta: {
+        filter: { type: "options", options: masterOptions(options?.jobGroups) },
+        cellClassName: "text-slate-600",
+      },
+      cell: ({ getValue }) => getValue() ?? "-",
+    }),
+    col.accessor("jobFunction", {
+      id: "job_function",
+      header: "Job Function",
+      meta: {
+        filter: { type: "options", options: masterOptions(options?.jobFunctions) },
+        cellClassName: "text-slate-600",
+      },
+      cell: ({ getValue }) => getValue() ?? "-",
+    }),
+    col.accessor("levelBod", {
+      id: "level",
+      header: "Level",
+      meta: {
+        filter: {
+          type: "options",
+          options:
+            options?.levelBod.map((l) => ({ value: String(l), label: `BOD-${l}` })) ??
+            [],
+        },
+        cellClassName: "whitespace-nowrap font-medium text-slate-700",
+      },
+      cell: ({ getValue }) => {
+        const level = getValue();
+        return level ? `BOD-${level}` : "-";
+      },
+    }),
+    col.accessor("golonganPhdp", {
+      id: "golongan_phdp",
+      header: "Gol. PHDP",
+      meta: {
+        filter: { type: "options", options: valueOptions(options?.golonganPhdp) },
+        cellClassName: "whitespace-nowrap text-slate-600",
+      },
+      cell: ({ getValue }) => getValue() ?? "-",
+    }),
+    col.accessor("personGrade", {
+      id: "person_grade",
+      header: "Person Grade",
+      meta: {
+        filter: { type: "options", options: valueOptions(options?.personGrade) },
+        cellClassName: "whitespace-nowrap text-slate-600",
+      },
+      cell: ({ getValue }) => getValue() ?? "-",
+    }),
+    col.display({
+      id: "actions",
+      header: "Aksi",
+      meta: { headerClassName: "text-right", cellClassName: "text-right" },
+      cell: ({ row }) => (
+        <Link
+          href={`/pegawai/${row.original.id}`}
+          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-200"
+        >
+          Detail
+        </Link>
+      ),
+    }),
+  ]);
+}
+
+export function PegawaiTable({
+  rows,
+  rowCount,
+  tableState,
+  loading = false,
+  options,
+}: PegawaiTableProps) {
+  // kolom dibuat ulang hanya saat isi checklist filter selesai dimuat
+  const columns = useMemo(() => buildColumns(options), [options]);
+
+  return (
+    <DataTable
+      columns={columns}
+      data={rows}
+      getRowId={(row) => row.id}
+      rowCount={rowCount}
+      tableState={tableState}
+      loading={loading}
+      emptyMessage="Tidak ada pegawai yang cocok dengan filter."
+      tableClassName="min-w-300"
+    />
   );
 }

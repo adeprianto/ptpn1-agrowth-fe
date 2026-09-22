@@ -6,66 +6,63 @@ import { Boxes, Building2, Factory, Landmark, Plus } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
-import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/http-client";
-import { PegawaiFilterBar } from "./PegawaiFilterBar";
-import { PegawaiTable } from "./PegawaiTable";
-import { getPegawaiList, getPegawaiSummary } from "../api/pegawai";
 import {
-  getEntityOptions,
-  type EntityOption,
-} from "@/features/organisasi/api/entityOptions";
-import type { EmployeeResource, EmployeeSummary } from "@/types/api/employee";
+  columnFiltersToRecord,
+  useDataTableState,
+} from "@/components/shared/data-table";
+import { PegawaiTable } from "./PegawaiTable";
+import {
+  getPegawaiFilterOptions,
+  getPegawaiList,
+  getPegawaiSummary,
+  type Pegawai,
+  type PegawaiFilterOptions,
+  type PegawaiQuery,
+  type PegawaiSortKey,
+  type PegawaiSummary,
+} from "../api/pegawai";
 
-const PAGE_SIZE = 20;
+// helper kecil untuk membaca nilai filter dari state tabel
+const asList = (value: unknown) => (Array.isArray(value) ? (value as string[]) : undefined);
+const asText = (value: unknown) => (typeof value === "string" ? value : undefined);
 
 export function PegawaiList() {
-  const [summary, setSummary] = useState<EmployeeSummary | null>(null);
-  const [penempatanOptions, setPenempatanOptions] = useState<EntityOption[]>([]);
+  const [summary, setSummary] = useState<PegawaiSummary | null>(null);
+  const [options, setOptions] = useState<PegawaiFilterOptions | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [penempatan, setPenempatan] = useState("all");
-  const [level, setLevel] = useState("all");
-  const [page, setPage] = useState(1);
+  const tableState = useDataTableState({
+    defaultSorting: [{ id: "name", desc: false }],
+    defaultPageSize: 10,
+  });
+  const { sorting, columnFilters, pagination } = tableState;
 
   // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
   // Baris lama tetap tampil (redup) selama halaman/filter baru dimuat.
-  const queryKey = [debouncedSearch, penempatan, level, page].join("|");
+  const queryKey = JSON.stringify({ sorting, columnFilters, pagination });
   const [result, setResult] = useState<{
     key: string;
-    rows: EmployeeResource[];
-    meta: PaginationMeta | null;
+    rows: Pegawai[];
+    total: number;
     error: string | null;
   } | null>(null);
   const loading = result?.key !== queryKey;
   const rows = result?.rows ?? [];
-  const meta = result?.meta ?? null;
   const error = result?.key === queryKey ? result.error : null;
 
-  // Tunda pencarian 400ms supaya tidak hit API di setiap ketikan
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  // Ringkasan + opsi penempatan cukup diambil sekali
+  // Ringkasan + isi checklist filter cukup diambil sekali
   useEffect(() => {
     const controller = new AbortController();
     const { signal } = controller;
 
     getPegawaiSummary(signal)
       .then(setSummary)
-      .catch((e: unknown) => {
+      .catch((e) => {
         if (!signal.aborted) console.error(e);
       });
 
-    getEntityOptions(signal)
-      .then(setPenempatanOptions)
-      .catch((e: unknown) => {
+    getPegawaiFilterOptions(signal)
+      .then(setOptions)
+      .catch((e) => {
         if (!signal.aborted) console.error(e);
       });
 
@@ -74,35 +71,43 @@ export function PegawaiList() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const key = [debouncedSearch, penempatan, level, page].join("|");
-    const pick = (v: string) => (v === "all" ? undefined : v);
+    const key = JSON.stringify({ sorting, columnFilters, pagination });
 
-    getPegawaiList(
-      {
-        search: debouncedSearch,
-        entity_id: pick(penempatan),
-        level_bod: pick(level),
-        page,
-        per_page: PAGE_SIZE,
-      },
-      controller.signal,
-    )
+    // id kolom di tabel = nama parameter sort di backend
+    const f = columnFiltersToRecord(columnFilters);
+    const query: PegawaiQuery = {
+      nik: asText(f.nik),
+      name: asText(f.name),
+      posisi: asText(f.posisi),
+      entityIds: asList(f.entity),
+      operasional: asList(f.operasional),
+      jobGroupIds: asList(f.job_group),
+      jobFunctionIds: asList(f.job_function),
+      levelBod: asList(f.level),
+      golonganPhdp: asList(f.golongan_phdp),
+      personGrade: asList(f.person_grade),
+      sort: sorting[0]?.id as PegawaiSortKey | undefined,
+      direction: sorting[0]?.desc ? "desc" : "asc",
+      page: pagination.pageIndex + 1,
+      perPage: pagination.pageSize,
+    };
+
+    getPegawaiList(query, controller.signal)
       .then((res) =>
-        setResult({ key, rows: res.rows, meta: res.meta ?? null, error: null }),
+        setResult({
+          key,
+          rows: res.rows,
+          total: res.meta?.total ?? res.rows.length,
+          error: null,
+        }),
       )
       .catch((e: Error) => {
         if (controller.signal.aborted) return;
-        setResult({ key, rows: [], meta: null, error: e.message });
+        setResult({ key, rows: [], total: 0, error: e.message });
       });
 
     return () => controller.abort();
-  }, [debouncedSearch, penempatan, level, page]);
-
-  // Ganti filter selalu balik ke halaman 1
-  const withPageReset = (setter: (v: string) => void) => (value: string) => {
-    setter(value);
-    setPage(1);
-  };
+  }, [sorting, columnFilters, pagination]);
 
   const formatNumber = (n?: number) =>
     n === undefined ? "-" : n.toLocaleString("id-ID");
@@ -133,35 +138,25 @@ export function PegawaiList() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
         <SummaryStatCard
           label="Total Karyawan"
-          value={formatNumber(summary?.total_karyawan)}
+          value={formatNumber(summary?.totalKaryawan)}
           icon={Boxes}
         />
         <SummaryStatCard
           label="Karyawan HO"
-          value={formatNumber(summary?.total_head_office)}
+          value={formatNumber(summary?.totalHo)}
           icon={Landmark}
         />
         <SummaryStatCard
           label="Karyawan REG"
-          value={formatNumber(summary?.total_regional)}
+          value={formatNumber(summary?.totalRegional)}
           icon={Building2}
         />
         <SummaryStatCard
           label="Karyawan UNIT"
-          value={formatNumber(summary?.total_unit)}
+          value={formatNumber(summary?.totalUnit)}
           icon={Factory}
         />
       </div>
-
-      <PegawaiFilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        penempatanOptions={penempatanOptions}
-        penempatanValue={penempatan}
-        onPenempatanChange={withPageReset(setPenempatan)}
-        levelValue={level}
-        onLevelChange={withPageReset(setLevel)}
-      />
 
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
@@ -169,17 +164,14 @@ export function PegawaiList() {
         </div>
       )}
 
-      <PegawaiTable rows={rows} startIndex={meta?.from ?? 1} loading={loading} />
-
-      {meta && meta.total > 0 && (
-        <Pagination
-          currentPage={meta.current_page}
-          totalPages={meta.last_page}
-          onPageChange={setPage}
-          totalItems={meta.total}
-          pageSize={meta.per_page}
-        />
-      )}
+      <PegawaiTable
+        rows={rows}
+        // selama halaman baru dimuat, total lama tetap dipakai supaya pagination tidak loncat
+        rowCount={result?.total ?? 0}
+        tableState={tableState}
+        loading={loading}
+        options={options}
+      />
     </div>
   );
 }
