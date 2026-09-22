@@ -22,6 +22,7 @@ export interface PegawaiFilters {
   name?: string;
   posisi?: string;
   entityIds?: string[];
+  regionalIds?: string[];
   operasional?: string[];
   jobGroupIds?: string[];
   jobFunctionIds?: string[];
@@ -53,6 +54,7 @@ export async function getPegawaiList(query: PegawaiQuery = {}, signal?: AbortSig
       // Array dikirim apa adanya; http-client merakitnya jadi `entity_id[]=1&entity_id[]=2`,
       // bentuk yang dibaca Laravel sebagai array untuk whereIn.
       entity_id: query.entityIds?.length ? query.entityIds : query.entityId,
+      regional_id: query.regionalIds,
       operasional: query.operasional,
       job_group_id: query.jobGroupIds,
       job_function_id: query.jobFunctionIds,

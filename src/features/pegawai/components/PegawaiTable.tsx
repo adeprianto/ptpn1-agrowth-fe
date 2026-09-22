@@ -44,6 +44,13 @@ function buildChecklistOptions(options: PegawaiFilterOptions | null) {
         label: entity.nama,
         group: ENTITY_TIPE_LABEL[entity.tipe],
       })) ?? [],
+    // Head Office ikut masuk daftar ini karena pegawainya tidak bernaung
+    // di regional mana pun
+    regional:
+      options?.regionals.map((regional) => ({
+        value: regional.id,
+        label: regional.nama,
+      })) ?? [],
     operasional:
       options?.operasional.map((row) => ({
         value: row.key,
@@ -101,11 +108,11 @@ export function createPegawaiTableConfig(
       col.accessor("regional", {
         id: "regional",
         header: "Regional",
-        // Belum ada parameter sort/filter untuk kolom ini di backend, jadi
-        // pengurutannya dimatikan supaya tidak menjanjikan yang tidak bisa
-        // dipenuhi. Nilainya diturunkan di model dari hierarki entity.
-        enableSorting: false,
-        meta: { nowrap: true, cellClassName: "text-slate-700" },
+        meta: {
+          filter: { options: checklist.regional },
+          nowrap: true,
+          cellClassName: "text-slate-700",
+        },
       }),
       col.accessor("penempatanNama", {
         id: "entity",

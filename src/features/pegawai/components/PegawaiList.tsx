@@ -30,6 +30,7 @@ export function PegawaiList() {
           nik: filterText(filters.nik),
           name: filterText(filters.name),
           posisi: filterText(filters.posisi),
+          regionalIds: filterList(filters.regional),
           entityIds: filterList(filters.entity),
           operasional: filterList(filters.operasional),
           jobGroupIds: filterList(filters.job_group),

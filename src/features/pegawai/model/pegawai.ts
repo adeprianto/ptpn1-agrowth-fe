@@ -1,4 +1,5 @@
 import type { BadgeTone } from "@/components/ui";
+import type { EntityType } from "@/types/api/entity";
 import type {
   EmployeeEntity,
   EmployeeFilterOptions,
@@ -87,6 +88,7 @@ export interface PegawaiDetail extends Pegawai {
 /** Isi checklist filter kolom di tabel pegawai. */
 export interface PegawaiFilterOptions {
   entities: { id: string; nama: string; tipe: EntityTipe }[];
+  regionals: { id: string; nama: string; tipe: EntityTipe }[];
   operasional: { key: string; jenis: MasterItem | null; komoditas: string | null }[];
   jobGroups: MasterItem[];
   jobFunctions: MasterItem[];
@@ -185,15 +187,18 @@ export function toPegawaiSummary(resource: EmployeeSummary): PegawaiSummary {
   };
 }
 
+const toEntityOption = (entity: { id: number; name: string; type: EntityType }) => ({
+  id: String(entity.id),
+  nama: entity.name,
+  tipe: ENTITY_TIPE_BY_TYPE[entity.type],
+});
+
 export function toPegawaiFilterOptions(
   resource: EmployeeFilterOptions,
 ): PegawaiFilterOptions {
   return {
-    entities: resource.entities.map((entity) => ({
-      id: String(entity.id),
-      nama: entity.name,
-      tipe: ENTITY_TIPE_BY_TYPE[entity.type],
-    })),
+    entities: resource.entities.map(toEntityOption),
+    regionals: resource.regionals.map(toEntityOption),
     operasional: resource.operasional.map((row) => ({
       key: row.key,
       jenis: row.jenis ? toMasterItem(row.jenis) : null,

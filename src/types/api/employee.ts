@@ -92,6 +92,8 @@ export interface EmployeeSummary {
  */
 export interface EmployeeFilterOptions {
   entities: (MasterRef & { type: EntityType })[];
+  /** Regional tempat pegawai bernaung; Head Office ikut masuk di sini */
+  regionals: (MasterRef & { type: EntityType })[];
   operasional: {
     /** Kunci gabungan jenis+komoditas yang dikirim balik sebagai nilai filter */
     key: string;
@@ -109,6 +111,7 @@ export interface EmployeeFilterOptions {
 export type EmployeeSortKey =
   | "nik"
   | "name"
+  | "regional"
   | "entity"
   | "operasional"
   | "posisi"
