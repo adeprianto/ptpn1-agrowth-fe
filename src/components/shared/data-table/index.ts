@@ -1,16 +1,87 @@
+/**
+ * Tabel data berbasis TanStack Table v9.
+ *
+ * Tiga lapis, pakai sesuai kebutuhan:
+ *
+ * 1. `DataTable` — susunan bawaan (toolbar → tabel → pagination → modal filter).
+ * 2. `DataTableProvider` + sub-komponen — kalau susunannya perlu diatur sendiri.
+ * 3. `defineTableConfig` + `columnPresets` — konfigurasi kolom yang bisa
+ *    dipakai ulang antar modul, dan `useServerDataTable` untuk menyambungkannya
+ *    ke endpoint.
+ */
+
+// Lapisan komponen
 export { DataTable } from "./DataTable";
+export {
+  DataTableProvider,
+  useDataTableContext,
+  type DataTableProviderProps,
+} from "./DataTableContext";
+export {
+  DataTableBody,
+  DataTableContent,
+  DataTableHead,
+} from "./DataTableContent";
+export {
+  DataTableFilterDialog,
+  DataTablePaginationBar,
+} from "./DataTableConnected";
+export {
+  DataTableActiveFilters,
+  DataTableFilterButton,
+  DataTableResetButton,
+  DataTableToolbar,
+} from "./DataTableToolbar";
 export { DataTablePagination } from "./DataTablePagination";
 export { DataTableFilterModal, type FilterField } from "./DataTableFilterModal";
+
+// Definisi kolom
 export {
+  cellClassFromMeta,
   createDataTableColumnHelper,
   dataTableFeatures,
+  headerClassFromMeta,
+  type ColumnAlign,
+  type ColumnFilterConfig,
   type DataTableColumnDef,
   type DataTableColumnMeta,
   type DataTableFeatures,
 } from "./dataTableFeatures";
+export {
+  actionsColumn,
+  badgeColumn,
+  linkColumn,
+  numberColumn,
+  optionsFilter,
+  rowNumberColumn,
+  textFilter,
+  titleColumn,
+  toFilterOptions,
+  toValueOptions,
+} from "./columnPresets";
+
+// Konfigurasi tabel
+export {
+  defineTableConfig,
+  densityCellClass,
+  extendTableConfig,
+  TABLE_CONFIG_DEFAULTS,
+  type TableConfig,
+  type TableDensity,
+} from "./tableConfig";
+
+// State & pengambilan data
 export {
   columnFiltersToRecord,
   DEFAULT_PAGE_SIZE_OPTIONS,
   useDataTableState,
   type DataTableState,
 } from "./useDataTableState";
+export {
+  filterList,
+  filterText,
+  useServerDataTable,
+  type ServerTableParams,
+  type ServerTableResult,
+  type UseServerDataTableReturn,
+} from "./useServerDataTable";

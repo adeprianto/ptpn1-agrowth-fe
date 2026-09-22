@@ -17,16 +17,29 @@ import {
 } from "@tanstack/react-table";
 import type { FilterOption } from "../ColumnHeader";
 
+/** Perataan isi kolom. Dipakai header dan sel sekaligus supaya selalu sejajar. */
+export type ColumnAlign = "left" | "center" | "right";
+
+/** Bentuk filter yang bisa dipasang di sebuah kolom. */
+export type ColumnFilterConfig =
+  | { type: "text"; placeholder?: string }
+  | { type: "options"; options: FilterOption[] };
+
 /**
  * Konfigurasi per kolom yang dibaca `DataTable` lewat `columnDef.meta`.
+ * Semuanya opsional — kolom paling sederhana cukup `header` + `accessor`.
  */
 export interface DataTableColumnMeta {
   /** Judul di header & chip filter aktif; default memakai `header` kalau berupa teks */
   label?: string;
-  /** Filter di panel header: kotak cari teks, atau checklist nilai */
-  filter?:
-    | { type: "text"; placeholder?: string }
-    | { type: "options"; options: FilterOption[] };
+  /** Filter di modal: kotak cari teks, atau checklist nilai */
+  filter?: ColumnFilterConfig;
+  /** Perataan header + sel */
+  align?: ColumnAlign;
+  /** Lebar kolom dalam kelas Tailwind, mis. "w-16" atau "min-w-48" */
+  width?: string;
+  /** Jangan biarkan isi sel terpotong jadi dua baris */
+  nowrap?: boolean;
   headerClassName?: string;
   cellClassName?: string;
 }
@@ -88,4 +101,32 @@ export type DataTableColumnDef<TData extends RowData> = ColumnDef<DataTableFeatu
  */
 export function createDataTableColumnHelper<TData extends RowData>() {
   return createColumnHelper<DataTableFeatures, TData>();
+}
+
+const alignClass: Record<ColumnAlign, string> = {
+  left: "text-left",
+  center: "text-center",
+  right: "text-right",
+};
+
+/** Kelas untuk sel header sebuah kolom, dirakit dari `meta`. */
+export function headerClassFromMeta(meta: DataTableColumnMeta | undefined) {
+  return [
+    meta?.align ? alignClass[meta.align] : null,
+    meta?.width ?? null,
+    meta?.headerClassName ?? null,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+/** Kelas untuk sel isi sebuah kolom, dirakit dari `meta`. */
+export function cellClassFromMeta(meta: DataTableColumnMeta | undefined) {
+  return [
+    meta?.align ? alignClass[meta.align] : null,
+    meta?.nowrap ? "whitespace-nowrap" : null,
+    meta?.cellClassName ?? null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }

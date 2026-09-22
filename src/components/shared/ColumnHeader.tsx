@@ -57,10 +57,20 @@ interface ColumnHeaderProps<K extends string> {
    */
   onFilterClick?: () => void;
   filterActive?: boolean;
+  /** Perataan isi header; samakan dengan perataan selnya */
+  align?: "left" | "center" | "right";
+  /** Padding sel header — diisi `DataTable` mengikuti kerapatan tabel */
+  paddingClass?: string;
   className?: string;
 }
 
 const PANEL_WIDTH = 272;
+
+const justifyClass = {
+  left: "justify-start",
+  center: "justify-center",
+  right: "justify-end",
+} as const;
 
 /**
  * Header kolom tabel dengan sorting + filter bergaya Excel.
@@ -77,6 +87,8 @@ export function ColumnHeader<K extends string>({
   filter,
   onFilterClick,
   filterActive: filterActiveProp,
+  align = "left",
+  paddingClass = "px-4 py-3",
   className = "",
 }: ColumnHeaderProps<K>) {
   const [open, setOpen] = useState(false);
@@ -179,8 +191,8 @@ export function ColumnHeader<K extends string>({
         : ArrowUpDown;
 
   return (
-    <th className={`px-4 py-3 ${className}`}>
-      <div className="flex items-center gap-1">
+    <th className={`${paddingClass} ${className}`}>
+      <div className={`flex items-center gap-1 ${justifyClass[align]}`}>
         {sortable ? (
           <button
             type="button"
