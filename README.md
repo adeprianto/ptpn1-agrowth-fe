@@ -121,32 +121,52 @@ Kolom siap pakai ada di `columnPresets`: `rowNumberColumn`, `numberColumn`,
 `badgeColumn`, `linkColumn`, `titleColumn`, `actionsColumn`. Perilaku per
 kolom diatur lewat `meta`: `filter`, `align`, `width`, `nowrap`, `label`.
 
-### Filter
+### Pencarian & filter kolom
 
-Kolom yang `meta.filter`-nya diisi otomatis mendapat ikon corong di headernya.
-Ikon itu membuka `ColumnFilterModal` **untuk kolom itu saja** — satu modal,
-satu kolom, satu nilai. Filter kolom lain tidak ikut tersentuh. Chip di
-toolbar menampilkan filter yang sedang aktif; klik chip untuk mengubahnya,
-klik tanda silang untuk melepasnya.
-
-Ada dua bentuk filter:
+Dua hal yang berdiri sendiri, dideklarasikan terpisah di `meta`:
 
 ```ts
-meta: { filter: { type: "text", placeholder: "Cari nama..." } }        // kotak cari
-meta: { filter: { type: "options", options: [{ value, label, group? }] } } // checklist
+col.accessor("nama", {
+  header: "Nama Pegawai",
+  meta: {
+    // kotak cari di bawah judul kolom (pencarian teks "mengandung")
+    search: { placeholder: "Cari nama..." },
+  },
+}),
+
+col.accessor("levelBod", {
+  id: "level",
+  header: "Level",
+  meta: {
+    // ikon corong di samping judul -> modal daftar centang
+    filter: { options: [{ value: "1", label: "BOD-1" }] },
+  },
+}),
+```
+
+Sebuah kolom boleh punya keduanya. Nilai filternya disimpan sebagai
+`{ search?: string; values?: string[] }` — kalau dua-duanya terisi, baris
+harus lolos keduanya. Chip di toolbar menampilkannya sebagai dua chip yang
+bisa dilepas satu per satu.
+
+Di `fetcher`, dua helper ini membacanya:
+
+```ts
+filterText(filters.name)   // -> teks dari kotak cari kolom "name"
+filterList(filters.level)  // -> string[] yang dicentang di modal kolom "level"
 ```
 
 `ColumnFilterModal` tidak bergantung pada tabel, jadi bisa dipakai sendiri:
 
 ```tsx
-const [nama, setNama] = useState<string>();
+const [level, setLevel] = useState<string[]>();
 
 <ColumnFilterModal
   open={open}
-  label="Nama Pegawai"
-  config={{ type: "text", placeholder: "Cari nama..." }}
-  value={nama}
-  onApply={(next) => setNama(next as string | undefined)}  // undefined = filter dihapus
+  label="Level"
+  config={{ options: [{ value: "1", label: "BOD-1" }] }}
+  value={level}
+  onApply={setLevel}          // undefined = filter dihapus
   onClose={() => setOpen(false)}
 />
 ```
@@ -179,8 +199,13 @@ const { tableState, rows, total, loading, error, refresh, startIndex } =
   });
 ```
 
-Id kolom sengaja disamakan dengan nama parameter sort/filter di backend,
-jadi isi `filters` bisa langsung diteruskan ke fungsi API.
+Id kolom sengaja disamakan dengan nama parameter sort/filter di backend
+(lihat `SORTABLE` di tiap controller), jadi isi `filters`, `sort`, dan
+`direction` bisa langsung diteruskan ke fungsi API.
+
+Nilai array dikirim `http-client` sebagai `key[]=a&key[]=b` — bentuk yang
+dibaca Laravel sebagai array untuk `whereIn`. Jangan menggabungnya sendiri
+jadi `"a,b"`; backend akan membacanya sebagai satu nilai.
 
 ## Hook bersama
 

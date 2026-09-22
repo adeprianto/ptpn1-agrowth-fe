@@ -1,63 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Modal, ModalActions, SearchInput } from "@/components/ui";
+import { Button, Modal, ModalActions } from "@/components/ui";
 import { FilterChecklist } from "./FilterChecklist";
 import type { ColumnFilterConfig } from "./dataTableFeatures";
 
-/**
- * Nilai filter satu kolom.
- * - `string`  -> filter teks, baris lolos kalau nilainya mengandung teks ini
- * - `string[]` -> filter checklist, baris lolos kalau nilainya ada di daftar
- */
-export type ColumnFilterValue = string | string[];
-
-/** true kalau nilainya benar-benar menyaring sesuatu. */
-export function isFilterFilled(value: ColumnFilterValue | undefined): boolean {
-  return Array.isArray(value) ? value.length > 0 : Boolean(value?.trim());
-}
-
 export interface ColumnFilterModalProps {
   open: boolean;
-  /** Judul kolom yang sedang difilter, mis. "Nama Pegawai" */
+  /** Judul kolom yang sedang difilter, mis. "Level" */
   label: string;
-  /** Bentuk filternya: kotak cari teks, atau checklist nilai */
+  /** Daftar pilihan yang bisa dicentang */
   config: ColumnFilterConfig;
-  /** Filter yang sedang berlaku untuk kolom ini; kosongkan kalau belum ada */
-  value?: ColumnFilterValue;
+  /** Nilai yang sedang tercentang; kosongkan kalau belum ada filter */
+  value?: string[];
   /** Dipanggil saat Terapkan. `undefined` berarti filter kolom ini dihapus. */
-  onApply: (value: ColumnFilterValue | undefined) => void;
+  onApply: (values: string[] | undefined) => void;
   onClose: () => void;
 }
 
 /**
- * Modal filter untuk SATU kolom.
+ * Modal daftar centang untuk SATU kolom, dibuka lewat ikon corong di judul
+ * kolomnya. Di dalamnya ada kotak cari untuk menyaring daftar pilihan —
+ * berguna saat pilihannya ratusan (mis. daftar unit).
  *
  * Perubahan ditampung sebagai draft dan baru berlaku saat "Terapkan", jadi
  * data hanya diambil ulang sekali. Isinya selalu mulai dari filter yang
  * sedang berlaku karena modal ini baru dirender ketika `open` bernilai true.
  *
- * Bisa dipakai lepas dari `DataTable` — cukup pegang nilainya sendiri:
+ * Tidak bergantung pada `DataTable`, jadi bisa dipakai lepas:
  *
- * @example Filter teks
- * const [nama, setNama] = useState<string>();
+ * @example
+ * const [level, setLevel] = useState<string[]>();
  *
- * <ColumnFilterModal
- *   open={open}
- *   label="Nama Pegawai"
- *   config={{ type: "text", placeholder: "Cari nama..." }}
- *   value={nama}
- *   onApply={(next) => setNama(next as string | undefined)}
- *   onClose={() => setOpen(false)}
- * />
- *
- * @example Filter checklist
  * <ColumnFilterModal
  *   open={open}
  *   label="Level"
- *   config={{ type: "options", options: [{ value: "1", label: "BOD-1" }] }}
+ *   config={{ options: [{ value: "1", label: "BOD-1" }] }}
  *   value={level}
- *   onApply={(next) => setLevel(next as string[] | undefined)}
+ *   onApply={setLevel}
  *   onClose={() => setOpen(false)}
  * />
  */
@@ -76,20 +56,11 @@ function OpenColumnFilterModal({
   onApply,
   onClose,
 }: Omit<ColumnFilterModalProps, "open">) {
-  const [draft, setDraft] = useState<ColumnFilterValue>(
-    () => value ?? (config.type === "options" ? [] : ""),
-  );
-
-  const filled = isFilterFilled(draft);
+  const [draft, setDraft] = useState<string[]>(() => value ?? []);
 
   function apply() {
-    if (!filled) {
-      // filter kosong = kolom ini tidak lagi menyaring apa pun
-      onApply(undefined);
-    } else {
-      onApply(typeof draft === "string" ? draft.trim() : draft);
-    }
-
+    // tidak ada yang dicentang = kolom ini tidak lagi menyaring apa pun
+    onApply(draft.length > 0 ? draft : undefined);
     onClose();
   }
 
@@ -104,19 +75,11 @@ function OpenColumnFilterModal({
       onClose={onClose}
       size="md"
       title={`Filter ${label}`}
-      description={
-        config.type === "text"
-          ? "Baris ditampilkan kalau isinya mengandung teks yang dicari."
-          : "Centang nilai yang ingin ditampilkan."
-      }
+      description="Centang nilai yang ingin ditampilkan."
       footer={
         <ModalActions
           secondary={
-            <Button
-              variant="ghost"
-              disabled={!isFilterFilled(value)}
-              onClick={clear}
-            >
+            <Button variant="ghost" disabled={!value?.length} onClick={clear}>
               Hapus filter
             </Button>
           }
@@ -124,29 +87,19 @@ function OpenColumnFilterModal({
           <Button variant="secondary" onClick={onClose}>
             Batal
           </Button>
-          <Button onClick={apply}>Terapkan</Button>
+          <Button onClick={apply}>
+            Terapkan{draft.length > 0 ? ` (${draft.length})` : ""}
+          </Button>
         </ModalActions>
       }
     >
-      {config.type === "text" ? (
-        <SearchInput
-          autoFocus
-          value={typeof draft === "string" ? draft : ""}
-          placeholder={config.placeholder ?? "Cari..."}
-          onValueChange={setDraft}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") apply();
-          }}
-        />
-      ) : (
-        <FilterChecklist
-          autoFocus
-          options={config.options}
-          selected={Array.isArray(draft) ? draft : []}
-          onChange={setDraft}
-          listClassName="max-h-80"
-        />
-      )}
+      <FilterChecklist
+        autoFocus
+        options={config.options}
+        selected={draft}
+        onChange={setDraft}
+        listClassName="max-h-80"
+      />
     </Modal>
   );
 }

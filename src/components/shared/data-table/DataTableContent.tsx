@@ -3,6 +3,7 @@
 import { cn } from "@/lib/cn";
 import { ColumnHeader } from "./ColumnHeader";
 import { useDataTableContext } from "./DataTableContext";
+import { DataTableSearchRow } from "./DataTableSearchRow";
 import {
   cellClassFromMeta,
   headerClassFromMeta,
@@ -46,6 +47,7 @@ export function DataTableHead() {
                     : undefined
                 }
                 // ikon corong membuka modal filter dan menyorot kolom ini
+                // ikon corong hanya untuk kolom yang punya daftar centang
                 onFilterClick={meta?.filter ? () => openFilter(column.id) : undefined}
                 filterActive={activeFilterIds.has(column.id)}
               />
@@ -53,6 +55,9 @@ export function DataTableHead() {
           })}
         </tr>
       ))}
+
+      {/* kotak cari per kolom, tepat di bawah judulnya */}
+      <DataTableSearchRow />
     </thead>
   );
 }

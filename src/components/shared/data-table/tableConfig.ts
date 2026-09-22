@@ -80,3 +80,14 @@ export const densityCellClass: Record<TableDensity, string> = {
   compact: "px-4 py-2.5",
   normal: "px-6 py-4",
 };
+
+/**
+ * Padding kiri-kanan saja, untuk baris yang paddingnya vertikal sendiri
+ * (mis. baris kotak cari). Dipisah karena menumpuk `py-4` dan `py-2` dalam
+ * satu className tidak bisa diandalkan — yang menang urutan di CSS Tailwind,
+ * bukan urutan penulisan.
+ */
+export const densityPaddingXClass: Record<TableDensity, string> = {
+  compact: "px-4",
+  normal: "px-6",
+};

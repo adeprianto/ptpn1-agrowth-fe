@@ -39,11 +39,15 @@ export function RegionalList() {
   const { tableState, rows, total, loading, error, refresh, startIndex } =
     useServerDataTable<Regional>({
       defaultSorting: [{ id: "name", desc: false }],
-      fetcher: ({ filters, page, perPage }, signal) =>
-        // backend mencari di nama maupun kode lewat satu parameter `search`
-        getRegionals({ search: filterText(filters.name), page, perPage }, signal).then(
-          (res) => ({ rows: res.rows, total: res.meta?.total ?? res.rows.length }),
-        ),
+      fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
+        // id kolom di tabel = nama parameter sort/filter di backend
+        getRegionals(
+          { nama: filterText(filters.name), sort, direction, page, perPage },
+          signal,
+        ).then((res) => ({
+          rows: res.rows,
+          total: res.meta?.total ?? res.rows.length,
+        })),
     });
 
   const { data: summary } = useAsyncData(getRegionalSummary, {

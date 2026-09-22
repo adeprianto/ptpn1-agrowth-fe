@@ -8,9 +8,18 @@ import {
 } from "../model/penyelenggara";
 
 export interface PenyelenggaraQuery {
+  /** Pencarian gabungan nama + kota + email */
   search?: string;
-  tipe?: VendorType;
+  /** Kotak cari per kolom */
+  nama?: string;
+  kota?: string;
+  telepon?: string;
+  /** Daftar centang — boleh lebih dari satu nilai */
+  tipe?: VendorType[];
+  status?: string[];
   isLpp?: boolean;
+  sort?: string;
+  direction?: "asc" | "desc";
   page?: number;
   perPage?: number;
 }
@@ -24,8 +33,14 @@ export async function getPenyelenggaraList(
     "/api/vendors",
     {
       search: query.search,
+      name: query.nama,
+      city: query.kota,
+      phone: query.telepon,
       classification: query.tipe,
+      status: query.status,
       is_lpp: query.isLpp,
+      sort: query.sort,
+      direction: query.direction,
       page: query.page,
       per_page: query.perPage,
     },

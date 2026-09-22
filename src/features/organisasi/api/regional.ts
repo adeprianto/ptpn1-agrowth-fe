@@ -11,7 +11,13 @@ import {
 import { toUnit, type Unit } from "../model/unit";
 
 export interface RegionalQuery {
+  /** Pencarian gabungan nama + kode */
   search?: string;
+  /** Kotak cari per kolom */
+  nama?: string;
+  kode?: string;
+  sort?: string;
+  direction?: "asc" | "desc";
   page?: number;
   perPage?: number;
 }
@@ -20,7 +26,15 @@ export interface RegionalQuery {
 export async function getRegionals(query: RegionalQuery = {}, signal?: AbortSignal) {
   const { data, meta } = await apiGet<RegionalResource[]>(
     "/api/regionals",
-    { search: query.search, page: query.page, per_page: query.perPage },
+    {
+      search: query.search,
+      name: query.nama,
+      code: query.kode,
+      sort: query.sort,
+      direction: query.direction,
+      page: query.page,
+      per_page: query.perPage,
+    },
     signal,
   );
 

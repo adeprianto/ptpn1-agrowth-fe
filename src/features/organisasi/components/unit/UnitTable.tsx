@@ -8,9 +8,7 @@ import {
   DataTable,
   defineTableConfig,
   numberColumn,
-  optionsFilter,
   rowNumberColumn,
-  textFilter,
   type DataTableState,
   type TableConfig,
 } from "@/components/shared/data-table";
@@ -75,9 +73,9 @@ export function createUnitTableConfig({
     columns: col.columns([
       rowNumberColumn<Unit>(startIndex),
       col.accessor("nama", {
-        id: "search",
+        id: "name",
         header: "Unit",
-        meta: { filter: textFilter("Cari nama atau kode unit...") },
+        meta: { search: { placeholder: "Cari nama atau kode unit..." } },
         cell: ({ row }) => {
           // Ikon unit mengikuti kategori operasional pertamanya
           const primary = getJenisDisplay(row.original.jenis[0]);
@@ -101,18 +99,21 @@ export function createUnitTableConfig({
       col.accessor((row) => row.regionalId ?? "", {
         id: "regional_id",
         header: "Regional",
-        meta: { filter: optionsFilter(asOptions(regionalOptions)) },
+        meta: {
+          search: { placeholder: "Cari regional..." },
+          filter: { options: asOptions(regionalOptions) },
+        },
         cell: ({ row }) => (
           <span className="flex items-center gap-1.5 text-slate-500">
             <MapPin className="h-4 w-4 text-slate-300" />
-            {row.original.regionalNama ?? "-"}
+            {row.original.regionalNama ?? "-" }
           </span>
         ),
       }),
       col.display({
         id: "operational_category_id",
         header: "Kategori",
-        meta: { label: "Kategori", filter: optionsFilter(asOptions(jenisOptions)) },
+        meta: { label: "Kategori", filter: { options: asOptions(jenisOptions) } },
         cell: ({ row }) => (
           <BadgeList
             items={row.original.jenis}
@@ -126,7 +127,7 @@ export function createUnitTableConfig({
       col.display({
         id: "business_type_id",
         header: "Komoditas",
-        meta: { label: "Komoditas", filter: optionsFilter(asOptions(komoditasOptions)) },
+        meta: { label: "Komoditas", filter: { options: asOptions(komoditasOptions) } },
         cell: ({ row }) => (
           <BadgeList
             items={row.original.komoditas}

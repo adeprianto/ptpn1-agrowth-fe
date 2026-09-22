@@ -9,10 +9,18 @@ import {
 } from "../model/unit";
 
 export interface UnitQuery {
+  /** Pencarian gabungan nama + kode */
   search?: string;
-  regionalId?: string;
-  jenisId?: string;
-  komoditasId?: string;
+  /** Kotak cari per kolom */
+  nama?: string;
+  kode?: string;
+  regional?: string;
+  /** Daftar centang — boleh lebih dari satu nilai */
+  regionalIds?: string[];
+  jenisIds?: string[];
+  komoditasIds?: string[];
+  sort?: string;
+  direction?: "asc" | "desc";
   page?: number;
   perPage?: number;
 }
@@ -23,9 +31,14 @@ export async function getUnits(query: UnitQuery = {}, signal?: AbortSignal) {
     "/api/units",
     {
       search: query.search,
-      regional_id: query.regionalId,
-      operational_category_id: query.jenisId,
-      business_type_id: query.komoditasId,
+      name: query.nama,
+      code: query.kode,
+      regional: query.regional,
+      regional_id: query.regionalIds,
+      operational_category_id: query.jenisIds,
+      business_type_id: query.komoditasIds,
+      sort: query.sort,
+      direction: query.direction,
       page: query.page,
       per_page: query.perPage,
     },

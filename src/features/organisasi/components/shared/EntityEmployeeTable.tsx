@@ -8,7 +8,6 @@ import {
   defineTableConfig,
   filterText,
   rowNumberColumn,
-  textFilter,
   titleColumn,
   useServerDataTable,
   type TableConfig,
@@ -40,7 +39,7 @@ export function createEntityEmployeeTableConfig(
         header: "Pegawai",
         value: (row) => row.nama,
         subtitle: (row) => row.nik,
-        filter: textFilter("Cari nama atau kode SAP..."),
+        search: { placeholder: "Cari nama atau kode SAP..." },
       }),
       col.accessor("jabatan", {
         id: "posisi",

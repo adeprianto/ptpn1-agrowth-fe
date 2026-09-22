@@ -17,6 +17,7 @@ export {
   useDataTableContext,
   type DataTableProviderProps,
   type FilterField,
+  type SearchField,
 } from "./DataTableContext";
 export {
   DataTableBody,
@@ -35,7 +36,6 @@ export {
 export { DataTablePagination, getPageNumbers } from "./DataTablePagination";
 export {
   ColumnHeader,
-  type ColumnFilter,
   type FilterOption,
   type SortDirection,
   type SortState,
@@ -43,10 +43,9 @@ export {
 export { FilterChecklist } from "./FilterChecklist";
 export {
   ColumnFilterModal,
-  isFilterFilled,
   type ColumnFilterModalProps,
-  type ColumnFilterValue,
 } from "./ColumnFilterModal";
+export { DataTableSearchRow } from "./DataTableSearchRow";
 
 // Definisi kolom
 export {
@@ -54,8 +53,11 @@ export {
   createDataTableColumnHelper,
   dataTableFeatures,
   headerClassFromMeta,
+  isFilterActive,
   type ColumnAlign,
   type ColumnFilterConfig,
+  type ColumnFilterValue,
+  type ColumnSearchConfig,
   type DataTableColumnDef,
   type DataTableColumnMeta,
   type DataTableFeatures,
@@ -65,9 +67,7 @@ export {
   badgeColumn,
   linkColumn,
   numberColumn,
-  optionsFilter,
   rowNumberColumn,
-  textFilter,
   titleColumn,
   toFilterOptions,
   toValueOptions,
@@ -77,6 +77,7 @@ export {
 export {
   defineTableConfig,
   densityCellClass,
+  densityPaddingXClass,
   extendTableConfig,
   TABLE_CONFIG_DEFAULTS,
   type TableConfig,

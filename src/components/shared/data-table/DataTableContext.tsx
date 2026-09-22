@@ -8,15 +8,18 @@ import {
   type ReactNode,
 } from "react";
 import { useTable, type ReactTable, type RowData } from "@tanstack/react-table";
-import type { ColumnFilterValue } from "./ColumnFilterModal";
 import {
   dataTableFeatures,
+  isFilterActive,
   type ColumnFilterConfig,
+  type ColumnFilterValue,
+  type ColumnSearchConfig,
   type DataTableColumnMeta,
   type DataTableFeatures,
 } from "./dataTableFeatures";
 import {
   densityCellClass,
+  densityPaddingXClass,
   TABLE_CONFIG_DEFAULTS,
   type TableConfig,
   type TableDensity,
@@ -36,12 +39,19 @@ export interface ColumnLike {
   columnDef: { header?: unknown; meta?: unknown };
 }
 
-/** Satu kolom yang bisa difilter, sudah siap diberikan ke modal filter. */
+/** Satu kolom yang punya daftar centang, siap diberikan ke modal filter. */
 export interface FilterField {
   /** Id kolom, sekaligus key di `columnFilters` */
   id: string;
   label: string;
   config: ColumnFilterConfig;
+}
+
+/** Satu kolom yang punya kotak cari di bawah judulnya. */
+export interface SearchField {
+  id: string;
+  label: string;
+  config: ColumnSearchConfig;
 }
 
 interface DataTableContextValue {
@@ -58,18 +68,26 @@ interface DataTableContextValue {
   density: TableDensity;
   /** Kelas padding sel sesuai kerapatan tabel */
   cellPaddingClass: string;
+  /** Padding kiri-kanan saja, untuk baris yang mengatur padding vertikalnya sendiri */
+  cellPaddingXClass: string;
   pageSizeOptions: number[];
-  /** Kolom yang punya konfigurasi filter */
+  /** Kolom yang punya daftar centang (ikon corong + modal) */
   filterFields: FilterField[];
+  /** Kolom yang punya kotak cari di bawah judulnya */
+  searchFields: SearchField[];
   /** Kolom yang modal filternya sedang terbuka; null = tidak ada */
   openFilterField: FilterField | null;
-  /** Buka modal filter untuk satu kolom */
+  /** Buka modal daftar centang untuk satu kolom */
   openFilter: (columnId: string) => void;
   closeFilter: () => void;
   /** Filter yang sedang berlaku untuk sebuah kolom */
   filterValueOf: (columnId: string) => ColumnFilterValue | undefined;
-  /** Pasang atau hapus (`undefined`) filter satu kolom */
-  setColumnFilter: (columnId: string, value: ColumnFilterValue | undefined) => void;
+  /** Isi kotak cari satu kolom; teks kosong menghapus bagian pencariannya */
+  setColumnSearch: (columnId: string, keyword: string) => void;
+  /** Isi daftar centang satu kolom; `undefined` menghapus bagian centangnya */
+  setColumnValues: (columnId: string, values: string[] | undefined) => void;
+  /** Hapus seluruh filter satu kolom (kotak cari sekaligus centangnya) */
+  clearColumnFilter: (columnId: string) => void;
   /** Judul kolom untuk header, chip filter, dan label modal */
   columnLabel: (column: ColumnLike) => string;
 }
@@ -152,6 +170,9 @@ export function DataTableProvider<TRow extends RowData>({
     columns,
     data,
     getRowId,
+    // semua kolom memakai cara saring yang sama: teks dari kotak cari +
+    // nilai dari daftar centang (lihat filterFn_column)
+    defaultColumn: { filterFn: "column" },
     state: {
       sorting: state.sorting,
       columnFilters: state.columnFilters,
@@ -173,12 +194,40 @@ export function DataTableProvider<TRow extends RowData>({
   const openFilter = useCallback((columnId: string) => setFilterColumnId(columnId), []);
   const closeFilter = useCallback(() => setFilterColumnId(null), []);
 
-  const filterFields: FilterField[] = table.getAllLeafColumns().flatMap((column) => {
+  const leafColumns = table.getAllLeafColumns();
+
+  const filterFields: FilterField[] = leafColumns.flatMap((column) => {
     const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
     return meta?.filter
       ? [{ id: column.id, label: labelOf(column), config: meta.filter }]
       : [];
   });
+
+  const searchFields: SearchField[] = leafColumns.flatMap((column) => {
+    const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
+    return meta?.search
+      ? [{ id: column.id, label: labelOf(column), config: meta.search }]
+      : [];
+  });
+
+  /**
+   * Ubah satu bagian filter kolom tanpa menyentuh kolom lain maupun bagian
+   * lain dari kolom itu sendiri. Kalau setelah diubah kolom itu tidak lagi
+   * menyaring apa pun, entri filternya dibuang supaya chip ikut hilang.
+   */
+  const patchColumnFilter = (
+    columnId: string,
+    patch: Partial<ColumnFilterValue>,
+  ) =>
+    state.setColumnFilters((previous) => {
+      const current = previous.find((filter) => filter.id === columnId)?.value as
+        | ColumnFilterValue
+        | undefined;
+      const others = previous.filter((filter) => filter.id !== columnId);
+      const next: ColumnFilterValue = { ...current, ...patch };
+
+      return isFilterActive(next) ? [...others, { id: columnId, value: next }] : others;
+    });
 
   const totalRows = isServer
     ? (rowCount ?? 0)
@@ -197,8 +246,10 @@ export function DataTableProvider<TRow extends RowData>({
     tableClassName: settings.tableClassName,
     density: settings.density,
     cellPaddingClass: densityCellClass[settings.density],
+    cellPaddingXClass: densityPaddingXClass[settings.density],
     pageSizeOptions: [...settings.pageSizeOptions],
     filterFields,
+    searchFields,
     openFilterField:
       filterFields.find((field) => field.id === filterColumnId) ?? null,
     openFilter,
@@ -207,11 +258,14 @@ export function DataTableProvider<TRow extends RowData>({
       state.columnFilters.find((filter) => filter.id === columnId)?.value as
         | ColumnFilterValue
         | undefined,
-    setColumnFilter: (columnId, value) =>
-      state.setColumnFilters((previous) => {
-        const others = previous.filter((filter) => filter.id !== columnId);
-        return value === undefined ? others : [...others, { id: columnId, value }];
-      }),
+    setColumnSearch: (columnId, keyword) =>
+      patchColumnFilter(columnId, { search: keyword.trim() || undefined }),
+    setColumnValues: (columnId, values) =>
+      patchColumnFilter(columnId, { values: values?.length ? values : undefined }),
+    clearColumnFilter: (columnId) =>
+      state.setColumnFilters((previous) =>
+        previous.filter((filter) => filter.id !== columnId),
+      ),
     columnLabel: labelOf,
   };
 

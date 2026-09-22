@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SortingState } from "@tanstack/react-table";
+import type { ColumnFilterValue } from "./dataTableFeatures";
 import {
   columnFiltersToRecord,
   useDataTableState,
@@ -156,10 +157,27 @@ export function useServerDataTable<TRow>({
   };
 }
 
-/** Baca nilai filter teks dari `params.filters`. */
-export const filterText = (value: unknown): string | undefined =>
-  typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+/**
+ * Baca teks dari kotak cari sebuah kolom.
+ *
+ * @example
+ * fetcher: ({ filters }, signal) =>
+ *   getUnits({ search: filterText(filters.name) }, signal)
+ */
+export const filterText = (value: unknown): string | undefined => {
+  const keyword = (value as ColumnFilterValue | undefined)?.search?.trim();
+  return keyword ? keyword : undefined;
+};
 
-/** Baca nilai filter checklist dari `params.filters`. */
-export const filterList = (value: unknown): string[] | undefined =>
-  Array.isArray(value) && value.length > 0 ? (value as string[]) : undefined;
+/**
+ * Baca nilai yang dicentang di modal filter sebuah kolom.
+ * Hasilnya array — kirim apa adanya, `http-client` merakitnya jadi `key[]=`.
+ *
+ * @example
+ * fetcher: ({ filters }, signal) =>
+ *   getUnits({ regionalIds: filterList(filters.regional_id) }, signal)
+ */
+export const filterList = (value: unknown): string[] | undefined => {
+  const values = (value as ColumnFilterValue | undefined)?.values;
+  return values?.length ? values : undefined;
+};

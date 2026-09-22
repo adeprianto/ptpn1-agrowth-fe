@@ -3,60 +3,104 @@
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 import { useDataTableContext } from "./DataTableContext";
+import type { ColumnFilterValue } from "./dataTableFeatures";
 
-function describeFilter(value: unknown) {
-  if (Array.isArray(value)) return `${value.length} dipilih`;
-  return `"${String(value)}"`;
+interface ChipProps {
+  label: string;
+  /** Diisi kalau chip bisa diklik untuk membuka kembali modal filternya */
+  onOpen?: () => void;
+  onRemove: () => void;
+  removeLabel: string;
+}
+
+function FilterChip({ label, onOpen, onRemove, removeLabel }: ChipProps) {
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-1 pr-1.5 text-xs font-medium text-emerald-700">
+      {onOpen ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="rounded-full px-2 py-0.5 hover:bg-emerald-100"
+        >
+          {label}
+        </button>
+      ) : (
+        <span className="px-2 py-0.5">{label}</span>
+      )}
+
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={removeLabel}
+        className="rounded-full p-0.5 hover:bg-emerald-100"
+      >
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  );
 }
 
 /**
- * Deretan chip filter yang sedang aktif; tiap chip bisa dilepas satu-satu,
- * atau diklik untuk membuka kembali modal filter kolomnya.
+ * Chip untuk tiap filter yang sedang aktif. Pencarian dan daftar centang
+ * dapat chip sendiri-sendiri supaya bisa dilepas satu per satu.
  */
 export function DataTableActiveFilters() {
-  const { state, table, columnLabel, openFilter } = useDataTableContext();
+  const {
+    state,
+    columnLabel,
+    table,
+    filterFields,
+    openFilter,
+    setColumnSearch,
+    setColumnValues,
+  } = useDataTableContext();
 
   if (state.columnFilters.length === 0) {
     return (
       <p className="text-slate-400">
-        Klik judul kolom untuk mengurutkan, atau ikon corong untuk memfilter.
+        Ketik di kotak bawah judul kolom untuk mencari, atau klik ikon corong
+        untuk memfilter.
       </p>
     );
   }
 
+  const hasChecklist = (columnId: string) =>
+    filterFields.some((field) => field.id === columnId);
+
   return (
     <>
       <span className="text-slate-500">Filter aktif:</span>
-      {state.columnFilters.map((filter) => {
+
+      {state.columnFilters.flatMap((filter) => {
         const column = table.getColumn(filter.id);
         const label = column ? columnLabel(column) : filter.id;
+        const value = filter.value as ColumnFilterValue;
+        const chips: ReactNode[] = [];
 
-        return (
-          <span
-            key={filter.id}
-            className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-1 pr-1.5 text-xs font-medium text-emerald-700"
-          >
-            <button
-              type="button"
-              onClick={() => openFilter(filter.id)}
-              className="rounded-full px-2 py-0.5 hover:bg-emerald-100"
-            >
-              {label}: {describeFilter(filter.value)}
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                state.setColumnFilters((prev) =>
-                  prev.filter((f) => f.id !== filter.id),
-                )
-              }
-              aria-label={`Hapus filter ${label}`}
-              className="rounded-full p-0.5 hover:bg-emerald-100"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </span>
-        );
+        if (value?.search) {
+          chips.push(
+            <FilterChip
+              key={`${filter.id}-search`}
+              label={`${label}: "${value.search}"`}
+              removeLabel={`Hapus pencarian ${label}`}
+              onRemove={() => setColumnSearch(filter.id, "")}
+            />,
+          );
+        }
+
+        if (value?.values?.length) {
+          chips.push(
+            <FilterChip
+              key={`${filter.id}-values`}
+              label={`${label}: ${value.values.length} dipilih`}
+              removeLabel={`Hapus filter ${label}`}
+              onOpen={hasChecklist(filter.id) ? () => openFilter(filter.id) : undefined}
+              onRemove={() => setColumnValues(filter.id, undefined)}
+            />,
+          );
+        }
+
+        return chips;
       })}
     </>
   );
@@ -82,18 +126,19 @@ export function DataTableResetButton() {
 /**
  * Baris di atas tabel: chip filter yang sedang aktif dan tombol reset.
  *
- * Filter dipasang lewat ikon corong di header masing-masing kolom, jadi
- * baris ini hanya menampilkan hasilnya.
+ * Filter dipasang dari header kolom — kotak cari di bawah judulnya, atau ikon
+ * corong untuk daftar centang — jadi baris ini hanya menampilkan hasilnya.
  *
  * @example Tambahkan kontrol sendiri di sisi kiri
  * <DataTableToolbar>
- *   <SearchInput value={search} onValueChange={setSearch} />
+ *   <ButtonLink href="/pegawai/create">Tambah</ButtonLink>
  * </DataTableToolbar>
  */
 export function DataTableToolbar({ children }: { children?: ReactNode }) {
-  const { filterFields } = useDataTableContext();
+  const { filterFields, searchFields } = useDataTableContext();
 
-  if (filterFields.length === 0) return children ? <div>{children}</div> : null;
+  const hasFilters = filterFields.length > 0 || searchFields.length > 0;
+  if (!hasFilters) return children ? <div>{children}</div> : null;
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">

@@ -7,9 +7,7 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
-  optionsFilter,
   rowNumberColumn,
-  textFilter,
   titleColumn,
   type DataTableState,
   type TableConfig,
@@ -52,19 +50,19 @@ export function createPenyelenggaraTableConfig({
     columns: col.columns([
       rowNumberColumn<Penyelenggara>(startIndex),
       titleColumn<Penyelenggara>({
-        id: "search",
+        id: "name",
         header: "Nama",
         value: (row) => row.nama,
         subtitle: (row) =>
           row.picNama
-            ? `PIC: ${row.picNama}${row.picJabatan ? ` · ${row.picJabatan}` : ""}`
+            ? `PIC: ${row.picNama}${row.picJabatan ? ` · ${row.picJabatan}` : "" }`
             : null,
-        filter: textFilter("Cari nama penyelenggara..."),
+        search: { placeholder: "Cari nama penyelenggara..." },
       }),
       col.accessor((row) => row.tipe ?? "", {
         id: "classification",
         header: "Jenis",
-        meta: { label: "Jenis", filter: optionsFilter(TIPE_OPTIONS), nowrap: true },
+        meta: { label: "Jenis", filter: { options: TIPE_OPTIONS }, nowrap: true },
         cell: ({ row }) =>
           row.original.tipe ? (
             <Badge tone={PENYELENGGARA_TIPE_TONE[row.original.tipe]}>
@@ -75,8 +73,9 @@ export function createPenyelenggaraTableConfig({
           ),
       }),
       col.accessor((row) => row.telepon ?? "", {
-        id: "kontak",
+        id: "phone",
         header: "Kontak",
+        meta: { search: { placeholder: "Cari telepon..." } },
         cell: ({ row }) => (
           <>
             <p className="whitespace-nowrap text-slate-700">
@@ -87,8 +86,9 @@ export function createPenyelenggaraTableConfig({
         ),
       }),
       col.accessor((row) => row.kota ?? "", {
-        id: "kota",
+        id: "city",
         header: "Kota",
+        meta: { search: { placeholder: "Cari kota..." } },
         cell: ({ row }) => (
           <>
             <p className="text-slate-700">{orDash(row.original.kota)}</p>
@@ -109,10 +109,10 @@ export function createPenyelenggaraTableConfig({
       col.accessor((row) => (row.aktif ? "1" : "0"), {
         id: "status",
         header: "Status",
-        meta: { label: "Status", filter: optionsFilter(STATUS_OPTIONS), nowrap: true },
+        meta: { label: "Status", filter: { options: STATUS_OPTIONS }, nowrap: true },
         cell: ({ row }) => (
-          <Badge tone={row.original.aktif ? "emerald" : "rose"}>
-            {row.original.aktif ? "Aktif" : "Non-aktif"}
+          <Badge tone={row.original.aktif ? "emerald" : "rose" }>
+            {row.original.aktif ? "Aktif" : "Non-aktif" }
           </Badge>
         ),
       }),

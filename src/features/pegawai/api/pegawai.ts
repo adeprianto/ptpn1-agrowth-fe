@@ -50,16 +50,15 @@ export async function getPegawaiList(query: PegawaiQuery = {}, signal?: AbortSig
       nik: query.nik,
       name: query.name,
       posisi: query.posisi,
-      // entityId tunggal dan entityIds (filter kolom) sama-sama jadi entity_id
-      entity_id: query.entityIds?.length
-        ? query.entityIds.join(",")
-        : query.entityId,
-      operasional: query.operasional?.join(","),
-      job_group_id: query.jobGroupIds?.join(","),
-      job_function_id: query.jobFunctionIds?.join(","),
-      level_bod: query.levelBod?.join(","),
-      golongan_phdp: query.golonganPhdp?.join(","),
-      person_grade: query.personGrade?.join(","),
+      // Array dikirim apa adanya; http-client merakitnya jadi `entity_id[]=1&entity_id[]=2`,
+      // bentuk yang dibaca Laravel sebagai array untuk whereIn.
+      entity_id: query.entityIds?.length ? query.entityIds : query.entityId,
+      operasional: query.operasional,
+      job_group_id: query.jobGroupIds,
+      job_function_id: query.jobFunctionIds,
+      level_bod: query.levelBod,
+      golongan_phdp: query.golonganPhdp,
+      person_grade: query.personGrade,
       sort: query.sort,
       direction: query.direction,
       page: query.page,

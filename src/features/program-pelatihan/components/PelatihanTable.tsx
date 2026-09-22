@@ -7,9 +7,7 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
-  optionsFilter,
   rowNumberColumn,
-  textFilter,
   toValueOptions,
   type TableConfig,
 } from "@/components/shared/data-table";
@@ -63,14 +61,14 @@ export function createPelatihanTableConfig({
       col.accessor("nama", {
         header: "Nama Pelatihan",
         meta: {
-          filter: textFilter("Cari nama pelatihan..."),
+          search: { placeholder: "Cari nama pelatihan..." },
           cellClassName: "font-medium text-slate-800",
         },
       }),
       col.accessor("penyelenggara", {
         header: "Penyelenggara",
         meta: {
-          filter: textFilter("Cari penyelenggara..."),
+          search: { placeholder: "Cari penyelenggara..." },
           nowrap: true,
           cellClassName: "font-medium text-slate-800",
         },
@@ -78,13 +76,13 @@ export function createPelatihanTableConfig({
       col.accessor("jenisKompetensi", {
         header: "Jenis Kompetensi",
         meta: {
-          filter: optionsFilter(JENIS_KOMPETENSI_OPTIONS),
+          filter: { options: JENIS_KOMPETENSI_OPTIONS },
           cellClassName: "font-medium text-slate-800",
         },
       }),
       col.accessor("jenisPsdm", {
         header: "Jenis Pengembangan SDM",
-        meta: { filter: optionsFilter(JENIS_PSDM_OPTIONS), nowrap: true },
+        meta: { filter: { options: JENIS_PSDM_OPTIONS }, nowrap: true },
         cell: ({ row }) => (
           <Badge tone={JENIS_PSDM_TONE[row.original.jenisPsdm]}>
             {row.original.jenisPsdm}
@@ -94,7 +92,7 @@ export function createPelatihanTableConfig({
       col.accessor("bidang", {
         header: "Bidang",
         meta: {
-          filter: optionsFilter(toValueOptions(bidangOptions)),
+          filter: { options: toValueOptions(bidangOptions) },
           cellClassName: "font-medium text-slate-800",
         },
       }),

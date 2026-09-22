@@ -25,16 +25,40 @@ export class ApiError extends Error {
   }
 }
 
-export type Query = Record<string, string | number | boolean | undefined | null>;
+export type QueryValue =
+  | string
+  | number
+  | boolean
+  | undefined
+  | null
+  | ReadonlyArray<string | number>;
 
-/** Rakit "/api/units" + { per_page: 20 } jadi "/api/units?per_page=20". */
+export type Query = Record<string, QueryValue>;
+
+const isEmpty = (value: unknown) =>
+  value === undefined || value === null || value === "";
+
+/**
+ * Rakit "/api/units" + { per_page: 20 } jadi "/api/units?per_page=20".
+ *
+ * Nilai berupa array dikirim sebagai `key[]=a&key[]=b` — itulah bentuk yang
+ * dibaca Laravel sebagai array. Kalau digabung jadi `key=a,b`, backend
+ * membacanya sebagai satu nilai "a,b" dan hasilnya selalu kosong.
+ */
 function buildUrl(path: string, query?: Query) {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(query ?? {})) {
-    if (value !== undefined && value !== null && value !== "") {
-      params.set(key, String(value));
+    if (isEmpty(value)) continue;
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (!isEmpty(item)) params.append(`${key}[]`, String(item));
+      }
+      continue;
     }
+
+    params.set(key, String(value));
   }
 
   const search = params.toString();

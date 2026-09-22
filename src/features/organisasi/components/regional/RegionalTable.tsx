@@ -9,7 +9,6 @@ import {
   defineTableConfig,
   numberColumn,
   rowNumberColumn,
-  textFilter,
   titleColumn,
   type DataTableState,
   type TableConfig,
@@ -49,7 +48,7 @@ export function createRegionalTableConfig({
         header: "Regional",
         value: (row) => row.nama,
         subtitle: (row) => row.kode,
-        filter: textFilter("Cari nama regional..."),
+        search: { placeholder: "Cari nama regional..." },
       }),
       col.accessor("jumlahUnit", {
         id: "jumlah_unit",

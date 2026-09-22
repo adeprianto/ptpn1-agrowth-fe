@@ -4,7 +4,6 @@ import {
   createFilteredRowModel,
   createPaginatedRowModel,
   createSortedRowModel,
-  filterFn_includesString,
   rowPaginationFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
@@ -20,19 +19,50 @@ import type { FilterOption } from "./ColumnHeader";
 /** Perataan isi kolom. Dipakai header dan sel sekaligus supaya selalu sejajar. */
 export type ColumnAlign = "left" | "center" | "right";
 
-/** Bentuk filter yang bisa dipasang di sebuah kolom. */
-export type ColumnFilterConfig =
-  | { type: "text"; placeholder?: string }
-  | { type: "options"; options: FilterOption[] };
+/**
+ * Kotak cari teks di bawah judul kolom.
+ * Mencocokkan nilai accessor kolom secara "mengandung".
+ */
+export interface ColumnSearchConfig {
+  placeholder?: string;
+}
+
+/**
+ * Daftar centang di modal filter, dibuka lewat ikon corong di samping judul.
+ * Baris lolos kalau nilai kolomnya ada di antara yang dicentang.
+ */
+export interface ColumnFilterConfig {
+  options: FilterOption[];
+}
+
+/**
+ * Filter yang sedang berlaku untuk satu kolom.
+ *
+ * Keduanya berdiri sendiri dan boleh aktif bersamaan — kalau begitu baris
+ * harus lolos dua-duanya:
+ * - `search` diisi kotak di bawah judul kolom
+ * - `values` diisi daftar centang di modal filter
+ */
+export interface ColumnFilterValue {
+  search?: string;
+  values?: string[];
+}
+
+/** true kalau filter kolom ini benar-benar menyaring sesuatu. */
+export function isFilterActive(value: ColumnFilterValue | undefined): boolean {
+  return Boolean(value?.search?.trim()) || Boolean(value?.values?.length);
+}
 
 /**
  * Konfigurasi per kolom yang dibaca `DataTable` lewat `columnDef.meta`.
  * Semuanya opsional — kolom paling sederhana cukup `header` + `accessor`.
  */
 export interface DataTableColumnMeta {
-  /** Judul di header & chip filter aktif; default memakai `header` kalau berupa teks */
+  /** Judul di header, chip filter, dan judul modal; default memakai `header` */
   label?: string;
-  /** Filter di modal: kotak cari teks, atau checklist nilai */
+  /** Munculkan kotak cari di bawah judul kolom ini */
+  search?: ColumnSearchConfig;
+  /** Munculkan ikon corong yang membuka modal daftar centang */
   filter?: ColumnFilterConfig;
   /** Perataan header + sel */
   align?: ColumnAlign;
@@ -45,19 +75,36 @@ export interface DataTableColumnMeta {
 }
 
 /**
- * Filter checklist: baris lolos kalau nilainya ada di daftar yang dicentang.
- * Hanya dipakai di mode client; di mode server nilai filter dikirim ke API.
+ * Cara `ColumnFilterValue` disaring di mode client. Mode server tidak
+ * memakainya — nilainya diteruskan apa adanya ke API.
+ *
+ * Yang dicocokkan adalah nilai accessor kolom. Kalau sel menampilkan teks
+ * yang berbeda dari nilai accessor-nya (mis. accessor mengembalikan id tapi
+ * sel merender nama), buat accessor mengembalikan teks yang ingin dicari dan
+ * pindahkan tampilannya ke `cell`.
+ *
  * (Diberi tipe `any` untuk fitur supaya tidak merujuk balik ke `dataTableFeatures`.)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const filterFn_inOptions: FilterFn<any, any> = Object.assign(
+const filterFn_column: FilterFn<any, any> = Object.assign(
   (
     row: { getValue: (id: string) => unknown },
     columnId: string,
-    filterValue: string[],
-  ) => filterValue.includes(String(row.getValue(columnId) ?? "")),
+    filterValue: ColumnFilterValue,
+  ) => {
+    const cellValue = String(row.getValue(columnId) ?? "");
+    const keyword = filterValue?.search?.trim().toLowerCase();
+
+    if (keyword && !cellValue.toLowerCase().includes(keyword)) return false;
+    if (filterValue?.values?.length && !filterValue.values.includes(cellValue)) {
+      return false;
+    }
+
+    return true;
+  },
   {
-    autoRemove: (value: unknown) => !Array.isArray(value) || value.length === 0,
+    autoRemove: (value: unknown) =>
+      !isFilterActive(value as ColumnFilterValue | undefined),
   },
 );
 
@@ -73,8 +120,7 @@ export const dataTableFeatures = tableFeatures({
   sortedRowModel: createSortedRowModel(),
   paginatedRowModel: createPaginatedRowModel(),
   filterFns: {
-    includesString: filterFn_includesString,
-    inOptions: filterFn_inOptions,
+    column: filterFn_column,
   },
   sortFns: {
     alphanumeric: sortFn_alphanumeric,
@@ -96,7 +142,10 @@ export type DataTableColumnDef<TData extends RowData> = ColumnDef<DataTableFeatu
  * @example
  * const col = createDataTableColumnHelper<Pegawai>();
  * const columns = col.columns([
- *   col.accessor("nik", { header: "NIK", meta: { filter: { type: "text" } } }),
+ *   col.accessor("nik", {
+ *     header: "NIK",
+ *     meta: { search: { placeholder: "Cari NIK..." } },
+ *   }),
  * ]);
  */
 export function createDataTableColumnHelper<TData extends RowData>() {

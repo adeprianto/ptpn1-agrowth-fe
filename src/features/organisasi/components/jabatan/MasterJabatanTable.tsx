@@ -7,9 +7,8 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
-  optionsFilter,
   rowNumberColumn,
-  textFilter,
+  toValueOptions,
   type DataTableColumnMeta,
   type TableConfig,
 } from "@/components/shared/data-table";
@@ -58,20 +57,21 @@ export function createMasterJabatanTableConfig({
     emptyMessage: "Tidak ada jabatan yang cocok dengan pencarian atau filter.",
     columns: col.columns([
       rowNumberColumn<JabatanMasterRow>(),
-      col.accessor("code", { header: "Code", meta: codeMeta }),
+      col.accessor("code", {
+        header: "Code",
+        meta: { search: { placeholder: "Cari kode..." }, ...codeMeta },
+      }),
       col.accessor("namaJabatanLengkap", {
         header: "Nama Jabatan",
         meta: {
-          filter: textFilter("Cari nama jabatan..."),
+          search: { placeholder: "Cari nama jabatan..." },
           cellClassName: "font-medium text-slate-800",
         },
       }),
       col.accessor("level", {
         header: "Level",
         meta: {
-          filter: optionsFilter(
-            levelOptions.map((level) => ({ value: level, label: level })),
-          ),
+          filter: { options: toValueOptions(levelOptions) },
           nowrap: true,
         },
         cell: ({ getValue }) => <Badge tone="emerald">{getValue()}</Badge>,
@@ -79,28 +79,31 @@ export function createMasterJabatanTableConfig({
       col.accessor((row) => getJobFamilyName(row.jobFamilyCode), {
         id: "jobFamily",
         header: "Job Family",
-        meta: { cellClassName: "text-slate-600" },
+        meta: {
+          search: { placeholder: "Cari job family..." },
+          cellClassName: "text-slate-600",
+        },
       }),
       col.accessor(jabatanEntityCode, {
         id: "entity",
         header: "Organisasi",
         meta: {
           label: "Organisasi",
-          filter: optionsFilter(
-            entityOptions.map((entity) => ({
+          filter: {
+            options: entityOptions.map((entity) => ({
               value: entity.code,
               label: entity.label,
             })),
-          ),
+          },
         },
         cell: ({ row }) => {
           const organisasi = getOrganisasiNode(row.original.organisasiCode);
 
           return (
             <>
-              <p className="text-slate-700">{organisasi?.name ?? "-"}</p>
+              <p className="text-slate-700">{organisasi?.name ?? "-" }</p>
               <p className="text-xs text-slate-400">
-                {organisasi ? getEntityLabel(organisasi.entityCode) : ""}
+                {organisasi ? getEntityLabel(organisasi.entityCode) : "" }
               </p>
             </>
           );

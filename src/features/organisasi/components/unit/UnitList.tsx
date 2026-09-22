@@ -61,15 +61,18 @@ export function UnitList() {
 
   const { tableState, rows, total, loading, error, refresh, startIndex } =
     useServerDataTable<Unit>({
-      defaultSorting: [{ id: "search", desc: false }],
-      fetcher: ({ filters, page, perPage }, signal) =>
+      defaultSorting: [{ id: "name", desc: false }],
+      fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
         getUnits(
           {
-            // id kolom di tabel = nama parameter filter di backend
-            search: filterText(filters.search),
-            regionalId: filterList(filters.regional_id)?.[0],
-            jenisId: filterList(filters.operational_category_id)?.[0],
-            komoditasId: filterList(filters.business_type_id)?.[0],
+            // id kolom di tabel = nama parameter sort/filter di backend
+            nama: filterText(filters.name),
+            regional: filterText(filters.regional_id),
+            regionalIds: filterList(filters.regional_id),
+            jenisIds: filterList(filters.operational_category_id),
+            komoditasIds: filterList(filters.business_type_id),
+            sort,
+            direction,
             page,
             perPage,
           },

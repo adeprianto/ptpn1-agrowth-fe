@@ -33,7 +33,7 @@ export function DataTablePaginationBar({ className }: { className?: string }) {
  * Pakai `ColumnFilterModal` langsung kalau butuh di luar `DataTable`.
  */
 export function DataTableFilterDialog() {
-  const { openFilterField, closeFilter, filterValueOf, setColumnFilter } =
+  const { openFilterField, closeFilter, filterValueOf, setColumnValues } =
     useDataTableContext();
 
   if (!openFilterField) return null;
@@ -43,9 +43,10 @@ export function DataTableFilterDialog() {
       open
       label={openFilterField.label}
       config={openFilterField.config}
-      value={filterValueOf(openFilterField.id)}
-      // satu kali update state = satu kali fetch, halaman ikut kembali ke 1
-      onApply={(value) => setColumnFilter(openFilterField.id, value)}
+      value={filterValueOf(openFilterField.id)?.values}
+      // satu kali update state = satu kali fetch, halaman ikut kembali ke 1;
+      // kotak cari kolom ini tidak ikut tersentuh
+      onApply={(values) => setColumnValues(openFilterField.id, values)}
       onClose={closeFilter}
     />
   );

@@ -5,8 +5,6 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
-  optionsFilter,
-  textFilter,
   toFilterOptions,
   toValueOptions,
   type DataTableState,
@@ -35,25 +33,60 @@ export function pegawaiOperasionalLabel(pegawai: Pegawai) {
 }
 
 /**
+ * Isi daftar centang tiap kolom, dirakit dari hasil
+ * GET /api/employees/filter-options. Kosong selama belum selesai dimuat.
+ */
+function buildChecklistOptions(options: PegawaiFilterOptions | null) {
+  return {
+    entity:
+      options?.entities.map((entity) => ({
+        value: entity.id,
+        label: entity.nama,
+        group: ENTITY_TIPE_LABEL[entity.tipe],
+      })) ?? [],
+    operasional:
+      options?.operasional.map((row) => ({
+        value: row.key,
+        label: operasionalLabel(
+          row.jenis ? getJenisDisplay(row.jenis) : null,
+          row.komoditas,
+        ),
+      })) ?? [],
+    jobGroup: toFilterOptions(options?.jobGroups),
+    jobFunction: toFilterOptions(options?.jobFunctions),
+    level:
+      options?.levelBod.map((level) => ({
+        value: String(level),
+        label: levelBodLabel(level),
+      })) ?? [],
+    golonganPhdp: toValueOptions(options?.golonganPhdp),
+    personGrade: toValueOptions(options?.personGrade),
+  };
+}
+
+/**
  * Konfigurasi tabel pegawai.
  *
- * Id kolom sengaja sama dengan nilai `sort`/filter di backend (lihat
- * `EmployeeSortKey`), jadi `PegawaiList` bisa langsung meneruskannya ke API.
+ * Id kolom sengaja sama dengan nama parameter sort/filter di backend (lihat
+ * EmployeeController::SORTABLE), jadi `PegawaiList` bisa meneruskannya
+ * langsung ke API tanpa tabel penerjemah.
  */
 export function createPegawaiTableConfig(
   options: PegawaiFilterOptions | null,
 ): TableConfig<Pegawai> {
+  const checklist = buildChecklistOptions(options);
+
   return defineTableConfig<Pegawai>({
     getRowId: (row) => row.id,
     tableClassName: "min-w-300",
     density: "compact",
     defaultSorting: [{ id: "name", desc: false }],
-    emptyMessage: "Tidak ada pegawai yang cocok dengan filter.",
+    emptyMessage: "Tidak ada pegawai yang cocok dengan pencarian atau filter.",
     columns: col.columns([
       col.accessor("nik", {
         header: "NIK (SAP)",
         meta: {
-          filter: textFilter("Cari kode SAP..."),
+          search: { placeholder: "Cari NIK..." },
           nowrap: true,
           cellClassName: "font-mono text-xs text-slate-600",
         },
@@ -61,7 +94,7 @@ export function createPegawaiTableConfig(
       col.accessor("nama", {
         id: "name",
         header: "Nama Pegawai",
-        meta: { filter: textFilter("Cari nama...") },
+        meta: { search: { placeholder: "Cari nama..." } },
         cell: ({ getValue }) => (
           <span className="font-medium text-slate-800">{getValue()}</span>
         ),
@@ -69,15 +102,7 @@ export function createPegawaiTableConfig(
       col.accessor("penempatanNama", {
         id: "entity",
         header: "Entity",
-        meta: {
-          filter: optionsFilter(
-            options?.entities.map((entity) => ({
-              value: entity.id,
-              label: entity.nama,
-              group: ENTITY_TIPE_LABEL[entity.tipe],
-            })) ?? [],
-          ),
-        },
+        meta: { filter: { options: checklist.entity } },
         cell: ({ row }) => (
           <>
             <p className="text-slate-700">{row.original.penempatanNama}</p>
@@ -90,17 +115,7 @@ export function createPegawaiTableConfig(
       col.accessor(pegawaiOperasionalLabel, {
         id: "operasional",
         header: "Entity Operational",
-        meta: {
-          filter: optionsFilter(
-            options?.operasional.map((row) => ({
-              value: row.key,
-              label: operasionalLabel(
-                row.jenis ? getJenisDisplay(row.jenis) : null,
-                row.komoditas,
-              ),
-            })) ?? [],
-          ),
-        },
+        meta: { filter: { options: checklist.operasional } },
         cell: ({ row, getValue }) =>
           row.original.operasionalJenis || row.original.operasionalKomoditas ? (
             <Badge tone={getJenisDisplay(row.original.operasionalJenis).tone}>
@@ -114,7 +129,7 @@ export function createPegawaiTableConfig(
         id: "posisi",
         header: "Posisi",
         meta: {
-          filter: textFilter("Cari nama jabatan..."),
+          search: { placeholder: "Cari jabatan..." },
           cellClassName: "text-slate-700",
         },
         cell: ({ getValue }) => orDash(getValue()),
@@ -123,7 +138,7 @@ export function createPegawaiTableConfig(
         id: "job_group",
         header: "Job Group",
         meta: {
-          filter: optionsFilter(toFilterOptions(options?.jobGroups)),
+          filter: { options: checklist.jobGroup },
           cellClassName: "text-slate-600",
         },
         cell: ({ getValue }) => orDash(getValue()),
@@ -132,7 +147,7 @@ export function createPegawaiTableConfig(
         id: "job_function",
         header: "Job Function",
         meta: {
-          filter: optionsFilter(toFilterOptions(options?.jobFunctions)),
+          filter: { options: checklist.jobFunction },
           cellClassName: "text-slate-600",
         },
         cell: ({ getValue }) => orDash(getValue()),
@@ -141,12 +156,7 @@ export function createPegawaiTableConfig(
         id: "level",
         header: "Level",
         meta: {
-          filter: optionsFilter(
-            options?.levelBod.map((level) => ({
-              value: String(level),
-              label: levelBodLabel(level),
-            })) ?? [],
-          ),
+          filter: { options: checklist.level },
           nowrap: true,
           cellClassName: "font-medium text-slate-700",
         },
@@ -156,7 +166,7 @@ export function createPegawaiTableConfig(
         id: "golongan_phdp",
         header: "Gol. PHDP",
         meta: {
-          filter: optionsFilter(toValueOptions(options?.golonganPhdp)),
+          filter: { options: checklist.golonganPhdp },
           nowrap: true,
           cellClassName: "text-slate-600",
         },
@@ -166,7 +176,7 @@ export function createPegawaiTableConfig(
         id: "person_grade",
         header: "Person Grade",
         meta: {
-          filter: optionsFilter(toValueOptions(options?.personGrade)),
+          filter: { options: checklist.personGrade },
           nowrap: true,
           cellClassName: "text-slate-600",
         },
@@ -196,7 +206,7 @@ interface PegawaiTableProps {
   rowCount: number;
   tableState: DataTableState;
   loading?: boolean;
-  /** Isi checklist filter; null selama belum selesai dimuat */
+  /** Isi daftar centang; null selama belum selesai dimuat */
   options: PegawaiFilterOptions | null;
 }
 
@@ -207,7 +217,7 @@ export function PegawaiTable({
   loading = false,
   options,
 }: PegawaiTableProps) {
-  // kolom dibuat ulang hanya saat isi checklist filter selesai dimuat
+  // kolom dibuat ulang hanya saat isi daftar centang selesai dimuat
   const config = useMemo(() => createPegawaiTableConfig(options), [options]);
 
   return (

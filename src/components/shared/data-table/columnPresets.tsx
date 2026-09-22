@@ -9,6 +9,7 @@ import { RowActionMenu, type RowAction } from "../RowActionMenu";
 import {
   createDataTableColumnHelper,
   type ColumnFilterConfig,
+  type ColumnSearchConfig,
   type DataTableColumnDef,
   type DataTableColumnMeta,
 } from "./dataTableFeatures";
@@ -20,16 +21,6 @@ import type { FilterOption } from "./ColumnHeader";
  *
  * Kolom lain cukup ditulis biasa lewat `createDataTableColumnHelper`.
  */
-
-/** Shorthand meta filter teks: `meta: { filter: textFilter("Cari nama...") }` */
-export function textFilter(placeholder?: string): ColumnFilterConfig {
-  return { type: "text", placeholder };
-}
-
-/** Shorthand meta filter checklist */
-export function optionsFilter(options: FilterOption[]): ColumnFilterConfig {
-  return { type: "options", options };
-}
 
 /** Ubah daftar master domain (id + nama) jadi opsi checklist */
 export function toFilterOptions(
@@ -146,6 +137,9 @@ interface BadgeColumnOptions<TRow> {
   value: (row: TRow) => string | null | undefined;
   /** Warna badge per baris; default emerald */
   tone?: (row: TRow) => BadgeTone;
+  /** Kotak cari di bawah judul kolom */
+  search?: ColumnSearchConfig;
+  /** Daftar centang di modal filter */
   filter?: ColumnFilterConfig;
   meta?: DataTableColumnMeta;
 }
@@ -156,6 +150,7 @@ export function badgeColumn<TRow extends RowData>({
   header,
   value,
   tone,
+  search,
   filter,
   meta,
 }: BadgeColumnOptions<TRow>): DataTableColumnDef<TRow> {
@@ -164,7 +159,7 @@ export function badgeColumn<TRow extends RowData>({
   return col.accessor((row) => value(row) ?? "", {
     id,
     header,
-    meta: { filter, nowrap: true, ...meta },
+    meta: { search, filter, nowrap: true, ...meta },
     cell: ({ row, getValue }) => {
       const text = getValue() as string;
       if (!text) return <span className="text-slate-300">-</span>;
@@ -181,6 +176,9 @@ interface LinkColumnOptions<TRow> {
   href: (row: TRow) => string;
   /** Baris kedua yang lebih redup, mis. kode entity di bawah namanya */
   subtitle?: (row: TRow) => string | null | undefined;
+  /** Kotak cari di bawah judul kolom */
+  search?: ColumnSearchConfig;
+  /** Daftar centang di modal filter */
   filter?: ColumnFilterConfig;
   meta?: DataTableColumnMeta;
 }
@@ -192,6 +190,7 @@ export function linkColumn<TRow extends RowData>({
   value,
   href,
   subtitle,
+  search,
   filter,
   meta,
 }: LinkColumnOptions<TRow>): DataTableColumnDef<TRow> {
@@ -200,7 +199,7 @@ export function linkColumn<TRow extends RowData>({
   return col.accessor(value, {
     id,
     header,
-    meta: { filter, ...meta },
+    meta: { search, filter, ...meta },
     cell: ({ row, getValue }) => (
       <>
         <Link
@@ -222,6 +221,9 @@ interface TitleColumnOptions<TRow> {
   header: string;
   value: (row: TRow) => string;
   subtitle?: (row: TRow) => string | null | undefined;
+  /** Kotak cari di bawah judul kolom */
+  search?: ColumnSearchConfig;
+  /** Daftar centang di modal filter */
   filter?: ColumnFilterConfig;
   meta?: DataTableColumnMeta;
 }
@@ -232,6 +234,7 @@ export function titleColumn<TRow extends RowData>({
   header,
   value,
   subtitle,
+  search,
   filter,
   meta,
 }: TitleColumnOptions<TRow>): DataTableColumnDef<TRow> {
@@ -240,7 +243,7 @@ export function titleColumn<TRow extends RowData>({
   return col.accessor(value, {
     id,
     header,
-    meta: { filter, ...meta },
+    meta: { search, filter, ...meta },
     cell: ({ row, getValue }) => (
       <>
         <p className="font-medium text-slate-800">{getValue() as ReactNode}</p>

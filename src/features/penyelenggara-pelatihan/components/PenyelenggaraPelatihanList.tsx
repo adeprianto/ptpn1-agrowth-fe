@@ -21,14 +21,20 @@ export default function PenyelenggaraPelatihanList() {
 
   const { tableState, rows, total, loading, error, refresh, startIndex } =
     useServerDataTable<Penyelenggara>({
-      defaultSorting: [{ id: "search", desc: false }],
-      fetcher: ({ filters, page, perPage }, signal) =>
+      defaultSorting: [{ id: "name", desc: false }],
+      fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
         getPenyelenggaraList(
           {
-            search: filterText(filters.search),
-            tipe: filterList(filters.classification)?.[0] as
-              | PenyelenggaraTipe
+            // id kolom di tabel = nama parameter sort/filter di backend
+            nama: filterText(filters.name),
+            kota: filterText(filters.city),
+            telepon: filterText(filters.phone),
+            tipe: filterList(filters.classification) as
+              | PenyelenggaraTipe[]
               | undefined,
+            status: filterList(filters.status),
+            sort,
+            direction,
             page,
             perPage,
           },
