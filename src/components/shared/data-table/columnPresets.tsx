@@ -12,7 +12,7 @@ import {
   type DataTableColumnDef,
   type DataTableColumnMeta,
 } from "./dataTableFeatures";
-import type { FilterOption } from "../ColumnHeader";
+import type { FilterOption } from "./ColumnHeader";
 
 /**
  * Kolom siap pakai untuk pola yang berulang di banyak tabel: nomor urut,

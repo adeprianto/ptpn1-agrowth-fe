@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import type { ColumnFiltersState } from "@tanstack/react-table";
-import { FilterChecklist } from "../FilterChecklist";
+import { FilterChecklist } from "./FilterChecklist";
 import type { DataTableColumnMeta } from "./dataTableFeatures";
 
 export interface FilterField {

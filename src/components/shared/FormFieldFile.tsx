@@ -16,12 +16,6 @@ export default function FormFieldFile({
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const allowedTypes = [
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
-        "application/vnd.ms-excel", // .xls
-        "text/csv", // .csv
-    ];
-
     const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragging(true);

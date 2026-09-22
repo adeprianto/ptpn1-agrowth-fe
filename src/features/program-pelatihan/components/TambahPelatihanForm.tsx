@@ -1,156 +1,163 @@
-'use client'
+"use client";
 
-import {Breadcrumb} from "@/components/shared/Breadcrumb";
-import Link from "next/link";
-import {ChevronLeft} from "lucide-react";
-import {FormField, formInputClass} from "@/components/shared/FormField";
+import { useRouter } from "next/navigation";
+import { FormPageLayout } from "@/components/shared/FormPageLayout";
+import {
+  Card,
+  CardHeader,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  type SelectOption,
+} from "@/components/ui";
+
+// DUMMY — daftar pilihan belum diambil dari master/API.
+const PENYELENGGARA_OPTIONS: SelectOption[] = [
+  { value: "1", label: "LPP Agro Nusantara" },
+  { value: "2", label: "PT. MarkPlus Indonesia" },
+  {
+    value: "3",
+    label: "Balai Besar Pelatihan Manajemen dan Kepemimpinan Pertanian",
+  },
+  { value: "4", label: "CV Solusi SDM Mandiri" },
+];
+
+const JENIS_PSDM_OPTIONS: SelectOption[] = [
+  { value: "bod_boc", label: "Pengembangan BOD/BOC" },
+  { value: "agrowallet", label: "Agrowallet" },
+  { value: "iht", label: "In House Training" },
+  { value: "public_training", label: "Public Training" },
+  { value: "kursus_jabatan", label: "Kursus Jabatan" },
+  { value: "benchmarking", label: "Benchmarking" },
+  { value: "program_budaya", label: "Program Budaya" },
+  { value: "sertifikasi", label: "Sertifikasi" },
+];
+
+const JENIS_KOMPETENSI_OPTIONS: SelectOption[] = [
+  { value: "hard", label: "Hard Competency" },
+  { value: "soft", label: "Soft Competency" },
+  { value: "hard_soft", label: "Hard Competency & Soft Competency" },
+];
+
+const BIDANG_OPTIONS: SelectOption[] = [
+  { value: "tanaman", label: "Tanaman" },
+  { value: "pengolahan", label: "Pengolahan" },
+  { value: "teknik", label: "Teknik" },
+  { value: "keuangan", label: "Keuangan" },
+  { value: "sdm", label: "SDM" },
+  { value: "ti", label: "IT" },
+  { value: "umum", label: "Umum" },
+];
+
+const ANGGARAN_OPTIONS: SelectOption[] = [
+  { value: "psdm_bod_boc", label: "PSDM - Pengembangan BOD & BOC" },
+  { value: "agrowallet", label: "PSDM - Agro Wallet" },
+  { value: "iht_public_training", label: "PSDM - IHT dan Public Training" },
+  { value: "pldp", label: "PSDM - Kursus Jabatan (PLDP)" },
+  { value: "sertifikasi_jabatan", label: "PSDM - Sertifikasi Jabatan" },
+  {
+    value: "benchmarking",
+    label: "PSDM - Program Study Banding (Benchmarking)",
+  },
+  { value: "pendidikan_lanjutan", label: "PSDM - Program Pendidikan Lanjutan" },
+  { value: "assesment", label: "Assesment" },
+  { value: "rekrutmen", label: "Rekrutmen" },
+  { value: "onboarding", label: "Onboarding" },
+  { value: "program_budaya_perusahaan", label: "Program Budaya Perusahaan" },
+  {
+    value: "konsultasi_pengembangan_sdm",
+    label: "Konsultasi Pengembangan SDM",
+  },
+  { value: "inovasi_riset", label: "Inovasi dan Riset" },
+];
 
 export default function TambahPelatihanForm() {
-    return <div className="space-y-5">
-        <Breadcrumb
-            items={[
-                { label: "Dashboard", href: "/dashboard" },
-                { label: "Program Pelatihan", href: "/program-pelatihan" },
-                { label: "Tambah Program Pelatihan" },
-            ]}
-        />
+  const router = useRouter();
 
-        <div className="flex items-center gap-4">
-            <Link
-                href="/program-pelatihan"
-                aria-label="Kembali ke daftar program pelatihan"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50"
-            >
-                <ChevronLeft className="h-4 w-4" />
-            </Link>
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">
-                    Tambah Program Pelatihan Baru
-                </h1>
-                <p className="mt-1 text-sm text-slate-500">
-                    Lengkapi Data Progam Pelatihan
-                </p>
-            </div>
+  function handleSubmit() {
+    // DUMMY — endpoint program pelatihan belum tersedia.
+    // TODO: POST /api/v1/program-pelatihan
+    router.push("/program-pelatihan");
+  }
+
+  return (
+    <FormPageLayout
+      variant="plain"
+      breadcrumb={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Program Pelatihan", href: "/program-pelatihan" },
+        { label: "Tambah Program Pelatihan" },
+      ]}
+      title="Tambah Program Pelatihan Baru"
+      description="Lengkapi Data Program Pelatihan"
+      backHref="/program-pelatihan"
+      submitLabel="Simpan Pelatihan"
+      onSubmit={handleSubmit}
+    >
+      <Card className="p-6">
+        <CardHeader title="Data Pelatihan" />
+
+        <div className="mt-5 space-y-5">
+          <Field label="Nama Pelatihan" required>
+            <Input
+              required
+              placeholder="Cth. Agribusiness Investment Management Series (AIMS)"
+            />
+          </Field>
+
+          <Field label="Penyelenggara Pelatihan" required>
+            <Select
+              required
+              defaultValue=""
+              placeholder="Pilih..."
+              options={PENYELENGGARA_OPTIONS}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <Field label="Jenis Pengembangan SDM" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={JENIS_PSDM_OPTIONS}
+              />
+            </Field>
+
+            <Field label="Jenis Kompetensi Pelatihan" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={JENIS_KOMPETENSI_OPTIONS}
+              />
+            </Field>
+
+            <Field label="Bidang Pelatihan" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={BIDANG_OPTIONS}
+              />
+            </Field>
+
+            <Field label="Alokasi Anggaran Pembiayaan" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={ANGGARAN_OPTIONS}
+              />
+            </Field>
+          </div>
+
+          <Field label="Deskripsi Pelatihan">
+            <Textarea placeholder="Deskripsi mengenai pelatihan" />
+          </Field>
         </div>
-
-        <form onSubmit={() => {}} className="space-y-5">
-            {/* ---------- Data Program Pelatihan ---------- */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                <h2 className="mb-5 text-lg font-bold text-slate-900">
-                    Data Pelatihan
-                </h2>
-
-                <div className="space-y-5">
-                    <FormField label="Nama Pelatihan" required>
-                        <input
-                            type="text"
-                            required
-                            placeholder="Cth. Agribusiness Investment Management Series (AIMS)"
-                            className={formInputClass}
-                        />
-                    </FormField>
-
-                    <FormField label="Penyelenggara Pelatihan" required>
-                        <select required defaultValue="" className={formInputClass}>
-                            <option value="" disabled>
-                                Pilih...
-                            </option>
-                            <option value="1">LPP Agro Nusantara</option>
-                            <option value="2">PT. MarkPlus Indonesia</option>
-                            <option value="3">Balai Besar Pelatihan Manajemen dan Kepemimpinan Pertanian</option>
-                            <option value="4">CV Solusi SDM Mandiri</option>
-                        </select>
-                    </FormField>
-
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <FormField label="Jenis Pengembangan SDM" required>
-                            <select required defaultValue="" className={formInputClass}>
-                                <option value="" disabled>
-                                    Pilih...
-                                </option>
-                                <option value="bod_boc">Pengembangan BOD/BOC</option>
-                                <option value="agrowallet">Agrowallet</option>
-                                <option value="iht">In House Training</option>
-                                <option value="public_training">Public Training</option>
-                                <option value="kursus_jabatan">Kursus Jabatan</option>
-                                <option value="benchmarking">Benchmarking</option>
-                                <option value="program_budaya">Program Budaya</option>
-                                <option value="Sertifikasi">Sertifikasi</option>
-                            </select>
-                        </FormField>
-
-                        <FormField label="Jenis Kompetensi Pelatihan" required>
-                            <select required defaultValue="" className={formInputClass}>
-                                <option value="" disabled>
-                                    Pilih...
-                                </option>
-                                <option value="hard">Hard Competency</option>
-                                <option value="soft">Soft Competency</option>
-                                <option value="hard_soft">Hard Competency & Soft Competency</option>
-                            </select>
-                        </FormField>
-
-                        <FormField label="Bidang Pelatihan" required>
-                            <select required defaultValue="" className={formInputClass}>
-                                <option value="" disabled>
-                                    Pilih...
-                                </option>
-                                <option value="tanaman">Tanaman</option>
-                                <option value="pengolahan">Pengolahan</option>
-                                <option value="teknik">Teknik</option>
-                                <option value="keuangan">Keuangan</option>
-                                <option value="sdm">SDM</option>
-                                <option value="ti">IT</option>
-                                <option value="umum">Umum</option>
-                            </select>
-                        </FormField>
-
-                        <FormField label="Alokasi Anggaran Pembiayaan" required>
-                            <select required defaultValue="" className={formInputClass}>
-                                <option value="" disabled>
-                                    Pilih...
-                                </option>
-                                <option value="psdm_bod_boc">PSDM - Pengembangan BOD & BOC</option>
-                                <option value="agrowallet">PSDM - Agro Wallet</option>
-                                <option value="iht_public_training">PSDM - IHT dan Public Training</option>
-                                <option value="pldp">PSDM - Kursus Jabatan (PLDP)</option>
-                                <option value="sertifikasi_jabatan">PSDM - Sertifikasi Jabatan</option>
-                                <option value="benchmarking">PSDM - Program Study Banding (Benchmarking)</option>
-                                <option value="pendidikan_lanjutan">PSDM - Program Pendidikan Lanjutan</option>
-                                <option value="assesment">Assesment</option>
-                                <option value="rekrutmen">Rekrutmen</option>
-                                <option value="onboarding">Onboarding</option>
-                                <option value="program_budaya_perusahaan">Program Budaya Perusahaan</option>
-                                <option value="konsultasi_pengembangan_sdm">Konsultasi Pengembangan SDM</option>
-                                <option value="inovasi_riset">Inovasi dan Riset</option>
-                            </select>
-                        </FormField>
-                    </div>
-
-                    <FormField label="Deskripsi Pelatihan">
-                      <textarea
-                          rows={3}
-                          placeholder="Dekripsi mengenai pelatihan"
-                          className={formInputClass}
-                      />
-                    </FormField>
-                </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-                <Link
-                    href="/program-pelatihan"
-                    className="rounded-xl bg-slate-400 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-500"
-                >
-                    Batal
-                </Link>
-                <button
-                    type="submit"
-                    className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-                >
-                    Simpan Pelatihan
-                </button>
-            </div>
-        </form>
-    </div>
+      </Card>
+    </FormPageLayout>
+  );
 }

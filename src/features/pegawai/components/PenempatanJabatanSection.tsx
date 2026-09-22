@@ -1,11 +1,13 @@
 "use client";
 
-import { Building2, Landmark, Network, type LucideIcon } from "lucide-react";
+import { Building2, Landmark, Network } from "lucide-react";
 import {
-  FormField,
-  formInputClass,
-  formInputDisableClass,
-} from "@/components/shared/FormField";
+  Field,
+  SegmentedControl,
+  Select,
+  StaticValue,
+  type SegmentedOption,
+} from "@/components/ui";
 import { regionalRows } from "@/features/organisasi/components/regional/regionalDummyData";
 import {
   jabatanMasterRows,
@@ -26,34 +28,27 @@ export interface PenempatanJabatanValue {
   jabatanId: string;
 }
 
-interface PenempatanJabatanSectionProps {
-  value: PenempatanJabatanValue;
-  onChange: (value: PenempatanJabatanValue) => void;
-}
+const LEVEL_OPTIONS: SegmentedOption<LevelPenempatan>[] = [
+  { value: "HO", label: "Head Office", icon: Landmark },
+  { value: "Regional", label: "Regional", icon: Network },
+  { value: "Unit", label: "Unit", icon: Building2 },
+];
 
-const levelTabs: { value: LevelPenempatan; label: string; icon: LucideIcon }[] =
-  [
-    { value: "HO", label: "Head Office", icon: Landmark },
-    { value: "Regional", label: "Regional", icon: Network },
-    { value: "Unit", label: "Unit", icon: Building2 },
-  ];
-
+/** Kode entity yang sedang dipilih, dipakai untuk menyaring master jabatan. */
 function resolveEntityCode(value: PenempatanJabatanValue): string | null {
   if (value.levelPenempatan === "HO") return "HO";
 
   if (value.levelPenempatan === "Regional") {
     if (!value.regionalId) return null;
-    return regionalRows.find((r) => r.id === value.regionalId)?.kode ?? null;
+    return regionalRows.find((row) => row.id === value.regionalId)?.kode ?? null;
   }
 
   if (!value.unitId) return null;
-  const unit = unitOptions.find((u) => u.id === value.unitId);
+  const unit = unitOptions.find((option) => option.id === value.unitId);
   return unit ? `UNIT-${unit.jenis.toUpperCase()}` : null;
 }
 
-function resolveJabatanOptions(
-  value: PenempatanJabatanValue,
-): JabatanMasterRow[] {
+function resolveJabatanOptions(value: PenempatanJabatanValue): JabatanMasterRow[] {
   const entityCode = resolveEntityCode(value);
   if (!entityCode) return [];
 
@@ -63,9 +58,21 @@ function resolveJabatanOptions(
       .map((node) => node.code),
   );
 
-  return jabatanMasterRows.filter((j) => organisasiCodes.has(j.organisasiCode));
+  return jabatanMasterRows.filter((jabatan) =>
+    organisasiCodes.has(jabatan.organisasiCode),
+  );
 }
 
+interface PenempatanJabatanSectionProps {
+  value: PenempatanJabatanValue;
+  onChange: (value: PenempatanJabatanValue) => void;
+}
+
+/**
+ * Pemilihan penempatan pegawai (HO / Regional / Unit) beserta posisi
+ * jabatannya. Job Group, Job Function, dan Level ikut otomatis dari posisi
+ * yang dipilih, jadi ketiganya hanya ditampilkan.
+ */
 export function PenempatanJabatanSection({
   value,
   onChange,
@@ -73,10 +80,10 @@ export function PenempatanJabatanSection({
   const { levelPenempatan, regionalId, unitId, jabatanId } = value;
 
   const unitsInRegional = unitOptions.filter(
-    (u) => u.regionalId === regionalId,
+    (option) => option.regionalId === regionalId,
   );
   const jabatanOptions = resolveJabatanOptions(value);
-  const selectedJabatan = jabatanOptions.find((j) => j.id === jabatanId);
+  const selectedJabatan = jabatanOptions.find((jabatan) => jabatan.id === jabatanId);
 
   const selectedOrganisasi = selectedJabatan
     ? getOrganisasiNode(selectedJabatan.organisasiCode)
@@ -85,31 +92,15 @@ export function PenempatanJabatanSection({
     ? getFunctionName(selectedOrganisasi.functionCode ?? "")
     : undefined;
 
-  function handleLevelChange(level: LevelPenempatan) {
-    onChange({
-      levelPenempatan: level,
-      regionalId: "",
-      unitId: "",
-      jabatanId: "",
-    });
-  }
+  // Pilihan di bawahnya selalu direset supaya tidak menyimpan kombinasi mustahil
+  const handleLevelChange = (level: LevelPenempatan) =>
+    onChange({ levelPenempatan: level, regionalId: "", unitId: "", jabatanId: "" });
 
-  function handleRegionalChange(newRegionalId: string) {
-    onChange({
-      ...value,
-      regionalId: newRegionalId,
-      unitId: "",
-      jabatanId: "",
-    });
-  }
+  const handleRegionalChange = (nextRegionalId: string) =>
+    onChange({ ...value, regionalId: nextRegionalId, unitId: "", jabatanId: "" });
 
-  function handleUnitChange(newUnitId: string) {
-    onChange({ ...value, unitId: newUnitId, jabatanId: "" });
-  }
-
-  function handleJabatanChange(newJabatanId: string) {
-    onChange({ ...value, jabatanId: newJabatanId });
-  }
+  const handleUnitChange = (nextUnitId: string) =>
+    onChange({ ...value, unitId: nextUnitId, jabatanId: "" });
 
   const jabatanDisabled =
     (levelPenempatan === "Regional" && !regionalId) ||
@@ -122,118 +113,94 @@ export function PenempatanJabatanSection({
         ? "Pilih Unit dahulu"
         : "Pilih posisi jabatan...";
 
+  const PLACEHOLDER_TURUNAN = "Pilih posisi terlebih dahulu.";
+
   return (
     <div className="space-y-5">
-      <FormField label="Level Penempatan" required>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {levelTabs.map((tab) => {
-            const isActive = levelPenempatan === tab.value;
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => handleLevelChange(tab.value)}
-                className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-700"
-                    : "border-slate-300 text-slate-600 hover:bg-slate-50"
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </FormField>
+      <Field label="Level Penempatan" required>
+        <SegmentedControl
+          options={LEVEL_OPTIONS}
+          value={levelPenempatan}
+          onChange={handleLevelChange}
+        />
+      </Field>
 
       {(levelPenempatan === "Regional" || levelPenempatan === "Unit") && (
-        <FormField label="Pilih Regional" required>
-          <select
+        <Field label="Pilih Regional" required>
+          <Select
             value={regionalId}
-            onChange={(e) => handleRegionalChange(e.target.value)}
-            className={formInputClass}
-          >
-            <option value="">Pilih Regional...</option>
-            {regionalRows.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.nama}
-              </option>
-            ))}
-          </select>
-        </FormField>
+            placeholder="Pilih Regional..."
+            options={regionalRows.map((row) => ({
+              value: row.id,
+              label: row.nama,
+            }))}
+            onChange={(event) => handleRegionalChange(event.target.value)}
+          />
+        </Field>
       )}
 
       {levelPenempatan === "Unit" && (
-        <FormField
+        <Field
           label="Pilih Unit"
           required
           hint={!regionalId ? "Pilih Regional dahulu" : undefined}
         >
-          <select
+          <Select
             value={unitId}
-            onChange={(e) => handleUnitChange(e.target.value)}
             disabled={!regionalId}
-            className={`${formInputClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
-          >
-            <option value="">Pilih Unit...</option>
-            {unitsInRegional.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name} ({u.jenis})
-              </option>
-            ))}
-          </select>
-        </FormField>
+            placeholder="Pilih Unit..."
+            options={unitsInRegional.map((unit) => ({
+              value: unit.id,
+              label: `${unit.name} (${unit.jenis})`,
+            }))}
+            onChange={(event) => handleUnitChange(event.target.value)}
+          />
+        </Field>
       )}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <FormField
-            label="Posisi Jabatan"
+        <Field
+          className="sm:col-span-2"
+          label="Posisi Jabatan"
+          required
+          hint={
+            !jabatanDisabled && jabatanOptions.length === 0
+              ? "Belum ada master jabatan untuk office ini"
+              : undefined
+          }
+        >
+          <Select
             required
-            hint={
-              !jabatanDisabled && jabatanOptions.length === 0
-                ? "Belum ada master jabatan untuk office ini"
-                : undefined
+            value={jabatanId}
+            disabled={jabatanDisabled || jabatanOptions.length === 0}
+            placeholder={jabatanPlaceholder}
+            options={jabatanOptions.map((jabatan) => ({
+              value: jabatan.id,
+              label: jabatan.namaJabatanLengkap,
+            }))}
+            onChange={(event) =>
+              onChange({ ...value, jabatanId: event.target.value })
             }
-          >
-            <select
-              value={jabatanId}
-              onChange={(e) => handleJabatanChange(e.target.value)}
-              disabled={jabatanDisabled || jabatanOptions.length === 0}
-              required
-              className={`${formInputClass} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400`}
-            >
-              <option value="">{jabatanPlaceholder}</option>
-              {jabatanOptions.map((j) => (
-                <option key={j.id} value={j.id}>
-                  {j.namaJabatanLengkap}
-                </option>
-              ))}
-            </select>
-          </FormField>
-        </div>
+          />
+        </Field>
 
-        <FormField label="Job Group (Job Family)" required>
-          <div className={formInputDisableClass}>
-            {selectedJabatan
-              ? getJobFamilyName(selectedJabatan.jobFamilyCode)
-              : "Pilih posisi terlebih dahulu."}
-          </div>
-        </FormField>
+        <Field label="Job Group (Job Family)" required>
+          <StaticValue placeholder={PLACEHOLDER_TURUNAN}>
+            {selectedJabatan && getJobFamilyName(selectedJabatan.jobFamilyCode)}
+          </StaticValue>
+        </Field>
 
-        <FormField label="Job Function" required>
-          <div className={formInputDisableClass}>
-            {jobFunctionName ?? "Pilih posisi terlebih dahulu."}
-          </div>
-        </FormField>
+        <Field label="Job Function" required>
+          <StaticValue placeholder={PLACEHOLDER_TURUNAN}>
+            {jobFunctionName}
+          </StaticValue>
+        </Field>
 
-        <FormField label="Level">
-          <div className={formInputDisableClass}>
-            {selectedJabatan?.level ?? "Pilih posisi terlebih dahulu."}
-          </div>
-        </FormField>
+        <Field label="Level">
+          <StaticValue placeholder={PLACEHOLDER_TURUNAN}>
+            {selectedJabatan?.level}
+          </StaticValue>
+        </Field>
       </div>
     </div>
   );

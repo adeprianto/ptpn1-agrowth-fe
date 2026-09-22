@@ -4,16 +4,13 @@ import Link from "next/link";
 import {
     Boxes,
     Building2,
-    Factory,
     Landmark,
     Plus,
-    LucideFileBarChart2,
     FilePlus,
     Upload,
     Download,
     Hourglass, Trash2
 } from "lucide-react";
-import LaporanRealisasiCard from "@/features/laporan-psdm/components/LaporanRealisasiCard";
 import {SummaryStatCard} from "@/components/shared/SummaryStatCard";
 
 export default function LaporanPsdmList() {

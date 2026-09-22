@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
+import { Alert, Button, Field, Input } from "@/components/ui";
 import Image from "next/image";
 import { useAuthContext } from "./AuthProvider";
 import { ApiError, apiPost } from "@/lib/http-client";
@@ -12,7 +13,7 @@ import { toAuthUser } from "@/types/auth";
 export function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user, loading, setUser } = useAuthContext();
+  const { setUser } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -20,10 +21,8 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // sudah punya sesi -> langsung ke dashboard
-  // useEffect(() => {
-  //   if (!loading && user) router.replace("/dashboard");
-  // }, [loading, user, router]);
+  // User yang sudah punya sesi dialihkan ke dashboard oleh proxy (src/proxy.ts),
+  // jadi halaman ini tidak perlu memeriksanya lagi.
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -121,43 +120,38 @@ export function LoginPage() {
           </p>
 
           {error && (
-            <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <Alert tone="error" className="mt-6">
               {error}
-            </div>
+            </Alert>
           )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
-                Email Akun <span className="text-rose-500">*</span>
-              </label>
-              <input
+            <Field label="Email Akun" required htmlFor="login-email">
+              <Input
+                id="login-email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="username"
                 placeholder="nama@ptpn1.test"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
               />
-            </div>
+            </Field>
 
-            <div>
-              <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-700">
-                Kata Sandi <span className="text-rose-500">*</span>
-              </label>
+            <Field label="Kata Sandi" required htmlFor="login-password">
               <div className="relative">
-                <input
+                <Input
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2.5 pr-10 text-sm text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  className="pr-10"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
+                  onClick={() => setShowPassword((visible) => !visible)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   aria-label={
                     showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"
@@ -170,7 +164,7 @@ export function LoginPage() {
                   )}
                 </button>
               </div>
-            </div>
+            </Field>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -188,14 +182,15 @@ export function LoginPage() {
               </span>
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={submitting}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-800 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-60"
+              block
+              loading={submitting}
+              className="bg-emerald-800 py-3 font-semibold hover:bg-emerald-900"
             >
               {submitting ? "Memproses..." : "Masuk ke Dashboard"}
               {!submitting && <ArrowRight className="h-4 w-4" />}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-400">

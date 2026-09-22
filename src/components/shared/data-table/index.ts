@@ -32,7 +32,15 @@ export {
   DataTableResetButton,
   DataTableToolbar,
 } from "./DataTableToolbar";
-export { DataTablePagination } from "./DataTablePagination";
+export { DataTablePagination, getPageNumbers } from "./DataTablePagination";
+export {
+  ColumnHeader,
+  type ColumnFilter,
+  type FilterOption,
+  type SortDirection,
+  type SortState,
+} from "./ColumnHeader";
+export { FilterChecklist } from "./FilterChecklist";
 export { DataTableFilterModal, type FilterField } from "./DataTableFilterModal";
 
 // Definisi kolom

@@ -15,7 +15,7 @@ import {
   type FilterFn,
   type RowData,
 } from "@tanstack/react-table";
-import type { FilterOption } from "../ColumnHeader";
+import type { FilterOption } from "./ColumnHeader";
 
 /** Perataan isi kolom. Dipakai header dan sel sekaligus supaya selalu sejajar. */
 export type ColumnAlign = "left" | "center" | "right";

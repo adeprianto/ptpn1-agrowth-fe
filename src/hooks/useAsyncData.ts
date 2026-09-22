@@ -90,7 +90,6 @@ export function useAsyncData<T>(
 
     return () => controller.abort();
     // `queryKey` sudah merangkum deps dan reloadToken
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryKey, enabled]);
 
   // saat dimatikan, hasil lama tidak boleh ikut terbaca

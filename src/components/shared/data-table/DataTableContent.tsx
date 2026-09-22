@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/cn";
-import { ColumnHeader } from "../ColumnHeader";
+import { ColumnHeader } from "./ColumnHeader";
 import { useDataTableContext } from "./DataTableContext";
 import {
   cellClassFromMeta,

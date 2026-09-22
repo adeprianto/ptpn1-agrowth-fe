@@ -2,12 +2,8 @@ import {
   LayoutDashboard,
   Network,
   Users,
-  ClipboardCheck,
   BookOpen,
-  Brain,
   GraduationCap,
-  UserPlus,
-  History,
   FileText,
   type LucideIcon,
 } from "lucide-react";

@@ -18,6 +18,11 @@ export { EmptyState } from "./EmptyState";
 export { Field, controlClass, controlClasses, invalidControlClass } from "./Field";
 export { Input, SearchInput, type InputProps } from "./Input";
 export { Modal, ModalActions, type ModalSize } from "./Modal";
+export {
+  SegmentedControl,
+  type SegmentedOption,
+} from "./SegmentedControl";
 export { Select, type SelectOption } from "./Select";
 export { Spinner } from "./Spinner";
+export { StaticValue } from "./StaticValue";
 export { Textarea, type TextareaProps } from "./Textarea";

@@ -1,15 +1,54 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Info } from "lucide-react";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
-import { FormField, formInputClass } from "@/components/shared/FormField";
+import { Info } from "lucide-react";
+import { FormPageLayout } from "@/components/shared/FormPageLayout";
+import {
+  Card,
+  CardHeader,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  type SelectOption,
+} from "@/components/ui";
 import {
   PenempatanJabatanSection,
   type PenempatanJabatanValue,
 } from "./PenempatanJabatanSection";
+
+// DUMMY — daftar pilihan belum diambil dari master/API.
+const toOptions = (values: string[]): SelectOption[] =>
+  values.map((value) => ({ value, label: value }));
+
+const JENIS_KELAMIN_OPTIONS = toOptions(["Laki-laki", "Perempuan"]);
+const PENDIDIKAN_OPTIONS = toOptions([
+  "SD",
+  "SMP",
+  "SMA/SMK",
+  "D3",
+  "S1",
+  "S2",
+  "S3",
+]);
+const STATUS_KEPEGAWAIAN_OPTIONS = toOptions([
+  "Karyawan Tetap",
+  "PKWT",
+  "Kontrak",
+  "Harian Lepas",
+]);
+const EMPLOYEE_GROUP_OPTIONS = toOptions(["Pelaksana", "Staff", "Manajerial"]);
+const EMPLOYEE_SUBGROUP_OPTIONS = toOptions(["PKWTT", "PKWT"]);
+const STATUS_KSO_OPTIONS = toOptions(["KSO", "Non KSO"]);
+const GOLONGAN_PHDP_OPTIONS = toOptions([
+  "I/A",
+  "I/B",
+  "II/A",
+  "II/B",
+  "II/C",
+  "III/A",
+]);
 
 export function TambahPegawaiForm() {
   const router = useRouter();
@@ -21,237 +60,152 @@ export function TambahPegawaiForm() {
     jabatanId: "",
   });
 
-  function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    console.log("Tambah pegawai (dummy):", penempatan);
+  function handleSubmit() {
+    // DUMMY — endpoint tambah pegawai belum tersedia.
+    // TODO: POST /api/v1/employees
     router.push("/pegawai");
   }
 
   return (
-    <div className="space-y-5">
-      <Breadcrumb
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Data Pegawai", href: "/pegawai" },
-          { label: "Tambah Pegawai" },
-        ]}
-      />
+    <FormPageLayout
+      variant="plain"
+      breadcrumb={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Data Pegawai", href: "/pegawai" },
+        { label: "Tambah Pegawai" },
+      ]}
+      title="Tambah Pegawai Baru"
+      description="Lengkapi Identitas dan Kepegawaian"
+      backHref="/pegawai"
+      submitLabel="Simpan Pegawai"
+      onSubmit={handleSubmit}
+    >
+      <Card className="p-6">
+        <CardHeader title="Informasi Pribadi" />
 
-      <div className="flex items-center gap-4">
-        <Link
-          href="/pegawai"
-          aria-label="Kembali ke daftar pegawai"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            Tambah Pegawai Baru
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Lengkapi Identitas dan Kepegawaian
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* ---------- Informasi Pribadi ---------- */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-5 text-lg font-bold text-slate-900">
-            Informasi Pribadi
-          </h2>
-
-          <div className="space-y-5">
-            <FormField label="Nama Lengkap" required>
-              <input
-                type="text"
-                required
-                placeholder="Cth. Slamet Riyadi"
-                className={formInputClass}
-              />
-            </FormField>
-
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <FormField label="NIK" required>
-                <input
-                  type="text"
-                  required
-                  placeholder="Cth. 1000234"
-                  className={formInputClass}
-                />
-              </FormField>
-
-              <FormField label="Jenis Kelamin" required>
-                <select required defaultValue="" className={formInputClass}>
-                  <option value="" disabled>
-                    Pilih...
-                  </option>
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
-                </select>
-              </FormField>
-
-              <FormField label="Tempat Lahir">
-                <input
-                  type="text"
-                  placeholder="Cth. Sumedang"
-                  className={formInputClass}
-                />
-              </FormField>
-
-              <FormField label="Tanggal Lahir" required>
-                <input type="date" required className={formInputClass} />
-              </FormField>
-
-              <FormField label="Pendidikan Terakhir" required>
-                <select required defaultValue="" className={formInputClass}>
-                  <option value="" disabled>
-                    Pilih...
-                  </option>
-                  <option value="SD">SD</option>
-                  <option value="SMP">SMP</option>
-                  <option value="SMA/SMK">SMA/SMK</option>
-                  <option value="D3">D3</option>
-                  <option value="S1">S1</option>
-                  <option value="S2">S2</option>
-                  <option value="S3">S3</option>
-                </select>
-              </FormField>
-
-              <FormField label="Nomor Telpon">
-                <input
-                  type="text"
-                  placeholder="0812-xxxx-xxxx"
-                  className={formInputClass}
-                />
-              </FormField>
-            </div>
-
-            <FormField label="Alamat">
-              <textarea
-                rows={3}
-                placeholder="Alamat lengkap sesuai KTP"
-                className={formInputClass}
-              />
-            </FormField>
-          </div>
-        </div>
-
-        {/* ---------- Penempatan & Jabatan ---------- */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-5 text-lg font-bold text-slate-900">
-            Penempatan & Jabatan
-          </h2>
-
-          <PenempatanJabatanSection
-            value={penempatan}
-            onChange={setPenempatan}
-          />
-
-          <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <FormField label="Tanggal Masuk" required>
-              <input type="date" required className={formInputClass} />
-            </FormField>
-
-            <FormField label="Status Kepegawaian" required>
-              <select required defaultValue="" className={formInputClass}>
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                <option value="Karyawan Tetap">Karyawan Tetap</option>
-                <option value="PKWT">PKWT</option>
-                <option value="Kontrak">Kontrak</option>
-                <option value="Harian Lepas">Harian Lepas</option>
-              </select>
-            </FormField>
-          </div>
-        </div>
-
-        {/* ---------- Data Kepegawaian ---------- */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="text-lg font-bold text-slate-900">Data Kepegawaian</h2>
-          <p className="mb-5 text-sm text-slate-400">
-            Mengikuti struktur administrasi personalia yang berjalan
-          </p>
+        <div className="mt-5 space-y-5">
+          <Field label="Nama Lengkap" required>
+            <Input required placeholder="Cth. Slamet Riyadi" />
+          </Field>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <FormField label="Employee Group" required>
-              <select required defaultValue="" className={formInputClass}>
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                <option value="Pelaksana">Pelaksana</option>
-                <option value="Staff">Staff</option>
-                <option value="Manajerial">Manajerial</option>
-              </select>
-            </FormField>
+            <Field label="NIK" required>
+              <Input required placeholder="Cth. 1000234" />
+            </Field>
 
-            <FormField label="Employee Sub Group" required>
-              <select required defaultValue="" className={formInputClass}>
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                <option value="PKWTT">PKWTT</option>
-                <option value="PKWT">PKWT</option>
-              </select>
-            </FormField>
-
-            <FormField label="Status KSO" required>
-              <select required defaultValue="" className={formInputClass}>
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                <option value="KSO">KSO</option>
-                <option value="Non KSO">Non KSO</option>
-              </select>
-            </FormField>
-
-            <FormField label="Person Grade">
-              <input
-                type="text"
-                placeholder="Cth. Grade 7"
-                className={formInputClass}
+            <Field label="Jenis Kelamin" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={JENIS_KELAMIN_OPTIONS}
               />
-            </FormField>
+            </Field>
 
-            <FormField label="Golongan PHDP">
-              <select defaultValue="" className={formInputClass}>
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                <option value="I/A">I/A</option>
-                <option value="I/B">I/B</option>
-                <option value="II/A">II/A</option>
-                <option value="II/B">II/B</option>
-                <option value="II/C">II/C</option>
-                <option value="III/A">III/A</option>
-              </select>
-            </FormField>
+            <Field label="Tempat Lahir">
+              <Input placeholder="Cth. Sumedang" />
+            </Field>
+
+            <Field label="Tanggal Lahir" required>
+              <Input type="date" required />
+            </Field>
+
+            <Field label="Pendidikan Terakhir" required>
+              <Select
+                required
+                defaultValue=""
+                placeholder="Pilih..."
+                options={PENDIDIKAN_OPTIONS}
+              />
+            </Field>
+
+            <Field label="Nomor Telpon">
+              <Input placeholder="0812-xxxx-xxxx" />
+            </Field>
           </div>
 
-          <div className="mt-5 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
-            Personnel area akan mengikuti Level Penempatan yang dipilih di atas
-            (Head Office, Regional, atau Unit) dan tidak perlu diisi manual.
-          </div>
+          <Field label="Alamat">
+            <Textarea placeholder="Alamat lengkap sesuai KTP" />
+          </Field>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <CardHeader title="Penempatan & Jabatan" />
+
+        <div className="mt-5">
+          <PenempatanJabatanSection value={penempatan} onChange={setPenempatan} />
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Link
-            href="/pegawai"
-            className="rounded-xl bg-slate-400 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-500"
-          >
-            Batal
-          </Link>
-          <button
-            type="submit"
-            className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-          >
-            Simpan Pegawai
-          </button>
+        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Tanggal Masuk" required>
+            <Input type="date" required />
+          </Field>
+
+          <Field label="Status Kepegawaian" required>
+            <Select
+              required
+              defaultValue=""
+              placeholder="Pilih..."
+              options={STATUS_KEPEGAWAIAN_OPTIONS}
+            />
+          </Field>
         </div>
-      </form>
-    </div>
+      </Card>
+
+      <Card className="p-6">
+        <CardHeader
+          title="Data Kepegawaian"
+          description="Mengikuti struktur administrasi personalia yang berjalan"
+        />
+
+        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Employee Group" required>
+            <Select
+              required
+              defaultValue=""
+              placeholder="Pilih..."
+              options={EMPLOYEE_GROUP_OPTIONS}
+            />
+          </Field>
+
+          <Field label="Employee Sub Group" required>
+            <Select
+              required
+              defaultValue=""
+              placeholder="Pilih..."
+              options={EMPLOYEE_SUBGROUP_OPTIONS}
+            />
+          </Field>
+
+          <Field label="Status KSO" required>
+            <Select
+              required
+              defaultValue=""
+              placeholder="Pilih..."
+              options={STATUS_KSO_OPTIONS}
+            />
+          </Field>
+
+          <Field label="Person Grade">
+            <Input placeholder="Cth. Grade 7" />
+          </Field>
+
+          <Field label="Golongan PHDP">
+            <Select
+              defaultValue=""
+              placeholder="Pilih..."
+              options={GOLONGAN_PHDP_OPTIONS}
+            />
+          </Field>
+        </div>
+
+        <div className="mt-5 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-500">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+          Personnel area akan mengikuti Level Penempatan yang dipilih di atas
+          (Head Office, Regional, atau Unit) dan tidak perlu diisi manual.
+        </div>
+      </Card>
+    </FormPageLayout>
   );
 }

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sprout } from "lucide-react";
 import { navigationConfig } from "@/config/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import type { Role } from "@/types/auth";
