@@ -49,7 +49,7 @@ function DataTableSearchCell({ columnId, label, config }: SearchCellProps) {
           // Enter menerapkan langsung tanpa menunggu jeda
           if (event.key === "Enter") setColumnSearch(columnId, draft);
         }}
-        className="w-full rounded-lg border border-slate-300 bg-white py-1.5 pl-7 pr-2 text-xs font-normal normal-case tracking-normal text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+        className="w-full rounded-lg border border-slate-300 bg-white py-2 pl-7 pr-2 text-xs font-normal normal-case tracking-normal text-slate-700 placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
       />
     </div>
   );
@@ -75,7 +75,7 @@ export function DataTableSearchRow() {
         const field = searchById.get(column.id);
 
         return (
-          <th key={column.id} className={cn(cellPaddingXClass, "pb-3 font-normal")}>
+          <th key={column.id} className={cn(cellPaddingXClass, "py-3 font-normal")}>
             {field && (
               <DataTableSearchCell
                 columnId={field.id}

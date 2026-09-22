@@ -23,7 +23,6 @@ import type { Pegawai } from "../model/pegawai";
 
 export function PegawaiList() {
   const { tableState, rows, total, loading, error } = useServerDataTable<Pegawai>({
-    defaultSorting: [{ id: "name", desc: false }],
     fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
       // id kolom di tabel = nama parameter sort/filter di backend
       getPegawaiList(

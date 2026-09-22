@@ -53,7 +53,6 @@ export function createMasterJabatanTableConfig({
   return defineTableConfig<JabatanMasterRow>({
     getRowId: (row) => String(row.id),
     tableClassName: "min-w-190",
-    defaultSorting: [{ id: "namaJabatanLengkap", desc: false }],
     emptyMessage: "Tidak ada jabatan yang cocok dengan pencarian atau filter.",
     columns: col.columns([
       rowNumberColumn<JabatanMasterRow>(),

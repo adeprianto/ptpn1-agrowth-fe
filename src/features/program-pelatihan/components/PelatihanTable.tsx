@@ -54,7 +54,6 @@ export function createPelatihanTableConfig({
   return defineTableConfig<PelatihanRow>({
     getRowId: (row) => row.id,
     tableClassName: "min-w-200",
-    defaultSorting: [{ id: "nama", desc: false }],
     emptyMessage: "Tidak ada program pelatihan yang cocok dengan pencarian.",
     columns: col.columns([
       rowNumberColumn<PelatihanRow>(),

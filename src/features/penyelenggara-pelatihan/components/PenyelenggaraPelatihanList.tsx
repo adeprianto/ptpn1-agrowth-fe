@@ -21,7 +21,6 @@ export default function PenyelenggaraPelatihanList() {
 
   const { tableState, rows, total, loading, error, refresh, startIndex } =
     useServerDataTable<Penyelenggara>({
-      defaultSorting: [{ id: "name", desc: false }],
       fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
         getPenyelenggaraList(
           {

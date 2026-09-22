@@ -38,7 +38,6 @@ export function RegionalList() {
 
   const { tableState, rows, total, loading, error, refresh, startIndex } =
     useServerDataTable<Regional>({
-      defaultSorting: [{ id: "name", desc: false }],
       fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
         // id kolom di tabel = nama parameter sort/filter di backend
         getRegionals(

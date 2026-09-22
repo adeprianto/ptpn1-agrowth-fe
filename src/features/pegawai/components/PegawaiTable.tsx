@@ -80,7 +80,6 @@ export function createPegawaiTableConfig(
     getRowId: (row) => row.id,
     tableClassName: "min-w-300",
     density: "compact",
-    defaultSorting: [{ id: "name", desc: false }],
     emptyMessage: "Tidak ada pegawai yang cocok dengan pencarian atau filter.",
     columns: col.columns([
       col.accessor("nik", {
