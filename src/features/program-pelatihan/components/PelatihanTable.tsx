@@ -1,110 +1,144 @@
 "use client";
 
-import Link from "next/link";
+import { useMemo } from "react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import {
+  actionsColumn,
+  createDataTableColumnHelper,
+  DataTable,
+  defineTableConfig,
+  optionsFilter,
+  rowNumberColumn,
+  textFilter,
+  toValueOptions,
+  type TableConfig,
+} from "@/components/shared/data-table";
+import { Badge, type BadgeTone } from "@/components/ui";
 import type { PelatihanRow } from "./programPelatihanDummyData";
 
-interface PelatihanTableProps {
-    rows: PelatihanRow[];
-}
+const col = createDataTableColumnHelper<PelatihanRow>();
 
-const jenisPsdmBadgeClass: Record<PelatihanRow["jenisPsdm"], string> = {
-    "Pengembangan BOD/BOC": "bg-blue-700 text-white",
-    "Agrowallet": "bg-green-100 text-green-700",
-    "IHT": "bg-sky-100 text-sky-700",
-    "Public Training": "bg-purple-700 text-white",
-    "Kursus Jabatan": "bg-purple-200 text-purple-800",
-    "Benchmarking": "bg-orange-200 text-orange-800",
-    "Program Budaya": "bg-yellow-200 text-yellow-800",
-    "Sertifikasi": "bg-teal-700 text-white",
+const JENIS_PSDM_TONE: Record<PelatihanRow["jenisPsdm"], BadgeTone> = {
+  "Pengembangan BOD/BOC": "blue",
+  Agrowallet: "emerald",
+  IHT: "blue",
+  "Public Training": "violet",
+  "Kursus Jabatan": "violet",
+  Benchmarking: "amber",
+  "Program Budaya": "amber",
+  Sertifikasi: "emerald",
 };
 
-export function PelatihanTable({ rows }: PelatihanTableProps) {
-    return (
-        <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white">
-            <table className="w-full min-w-200 text-left text-sm">
-                <thead>
-                <tr className="border-b border-slate-300 text-xs font-medium uppercase tracking-wide text-slate-400">
-                    <th className="px-6 py-4">No</th>
-                    <th className="px-6 py-4">Nama Pelatihan</th>
-                    <th className="px-6 py-4">Penyelenggara</th>
-                    <th className="px-6 py-4">Jenis Pengembangan SDM</th>
-                    <th className="px-6 py-4">Jenis Kompetensi</th>
-                    <th className="px-6 py-4">Bidang</th>
-                    <th className="px-6 py-4 text-right">Action</th>
-                </tr>
-                </thead>
-                <tbody>
-                {rows.map((row, index) => (
-                    <tr key={row.id} className="border-b border-slate-50 last:border-0">
-                        <td className="px-6 py-4">
-                            <p className="font-medium text-slate-800">{index + 1}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                            <div>
-                                <p className="font-medium text-slate-800">{row.nama}</p>
-                            </div>
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4">
-                            <div>
-                                <p className="font-medium text-slate-800">
-                                    {row.penyelenggara}
-                                </p>
-                            </div>
-                        </td>
-                        <td className="px-6 py-4">
-                            <div>
-                                <p className="font-medium text-slate-800">{row.jenisKompetensi}</p>
-                            </div>
-                        </td>
-                        <td className="px-6 py-4">
-                            <span
-                                className={`rounded-full whitespace-nowrap px-3 py-1 text-xs font-medium ${jenisPsdmBadgeClass[row.jenisPsdm]}`}
-                            >
-                              {row.jenisPsdm}
-                            </span>
-                        </td>
-                        <td className="px-6 py-4">
-                            <div>
-                                <p className="font-medium text-slate-800">{row.bidang}</p>
-                            </div>
-                        </td>
-                        <td className="px-6 py-4">
-                            <div className="flex justify-end gap-2">
-                                <Link
-                                    href={`/pegawai/${row.id}`}
-                                    className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-200"
-                                >
-                                    Detail
-                                </Link>
-                                <button
-                                    type="button"
-                                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    type="button"
-                                    className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                ))}
+const JENIS_PSDM_OPTIONS = toValueOptions(Object.keys(JENIS_PSDM_TONE));
 
-                {rows.length === 0 && (
-                    <tr>
-                        <td
-                            colSpan={7}
-                            className="px-6 py-10 text-center text-sm text-slate-400"
-                        >
-                            Tidak ada pegawai yang cocok dengan pencarian/filter.
-                        </td>
-                    </tr>
-                )}
-                </tbody>
-            </table>
-        </div>
-    );
+const JENIS_KOMPETENSI_OPTIONS = toValueOptions([
+  "Hard Competency",
+  "Soft Competency",
+  "Hard & Soft Competency",
+]);
+
+interface PelatihanTableOptions {
+  /** Isi checklist filter Bidang, diturunkan dari data yang ada */
+  bidangOptions: string[];
+  onDelete?: (row: PelatihanRow) => void;
+}
+
+/**
+ * Konfigurasi tabel program pelatihan.
+ *
+ * Datanya masih dummy dan sudah lengkap di browser, jadi tabel ini dipakai
+ * dalam mode client.
+ */
+export function createPelatihanTableConfig({
+  bidangOptions,
+  onDelete,
+}: PelatihanTableOptions): TableConfig<PelatihanRow> {
+  return defineTableConfig<PelatihanRow>({
+    getRowId: (row) => row.id,
+    tableClassName: "min-w-200",
+    defaultSorting: [{ id: "nama", desc: false }],
+    emptyMessage: "Tidak ada program pelatihan yang cocok dengan pencarian.",
+    columns: col.columns([
+      rowNumberColumn<PelatihanRow>(),
+      col.accessor("nama", {
+        header: "Nama Pelatihan",
+        meta: {
+          filter: textFilter("Cari nama pelatihan..."),
+          cellClassName: "font-medium text-slate-800",
+        },
+      }),
+      col.accessor("penyelenggara", {
+        header: "Penyelenggara",
+        meta: {
+          filter: textFilter("Cari penyelenggara..."),
+          nowrap: true,
+          cellClassName: "font-medium text-slate-800",
+        },
+      }),
+      col.accessor("jenisKompetensi", {
+        header: "Jenis Kompetensi",
+        meta: {
+          filter: optionsFilter(JENIS_KOMPETENSI_OPTIONS),
+          cellClassName: "font-medium text-slate-800",
+        },
+      }),
+      col.accessor("jenisPsdm", {
+        header: "Jenis Pengembangan SDM",
+        meta: { filter: optionsFilter(JENIS_PSDM_OPTIONS), nowrap: true },
+        cell: ({ row }) => (
+          <Badge tone={JENIS_PSDM_TONE[row.original.jenisPsdm]}>
+            {row.original.jenisPsdm}
+          </Badge>
+        ),
+      }),
+      col.accessor("bidang", {
+        header: "Bidang",
+        meta: {
+          filter: optionsFilter(toValueOptions(bidangOptions)),
+          cellClassName: "font-medium text-slate-800",
+        },
+      }),
+      actionsColumn<PelatihanRow>({
+        ariaLabel: (row) => `Aksi untuk ${row.nama}`,
+        actions: (row) => [
+          { label: "Lihat Detail", icon: Eye, href: `/program-pelatihan/${row.id}` },
+          {
+            label: "Edit",
+            icon: Pencil,
+            href: `/program-pelatihan/${row.id}/edit`,
+          },
+          ...(onDelete
+            ? [
+                {
+                  label: "Hapus",
+                  icon: Trash2,
+                  variant: "danger" as const,
+                  onClick: () => onDelete(row),
+                },
+              ]
+            : []),
+        ],
+      }),
+    ]),
+  });
+}
+
+interface PelatihanTableProps extends Partial<PelatihanTableOptions> {
+  rows: PelatihanRow[];
+}
+
+export function PelatihanTable({ rows, bidangOptions, onDelete }: PelatihanTableProps) {
+  // kalau tidak dikirim dari luar, isi filter Bidang diturunkan dari datanya
+  const bidang = useMemo(
+    () => bidangOptions ?? Array.from(new Set(rows.map((row) => row.bidang))).sort(),
+    [bidangOptions, rows],
+  );
+
+  const config = useMemo(
+    () => createPelatihanTableConfig({ bidangOptions: bidang, onDelete }),
+    [bidang, onDelete],
+  );
+
+  // mode client: data program pelatihan sudah lengkap di browser
+  return <DataTable config={config} data={rows} />;
 }

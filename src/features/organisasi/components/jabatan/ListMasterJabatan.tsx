@@ -1,66 +1,41 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Link from "next/link";
+import { useCallback, useMemo, useState } from "react";
 import { Layers, ListTree, Plus } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { MasterJabatanFilterBar } from "./MasterJabatanFilterBar";
-import { MasterJabatanTable } from "./MasterJabatanTable";
+import { ButtonLink } from "@/components/ui";
+import { MasterJabatanTable, jabatanEntityCode } from "./MasterJabatanTable";
 import {
   jabatanMasterRows as initialJabatanRows,
   getEntityLabel,
-  getOrganisasiNode,
   type JabatanMasterRow,
 } from "@/features/organisasi/components/departemen/masterJabatanDummyData";
 
 export function ListMasterJabatan() {
+  // DUMMY — master jabatan belum ada endpoint-nya, jadi datanya di state lokal
   const [rows, setRows] = useState<JabatanMasterRow[]>(initialJabatanRows);
-  const [search, setSearch] = useState("");
-  const [level, setLevel] = useState("all");
-  const [entity, setEntity] = useState("all");
-  const [deleteTarget, setDeleteTarget] = useState<JabatanMasterRow | null>(
-    null,
-  );
+  const [deleteTarget, setDeleteTarget] = useState<JabatanMasterRow | null>(null);
 
+  // Isi checklist filter kolom diturunkan dari data yang ada
   const levelOptions = useMemo(
-    () => Array.from(new Set(rows.map((r) => r.level))).sort(),
+    () => Array.from(new Set(rows.map((row) => row.level))).sort(),
     [rows],
   );
 
   const entityOptions = useMemo(() => {
-    const codes = new Set(
-      rows
-        .map((r) => getOrganisasiNode(r.organisasiCode)?.entityCode)
-        .filter((code): code is string => !!code),
-    );
-    return Array.from(codes).map((code) => ({
-      code,
-      label: getEntityLabel(code),
-      isHo: code === "HO",
-    }));
+    const codes = new Set(rows.map(jabatanEntityCode).filter(Boolean));
+    return Array.from(codes).map((code) => ({ code, label: getEntityLabel(code) }));
   }, [rows]);
 
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const keyword = search.trim().toLowerCase();
-      const matchSearch =
-        keyword === "" ||
-        row.namaJabatanLengkap.toLowerCase().includes(keyword) ||
-        row.code.toLowerCase().includes(keyword);
+  const totalJobFamily = new Set(rows.map((row) => row.jobFamilyCode)).size;
 
-      const matchLevel = level === "all" || row.level === level;
-
-      const rowEntity = getOrganisasiNode(row.organisasiCode)?.entityCode;
-      const matchEntity = entity === "all" || rowEntity === entity;
-
-      return matchSearch && matchLevel && matchEntity;
-    });
-  }, [rows, search, level, entity]);
-
-  const totalJobFamily = new Set(rows.map((r) => r.jobFamilyCode)).size;
+  const askDelete = useCallback(
+    (row: JabatanMasterRow) => setDeleteTarget(row),
+    [],
+  );
 
   function handleConfirmDelete() {
     if (deleteTarget) {
@@ -83,22 +58,14 @@ export function ListMasterJabatan() {
         title="Master Jabatan"
         description="Daftar jabatan beserta Job Family dan posisinya di struktur organisasi"
         action={
-          <Link
-            href="/organisasi/jabatan/create"
-            className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-          >
-            <Plus className="h-4 w-4" />
+          <ButtonLink href="/organisasi/jabatan/create" size="lg" icon={Plus}>
             Tambah Jabatan
-          </Link>
+          </ButtonLink>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SummaryStatCard
-          label="Total Jabatan"
-          value={rows.length}
-          icon={ListTree}
-        />
+        <SummaryStatCard label="Total Jabatan" value={rows.length} icon={ListTree} />
         <SummaryStatCard
           label="Total Job Family"
           value={totalJobFamily}
@@ -111,18 +78,12 @@ export function ListMasterJabatan() {
         />
       </div>
 
-      <MasterJabatanFilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
+      <MasterJabatanTable
+        rows={rows}
         levelOptions={levelOptions}
-        levelValue={level}
-        onLevelChange={setLevel}
         entityOptions={entityOptions}
-        entityValue={entity}
-        onEntityChange={setEntity}
+        onDelete={askDelete}
       />
-
-      <MasterJabatanTable rows={filteredRows} onDeleteClick={setDeleteTarget} />
 
       <ConfirmDialog
         open={deleteTarget !== null}

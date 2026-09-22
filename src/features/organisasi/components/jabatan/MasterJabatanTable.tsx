@@ -1,4 +1,19 @@
-import Link from "next/link";
+"use client";
+
+import { useMemo } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import {
+  actionsColumn,
+  createDataTableColumnHelper,
+  DataTable,
+  defineTableConfig,
+  optionsFilter,
+  rowNumberColumn,
+  textFilter,
+  type DataTableColumnMeta,
+  type TableConfig,
+} from "@/components/shared/data-table";
+import { Badge } from "@/components/ui";
 import {
   getEntityLabel,
   getJobFamilyName,
@@ -6,90 +21,126 @@ import {
   type JabatanMasterRow,
 } from "@/features/organisasi/components/departemen/masterJabatanDummyData";
 
-interface MasterJabatanTableProps {
+const col = createDataTableColumnHelper<JabatanMasterRow>();
+
+/** Kode entity tempat jabatan berada, lewat organisasi induknya. */
+export function jabatanEntityCode(row: JabatanMasterRow): string {
+  return getOrganisasiNode(row.organisasiCode)?.entityCode ?? "";
+}
+
+interface MasterJabatanTableOptions {
+  /** Isi checklist filter Level & Entity, diturunkan dari data yang ada */
+  levelOptions: string[];
+  entityOptions: { code: string; label: string }[];
+  onDelete: (row: JabatanMasterRow) => void;
+}
+
+/**
+ * Konfigurasi tabel master jabatan.
+ *
+ * Datanya masih dummy dan sudah lengkap di browser, jadi tabel ini dipakai
+ * dalam mode client: sort, filter, dan pagination diproses TanStack Table.
+ */
+export function createMasterJabatanTableConfig({
+  levelOptions,
+  entityOptions,
+  onDelete,
+}: MasterJabatanTableOptions): TableConfig<JabatanMasterRow> {
+  const codeMeta: DataTableColumnMeta = {
+    nowrap: true,
+    cellClassName: "font-mono text-xs text-slate-500",
+  };
+
+  return defineTableConfig<JabatanMasterRow>({
+    getRowId: (row) => String(row.id),
+    tableClassName: "min-w-190",
+    defaultSorting: [{ id: "namaJabatanLengkap", desc: false }],
+    emptyMessage: "Tidak ada jabatan yang cocok dengan pencarian atau filter.",
+    columns: col.columns([
+      rowNumberColumn<JabatanMasterRow>(),
+      col.accessor("code", { header: "Code", meta: codeMeta }),
+      col.accessor("namaJabatanLengkap", {
+        header: "Nama Jabatan",
+        meta: {
+          filter: textFilter("Cari nama jabatan..."),
+          cellClassName: "font-medium text-slate-800",
+        },
+      }),
+      col.accessor("level", {
+        header: "Level",
+        meta: {
+          filter: optionsFilter(
+            levelOptions.map((level) => ({ value: level, label: level })),
+          ),
+          nowrap: true,
+        },
+        cell: ({ getValue }) => <Badge tone="emerald">{getValue()}</Badge>,
+      }),
+      col.accessor((row) => getJobFamilyName(row.jobFamilyCode), {
+        id: "jobFamily",
+        header: "Job Family",
+        meta: { cellClassName: "text-slate-600" },
+      }),
+      col.accessor(jabatanEntityCode, {
+        id: "entity",
+        header: "Organisasi",
+        meta: {
+          label: "Organisasi",
+          filter: optionsFilter(
+            entityOptions.map((entity) => ({
+              value: entity.code,
+              label: entity.label,
+            })),
+          ),
+        },
+        cell: ({ row }) => {
+          const organisasi = getOrganisasiNode(row.original.organisasiCode);
+
+          return (
+            <>
+              <p className="text-slate-700">{organisasi?.name ?? "-"}</p>
+              <p className="text-xs text-slate-400">
+                {organisasi ? getEntityLabel(organisasi.entityCode) : ""}
+              </p>
+            </>
+          );
+        },
+      }),
+      actionsColumn<JabatanMasterRow>({
+        ariaLabel: (row) => `Aksi untuk ${row.namaJabatanLengkap}`,
+        actions: (row) => [
+          {
+            label: "Edit",
+            icon: Pencil,
+            href: `/organisasi/jabatan/${row.id}/edit`,
+          },
+          {
+            label: "Hapus",
+            icon: Trash2,
+            variant: "danger",
+            onClick: () => onDelete(row),
+          },
+        ],
+      }),
+    ]),
+  });
+}
+
+interface MasterJabatanTableProps extends MasterJabatanTableOptions {
   rows: JabatanMasterRow[];
-  onDeleteClick: (row: JabatanMasterRow) => void;
 }
 
 export function MasterJabatanTable({
   rows,
-  onDeleteClick,
+  levelOptions,
+  entityOptions,
+  onDelete,
 }: MasterJabatanTableProps) {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-      <table className="w-full min-w-190 text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-100 text-xs font-medium uppercase tracking-wide text-slate-400">
-            <th className="px-6 py-4">No</th>
-            <th className="px-4 py-4">Code</th>
-            <th className="px-6 py-4">Nama Jabatan</th>
-            <th className="px-6 py-4">Level</th>
-            <th className="px-6 py-4">Job Family</th>
-            <th className="px-6 py-4">Organisasi</th>
-            <th className="px-6 py-4 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const organisasi = getOrganisasiNode(row.organisasiCode);
-
-            return (
-              <tr
-                key={row.id}
-                className="border-b border-slate-50 last:border-0"
-              >
-                <td className="px-6 py-4 text-slate-500">{row.id}</td>
-                <td className="px-4 py-4 text-slate-500">{row.code}</td>
-                <td className="px-6 py-4 font-medium text-slate-800">
-                  {row.namaJabatanLengkap}
-                </td>
-                <td className="px-6 py-4">
-                  <span className="rounded-full whitespace-nowrap bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                    {row.level}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-slate-600">
-                  {getJobFamilyName(row.jobFamilyCode)}
-                </td>
-                <td className="px-6 py-4">
-                  <p className="text-slate-700">{organisasi?.name ?? "-"}</p>
-                  <p className="text-xs text-slate-400">
-                    {organisasi ? getEntityLabel(organisasi.entityCode) : ""}
-                  </p>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex justify-end gap-2">
-                    <Link
-                      href={`/organisasi/jabatan/${row.id}/edit`}
-                      className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-600"
-                    >
-                      Edit
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => onDeleteClick(row)}
-                      className="rounded-lg bg-rose-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-rose-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-
-          {rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={6}
-                className="px-6 py-10 text-center text-sm text-slate-400"
-              >
-                Tidak ada jabatan yang cocok dengan pencarian/filter.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+  const config = useMemo(
+    () => createMasterJabatanTableConfig({ levelOptions, entityOptions, onDelete }),
+    [levelOptions, entityOptions, onDelete],
   );
+
+  // mode client: data jabatan sudah lengkap di browser
+  return <DataTable config={config} data={rows} />;
 }
