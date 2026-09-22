@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { ListChecks, Network, User, Wallet } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { DetailPageState } from "@/components/shared/DetailPageState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { PanelCard } from "@/components/shared/PanelCard";
-import { ApiError } from "@/lib/http-client";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { formatNumber, formatRupiah } from "@/lib/format";
 import { getRegional } from "../../api/regional";
-import type { RegionalResource } from "@/types/api/regional";
 import { RegionalInfoCard } from "./RegionalInfoCard";
 import { RegionalUnitStructureTable } from "./RegionalUnitStructureTable";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
@@ -19,78 +18,29 @@ import { MenungguValidasiList } from "./MenungguValidasiList";
 import { pendingValidationRows } from "./regionalDetailDummyData";
 
 interface DetailRegionalProps {
-  id: number;
+  id: string;
 }
 
-type LoadState =
-  | { status: "loading" }
-  | { status: "error"; code: number | null; message: string }
-  | { status: "ready"; regional: RegionalResource };
-
 export function DetailRegional({ id }: DetailRegionalProps) {
-  // Hasil disimpan bersama id-nya; kalau id berubah, otomatis dianggap loading
-  const [loaded, setLoaded] = useState<{ id: number; state: LoadState } | null>(
-    null,
-  );
-  const state: LoadState =
-    loaded?.id === id ? loaded.state : { status: "loading" };
+  const query = useAsyncData((signal) => getRegional(id, signal), { deps: [id] });
+  const regional = query.data;
 
-  useEffect(() => {
-    const controller = new AbortController();
-    getRegional(id, controller.signal)
-      .then((regional) =>
-        setLoaded({ id, state: { status: "ready", regional } }),
-      )
-      .catch((e: Error) => {
-        if (controller.signal.aborted) return;
-        setLoaded({
-          id,
-          state: {
-            status: "error",
-            code: e instanceof ApiError ? e.status : null,
-            message: e.message,
-          },
-        });
-      });
-    return () => controller.abort();
-  }, [id]);
-
-  if (state.status === "loading") {
+  if (!regional) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
-        Memuat data regional...
-      </div>
+      <DetailPageState
+        query={query}
+        resource="regional"
+        backHref="/organisasi/regional"
+        backLabel="Kembali ke daftar Regional"
+      />
     );
   }
-
-  if (state.status === "error") {
-    const message =
-      state.code === 404
-        ? "Regional tidak ditemukan."
-        : state.code === 403
-          ? "Anda tidak memiliki akses ke regional ini."
-          : `Gagal memuat data regional: ${state.message}`;
-
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-        <p className="text-sm text-slate-500">{message}</p>
-        <Link
-          href="/organisasi/regional"
-          className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:underline"
-        >
-          Kembali ke daftar Regional
-        </Link>
-      </div>
-    );
-  }
-
-  const { regional } = state;
 
   // DUMMY — realisasi anggaran & jumlah menunggu validasi belum dari API,
   // nanti diganti hasil GET /api/v1/organisasi/regional/{id}
   const realisasiAnggaran = 245_000_000;
   const menungguValidasi = pendingValidationRows.filter(
-    (v) => v.status === "menunggu_approval" || v.status === "diajukan",
+    (row) => row.status === "menunggu_approval" || row.status === "diajukan",
   ).length;
 
   return (
@@ -100,30 +50,25 @@ export function DetailRegional({ id }: DetailRegionalProps) {
           { label: "Dashboard", href: "/dashboard" },
           { label: "Organisasi", href: "/organisasi" },
           { label: "Regional", href: "/organisasi/regional" },
-          { label: regional.name },
+          { label: regional.nama },
         ]}
       />
 
       <PageHeader
-        title={regional.name}
-        description={`${regional.code} · Ringkasan organisasi, SDM, dan pengembangan di wilayah kerja ini.`}
-        action={null}
+        title={regional.nama}
+        description={`${regional.kode} · Ringkasan organisasi, SDM, dan pengembangan di wilayah kerja ini.`}
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          label="Jumlah Unit"
-          value={regional.jumlah_unit}
-          icon={Network}
-        />
+        <MetricCard label="Jumlah Unit" value={regional.jumlahUnit} icon={Network} />
         <MetricCard
           label="Total Karyawan"
-          value={regional.jumlah_karyawan.toLocaleString("id-ID")}
+          value={formatNumber(regional.jumlahKaryawan)}
           icon={User}
         />
         <MetricCard
           label="Realisasi Anggaran"
-          value={`Rp ${realisasiAnggaran.toLocaleString("id-ID")}`}
+          value={formatRupiah(realisasiAnggaran)}
           icon={Wallet}
         />
         <MetricCard
@@ -137,8 +82,8 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="lg:col-span-2">
           <RegionalInfoCard
-            penanggungJawab={regional.kepala_regional ?? undefined}
-            indukOrganisasi={regional.parent?.name ?? "-"}
+            penanggungJawab={regional.kepalaRegional ?? undefined}
+            indukOrganisasi={regional.induk ?? "-"}
           />
         </div>
         <div className="lg:col-span-3">
@@ -149,8 +94,8 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <EntityEmployeeTable
         entityId={regional.id}
         title="Karyawan Kantor Regional"
-        subtitle={`${regional.jumlah_karyawan_kantor.toLocaleString(
-          "id-ID",
+        subtitle={`${formatNumber(
+          regional.jumlahKaryawanKantor,
         )} pegawai ditempatkan langsung di kantor regional (di luar pegawai unit)`}
       />
 
@@ -163,10 +108,7 @@ export function DetailRegional({ id }: DetailRegionalProps) {
           <AnggaranPengembanganChart />
         </PanelCard>
 
-        <PanelCard
-          title="Distribusi Karyawan"
-          subtitle="Berdasarkan Job Family"
-        >
+        <PanelCard title="Distribusi Karyawan" subtitle="Berdasarkan Job Family">
           <DistribusiKaryawanChart />
         </PanelCard>
       </div>

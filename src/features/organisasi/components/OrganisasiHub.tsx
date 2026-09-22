@@ -15,6 +15,7 @@ import {
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useAuth } from "@/hooks/useAuth";
+import { formatNumber } from "@/lib/format";
 import type { Role } from "@/types/auth";
 import { getRegionalSummary } from "../api/regional";
 import { getHeadOffice } from "../api/headOffice";
@@ -56,8 +57,8 @@ export function OrganisasiHub() {
       .then((s) =>
         setStats((prev) => ({
           ...prev,
-          regional: s.total_regional,
-          unit: s.total_unit,
+          regional: s.totalRegional,
+          unit: s.totalUnit,
         })),
       )
       .catch(() => {});
@@ -66,7 +67,7 @@ export function OrganisasiHub() {
     if (isHo) {
       getHeadOffice(signal)
         .then((ho) =>
-          setStats((prev) => ({ ...prev, karyawanHo: ho.jumlah_karyawan })),
+          setStats((prev) => ({ ...prev, karyawanHo: ho.jumlahKaryawan })),
         )
         .catch(() => {});
     }
@@ -83,7 +84,7 @@ export function OrganisasiHub() {
   }, [isHo]);
 
   const stat = (value: number | undefined, suffix: string) =>
-    value === undefined ? "…" : `${value.toLocaleString("id-ID")} ${suffix}`;
+    value === undefined ? "…" : `${formatNumber(value)} ${suffix}`;
 
   const hubCards: HubCardData[] = [
     {

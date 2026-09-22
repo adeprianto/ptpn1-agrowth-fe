@@ -6,5 +6,5 @@ export default async function PegawaiDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <DetailPegawai id={Number(id)} />;
+  return <DetailPegawai id={id} />;
 }

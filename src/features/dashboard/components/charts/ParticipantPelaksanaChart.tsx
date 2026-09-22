@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { ChartTooltipProps } from "./chartTooltip";
 
 const data = [
   { regional: "1", target: 100 },
@@ -26,15 +27,7 @@ const formatValue = (value: number) => {
   return `${value} Orang`;
 };
 
-function CustomTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-}) {
+function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) {
     return null;
   }
@@ -63,7 +56,7 @@ function CustomTooltip({
             </div>
 
             <span className="font-medium text-slate-800">
-              {formatValue(item.value)}
+              {formatValue(item.value ?? 0)}
             </span>
           </div>
         ))}

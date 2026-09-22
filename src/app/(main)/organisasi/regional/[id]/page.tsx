@@ -9,5 +9,5 @@ export default async function RegionalDetailPage({
 }: RegionalDetailPageProps) {
   const { id } = await params;
 
-  return <DetailRegional id={Number(id)} />;
+  return <DetailRegional id={id} />;
 }

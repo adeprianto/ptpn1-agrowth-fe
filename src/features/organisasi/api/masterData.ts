@@ -1,32 +1,30 @@
 import { apiGet } from "@/lib/http-client";
 import type { MasterRef } from "@/types/api/master-data";
+import { toMasterItems, type MasterItem } from "../model/masterData";
 
 // Master data jumlahnya kecil, jadi diambil sekaligus untuk dropdown/filter.
 const ALL = { per_page: 100 };
 
-/** GET /api/operational-categories — jenis unit (Kebun, Pabrik, dst) */
-export async function getOperationalCategories(signal?: AbortSignal) {
-  const { data } = await apiGet<MasterRef[]>("/api/operational-categories", ALL, signal);
-  return data;
+async function getMasterList(path: string, signal?: AbortSignal): Promise<MasterItem[]> {
+  const { data } = await apiGet<MasterRef[]>(path, ALL, signal);
+  return toMasterItems(data);
 }
+
+/** GET /api/operational-categories — jenis unit (Kebun, Pabrik, dst) */
+export const getOperationalCategories = (signal?: AbortSignal) =>
+  getMasterList("/api/operational-categories", signal);
 
 /** GET /api/business-types — komoditas (Teh, Kopi, Karet, dst) */
-export async function getBusinessTypes(signal?: AbortSignal) {
-  const { data } = await apiGet<MasterRef[]>("/api/business-types", ALL, signal);
-  return data;
-}
+export const getBusinessTypes = (signal?: AbortSignal) =>
+  getMasterList("/api/business-types", signal);
 
 /** GET /api/organization-types — tipe departemen (Direktorat, Divisi, dst) */
-export async function getOrganizationTypes(signal?: AbortSignal) {
-  const { data } = await apiGet<MasterRef[]>("/api/organization-types", ALL, signal);
-  return data;
-}
+export const getOrganizationTypes = (signal?: AbortSignal) =>
+  getMasterList("/api/organization-types", signal);
 
 /** GET /api/job-functions */
-export async function getJobFunctions(signal?: AbortSignal) {
-  const { data } = await apiGet<MasterRef[]>("/api/job-functions", ALL, signal);
-  return data;
-}
+export const getJobFunctions = (signal?: AbortSignal) =>
+  getMasterList("/api/job-functions", signal);
 
 /** GET /api/position-titles — hanya butuh totalnya, jadi ambil 1 baris saja */
 export async function getPositionTitleCount(signal?: AbortSignal) {

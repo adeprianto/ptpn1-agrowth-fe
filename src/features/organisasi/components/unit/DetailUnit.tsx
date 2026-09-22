@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { ListChecks, User, Users, Wallet } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { DetailPageState } from "@/components/shared/DetailPageState";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { PanelCard } from "@/components/shared/PanelCard";
@@ -11,92 +10,51 @@ import { EntityInfoCard } from "@/components/shared/EntityInforCard";
 import { AnggaranPengembanganChart } from "@/components/shared/AnggaranPengembanganChart";
 import { DistribusiKaryawanChart } from "@/components/shared/DistribusiKaryawanChart";
 import { PengajuanPelatihanList } from "@/components/shared/PengajuanPelatihanList";
-import { ApiError } from "@/lib/http-client";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { formatNumber, formatRupiah } from "@/lib/format";
 import { getUnit } from "../../api/unit";
-import type { UnitListResource } from "@/types/api/unit";
+import { komoditasLabel } from "../../model/unit";
 import { getUnitDetailDummy } from "./unitDetailDummyData";
 import { UnitPositionTable } from "./UnitPositionTable";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
 import { getJenisDisplay } from "./jenisUnit";
 
 interface DetailUnitProps {
-  id: number;
+  id: string;
 }
 
-type LoadState =
-  | { status: "loading" }
-  | { status: "error"; code: number | null; message: string }
-  | { status: "ready"; unit: UnitListResource };
-
 export function DetailUnit({ id }: DetailUnitProps) {
-  // Hasil disimpan bersama id-nya; kalau id berubah, otomatis dianggap loading
-  const [loaded, setLoaded] = useState<{ id: number; state: LoadState } | null>(
-    null,
-  );
-  const state: LoadState =
-    loaded?.id === id ? loaded.state : { status: "loading" };
+  const query = useAsyncData((signal) => getUnit(id, signal), { deps: [id] });
+  const unit = query.data;
 
-  useEffect(() => {
-    const controller = new AbortController();
-    getUnit(id, controller.signal)
-      .then((unit) => setLoaded({ id, state: { status: "ready", unit } }))
-      .catch((e: Error) => {
-        if (controller.signal.aborted) return;
-        setLoaded({
-          id,
-          state: {
-            status: "error",
-            code: e instanceof ApiError ? e.status : null,
-            message: e.message,
-          },
-        });
-      });
-    return () => controller.abort();
-  }, [id]);
-
-  if (state.status === "loading") {
+  if (!unit) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
-        Memuat data unit...
-      </div>
+      <DetailPageState
+        query={query}
+        resource="unit"
+        backHref="/organisasi/unit"
+        backLabel="Kembali ke daftar Unit"
+      />
     );
   }
 
-  if (state.status === "error") {
-    const message =
-      state.code === 404
-        ? "Unit tidak ditemukan."
-        : state.code === 403
-          ? "Anda tidak memiliki akses ke unit ini."
-          : `Gagal memuat data unit: ${state.message}`;
-
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-        <p className="text-sm text-slate-500">{message}</p>
-        <Link
-          href="/organisasi/unit"
-          className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:underline"
-        >
-          Kembali ke daftar Unit
-        </Link>
-      </div>
-    );
-  }
-
-  const { unit } = state;
   // DUMMY — struktur posisi, anggaran, distribusi & pengajuan belum dari API
   const detail = getUnitDetailDummy();
 
-  const jenisLabel = unit.jenis.map((j) => getJenisDisplay(j).label).join(", ");
-  const komoditasLabel = unit.komoditas.map((k) => k.name).join(", ");
+  const jenisLabel = unit.jenis.map((item) => getJenisDisplay(item).label).join(", ");
+  const komoditas = komoditasLabel(unit);
   const description = [
-    unit.code,
-    unit.regional?.name,
+    unit.kode,
+    unit.regionalNama,
     jenisLabel,
-    komoditasLabel && `Komoditas ${komoditasLabel}`,
+    komoditas !== "-" && `Komoditas ${komoditas}`,
   ]
     .filter(Boolean)
     .join(" · ");
+
+  const pengajuanAktif = detail.riwayatPengajuan.filter(
+    (row) => row.status === "diajukan" || row.status === "menunggu_approval",
+  ).length;
 
   return (
     <div className="space-y-5">
@@ -104,16 +62,16 @@ export function DetailUnit({ id }: DetailUnitProps) {
         items={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Unit", href: "/organisasi/unit" },
-          { label: unit.name },
+          { label: unit.nama },
         ]}
       />
 
-      <PageHeader title={unit.name} description={description} />
+      <PageHeader title={unit.nama} description={description} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Total Karyawan"
-          value={unit.jumlah_karyawan.toLocaleString("id-ID")}
+          value={formatNumber(unit.jumlahKaryawan)}
           icon={Users}
         />
         <MetricCard
@@ -123,16 +81,12 @@ export function DetailUnit({ id }: DetailUnitProps) {
         />
         <MetricCard
           label="Realisasi Anggaran"
-          value={`Rp ${detail.realisasiAnggaran.toLocaleString("id-ID")}`}
+          value={formatRupiah(detail.realisasiAnggaran)}
           icon={Wallet}
         />
         <MetricCard
           label="Pengajuan Aktif"
-          value={
-            detail.riwayatPengajuan.filter(
-              (r) => r.status === "diajukan" || r.status === "menunggu_approval",
-            ).length
-          }
+          value={pengajuanAktif}
           icon={ListChecks}
           variant="featured"
         />
@@ -146,7 +100,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
             noHp={detail.noHp}
             alamatKantor={detail.alamat}
             indukOrganisasiLabel="Induk Organisasi"
-            indukOrganisasiValue={unit.regional?.name ?? "-"}
+            indukOrganisasiValue={unit.regionalNama ?? "-"}
           />
         </div>
         <div className="lg:col-span-3">
@@ -157,9 +111,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
       <EntityEmployeeTable
         entityId={unit.id}
         title="Karyawan Unit"
-        subtitle={`${unit.jumlah_karyawan.toLocaleString(
-          "id-ID",
-        )} pegawai ditempatkan di unit ini`}
+        subtitle={`${formatNumber(unit.jumlahKaryawan)} pegawai ditempatkan di unit ini`}
       />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

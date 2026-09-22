@@ -10,6 +10,14 @@ export interface EmployeeEntity {
   parent: { id: number; type: EntityType; code: string; name: string } | null;
 }
 
+/** Baris operasional unit tempat pegawai bekerja (jenis + komoditas). */
+export interface EmployeeEntityOperational {
+  id: number;
+  code: string;
+  jenis: MasterRef | null;
+  komoditas: MasterRef | null;
+}
+
 /** Jabatan pegawai (PositionTitle) seperti yang dikirim EmployeeResource. */
 export interface EmployeeJabatan {
   id: number;
@@ -47,6 +55,7 @@ export interface EmployeeResource {
   jenis_kelamin: "L" | "P" | null;
   jabatan: EmployeeJabatan | null;
   entity: EmployeeEntity | null;
+  entity_operational?: EmployeeEntityOperational | null;
   komoditas?: MasterRef | null;
   status: string | null;
   penugasan: string | null;
@@ -76,3 +85,35 @@ export interface EmployeeSummary {
   total_regional: number;
   total_unit: number;
 }
+
+/**
+ * EmployeeController@filterOptions — isi checklist filter kolom.
+ * Sudah di-scope backend, jadi akun Regional/Unit hanya dapat pilihan miliknya.
+ */
+export interface EmployeeFilterOptions {
+  entities: (MasterRef & { type: EntityType })[];
+  operasional: {
+    /** Kunci gabungan jenis+komoditas yang dikirim balik sebagai nilai filter */
+    key: string;
+    jenis: MasterRef | null;
+    komoditas: MasterRef | null;
+  }[];
+  job_groups: MasterRef[];
+  job_functions: MasterRef[];
+  level_bod: number[];
+  golongan_phdp: string[];
+  person_grade: string[];
+}
+
+/** Kolom yang bisa di-sort di tabel pegawai (sama dengan whitelist backend). */
+export type EmployeeSortKey =
+  | "nik"
+  | "name"
+  | "entity"
+  | "operasional"
+  | "posisi"
+  | "job_group"
+  | "job_function"
+  | "level"
+  | "golongan_phdp"
+  | "person_grade";

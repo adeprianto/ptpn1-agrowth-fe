@@ -1,7 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   Award,
   BadgeCheck,
@@ -18,82 +16,116 @@ import {
   User,
 } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { DetailPageState } from "@/components/shared/DetailPageState";
 import { MetricCard } from "@/components/shared/MetricCard";
-import { ApiError } from "@/lib/http-client";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import {
+  formatMasaKerja,
+  formatNumber,
+  formatTanggal,
+  joinOrDash,
+} from "@/lib/format";
 import { getPegawaiDetail } from "../api/pegawai";
-import type { EmployeeResource } from "@/types/api/employee";
+import { levelBodLabel, type PegawaiDetail as Pegawai } from "../model/pegawai";
 import { kompetensiDummy } from "./pegawaiDetailDummyData";
 import { PegawaiProfileHeader } from "./PegawaiProfileHeader";
 import { InfoListCard, type InfoItem } from "./InfoListCard";
 import { RiwayatPelatihanTable } from "./RiwayatPelatihanTable";
 import { ProfilKompetensiCard } from "./ProfileKompetensiCard";
-import { formatMasaKerja, formatTanggal } from "./formatTanggal";
 
 interface DetailPegawaiProps {
-  id: number;
+  id: string;
 }
 
-type LoadState =
-  | { status: "loading" }
-  | { status: "error"; code: number | null; message: string }
-  | { status: "ready"; pegawai: EmployeeResource };
+function buildInformasiPribadiItems(pegawai: Pegawai): InfoItem[] {
+  return [
+    {
+      icon: Cake,
+      label: "Tempat, Tanggal Lahir",
+      value: joinOrDash(
+        [pegawai.tempatLahir, pegawai.tanggalLahir && formatTanggal(pegawai.tanggalLahir)],
+        ", ",
+      ),
+    },
+    {
+      icon: User,
+      label: "Usia · Jenis Kelamin",
+      value: joinOrDash([
+        pegawai.usia !== null ? `${pegawai.usia} Tahun` : null,
+        pegawai.jenisKelamin,
+      ]),
+    },
+    {
+      icon: GraduationCap,
+      label: "Pendidikan Terakhir",
+      value: joinOrDash([pegawai.pendidikan, pegawai.jurusan]),
+    },
+  ];
+}
+
+function buildInformasiKepegawaianItems(pegawai: Pegawai): InfoItem[] {
+  return [
+    {
+      icon: Briefcase,
+      label: "Status Kepegawaian",
+      value: joinOrDash([pegawai.status, pegawai.penugasan]),
+    },
+    {
+      icon: Briefcase,
+      label: "Employee Group / Subgroup",
+      value: joinOrDash([pegawai.employeeGroup, pegawai.employeeSubgroup], " / "),
+    },
+    {
+      icon: Layers,
+      label: "Job Group / Job Function",
+      value: joinOrDash([pegawai.jobGroup, pegawai.jobFunction], " / "),
+    },
+    {
+      icon: Building2,
+      label: "Personnel Area",
+      value: joinOrDash([
+        pegawai.penempatanNama,
+        pegawai.penempatanInduk,
+        pegawai.komoditas,
+      ]),
+    },
+    {
+      icon: ShieldCheck,
+      label: "Status KSO",
+      value: pegawai.ksoNonKso ?? "-",
+    },
+    {
+      icon: BadgeCheck,
+      label: "Person Grade · Gol. PHDP",
+      value: joinOrDash([pegawai.personGrade, pegawai.golonganPhdp]),
+    },
+    {
+      icon: CalendarDays,
+      label: "Tanggal Acuan Masa Kerja",
+      value: formatTanggal(pegawai.tanggalAcuanMasaKerja),
+    },
+    {
+      icon: CalendarClock,
+      label: "Tanggal Pensiun",
+      value: formatTanggal(pegawai.tanggalPensiun),
+    },
+  ];
+}
 
 export function DetailPegawai({ id }: DetailPegawaiProps) {
-  // Hasil disimpan bersama id-nya; kalau id berubah, otomatis dianggap loading
-  const [loaded, setLoaded] = useState<{ id: number; state: LoadState } | null>(
-    null,
-  );
-  const state: LoadState =
-    loaded?.id === id ? loaded.state : { status: "loading" };
+  const query = useAsyncData((signal) => getPegawaiDetail(id, signal), { deps: [id] });
+  const pegawai = query.data;
 
-  useEffect(() => {
-    const controller = new AbortController();
-    getPegawaiDetail(id, controller.signal)
-      .then((pegawai) => setLoaded({ id, state: { status: "ready", pegawai } }))
-      .catch((e: Error) => {
-        if (controller.signal.aborted) return;
-        setLoaded({
-          id,
-          state: {
-            status: "error",
-            code: e instanceof ApiError ? e.status : null,
-            message: e.message,
-          },
-        });
-      });
-    return () => controller.abort();
-  }, [id]);
-
-  if (state.status === "loading") {
+  if (!pegawai) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
-        Memuat data pegawai...
-      </div>
+      <DetailPageState
+        query={query}
+        resource="pegawai"
+        backHref="/pegawai"
+        backLabel="Kembali ke daftar Pegawai"
+      />
     );
   }
-
-  if (state.status === "error") {
-    const message =
-      state.code === 404
-        ? "Pegawai tidak ditemukan."
-        : state.code === 403
-          ? "Anda tidak memiliki akses ke data pegawai ini."
-          : `Gagal memuat data pegawai: ${state.message}`;
-
-    return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
-        <p className="text-sm text-slate-500">{message}</p>
-        <Link
-          href="/pegawai"
-          className="mt-3 inline-block text-sm font-medium text-emerald-600 hover:underline"
-        >
-          Kembali ke daftar Pegawai
-        </Link>
-      </div>
-    );
-  }
-
-  const { pegawai } = state;
 
   return (
     <div className="space-y-5">
@@ -101,43 +133,43 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
         items={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Pegawai", href: "/pegawai" },
-          { label: pegawai.nama_lengkap || pegawai.name },
+          { label: pegawai.nama },
         ]}
       />
 
       <PegawaiProfileHeader
-        nama={pegawai.nama_lengkap || pegawai.name}
+        nama={pegawai.nama}
         nik={pegawai.nik}
-        jabatan={pegawai.jabatan?.name ?? null}
-        penempatanNama={pegawai.entity?.name ?? "-"}
-        penempatanInduk={pegawai.entity?.parent?.name ?? null}
+        jabatan={pegawai.jabatan}
+        penempatanNama={pegawai.penempatanNama}
+        penempatanInduk={pegawai.penempatanInduk}
         backHref="/pegawai"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Masa Kerja"
-          value={formatMasaKerja(pegawai.tanggal_acuan_masa_kerja)}
+          value={formatMasaKerja(pegawai.tanggalAcuanMasaKerja)}
           icon={Clock}
         />
         <MetricCard
           label="Pelatihan Diikuti"
-          value={`${pegawai.pelatihan?.total_diikuti ?? 0} Kali`}
+          value={`${pegawai.pelatihanDiikuti} Kali`}
           icon={Award}
         />
         <MetricCard
           label="Total Jam Pelatihan"
-          value={`${(pegawai.pelatihan?.total_jam ?? 0).toLocaleString("id-ID")} Jam`}
+          value={`${formatNumber(pegawai.totalJamPelatihan)} Jam`}
           icon={BookOpenCheck}
         />
         <MetricCard
           label="Level Jabatan"
-          value={pegawai.jabatan?.level_bod ? `BOD-${pegawai.jabatan.level_bod}` : "-"}
+          value={levelBodLabel(pegawai.levelBod)}
           icon={Briefcase}
         />
       </div>
 
-      <RiwayatPelatihanTable rows={pegawai.pelatihan?.riwayat ?? []} />
+      <RiwayatPelatihanTable rows={pegawai.riwayatPelatihan} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className="space-y-5">
@@ -154,86 +186,11 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
         <div className="space-y-5">
           {/* DUMMY — master kompetensi & penilaian belum ada di backend */}
           <ProfilKompetensiCard
-            standarJabatan={pegawai.jabatan?.name ?? "-"}
+            standarJabatan={pegawai.jabatan ?? "-"}
             rows={kompetensiDummy}
           />
         </div>
       </div>
     </div>
   );
-}
-
-const joinOrDash = (values: (string | null | undefined)[], separator = " · ") =>
-  values.filter(Boolean).join(separator) || "-";
-
-/** Backend menyimpan "L"/"P" seperti di SAP. */
-const jenisKelaminLabel = (value: "L" | "P" | null) =>
-  value === "L" ? "Laki-laki" : value === "P" ? "Perempuan" : null;
-
-function buildInformasiPribadiItems(p: EmployeeResource): InfoItem[] {
-  return [
-    {
-      icon: Cake,
-      label: "Tempat, Tanggal Lahir",
-      value: joinOrDash(
-        [p.tempat_lahir, p.tanggal_lahir && formatTanggal(p.tanggal_lahir)],
-        ", ",
-      ),
-    },
-    {
-      icon: User,
-      label: "Usia · Jenis Kelamin",
-      value: joinOrDash([p.usia !== null ? `${p.usia} Tahun` : null, jenisKelaminLabel(p.jenis_kelamin)]),
-    },
-    {
-      icon: GraduationCap,
-      label: "Pendidikan Terakhir",
-      value: joinOrDash([p.pendidikan, p.jurusan]),
-    },
-  ];
-}
-
-function buildInformasiKepegawaianItems(p: EmployeeResource): InfoItem[] {
-  return [
-    {
-      icon: Briefcase,
-      label: "Status Kepegawaian",
-      value: joinOrDash([p.status, p.penugasan]),
-    },
-    {
-      icon: Briefcase,
-      label: "Employee Group / Subgroup",
-      value: joinOrDash([p.employee_group, p.employee_subgroup], " / "),
-    },
-    {
-      icon: Layers,
-      label: "Job Group / Job Function",
-      value: joinOrDash([p.jabatan?.job_group?.name, p.jabatan?.job_function?.name], " / "),
-    },
-    {
-      icon: Building2,
-      label: "Personnel Area",
-      value: joinOrDash([p.entity?.name, p.entity?.parent?.name, p.komoditas?.name]),
-    },
-    {
-      icon: ShieldCheck,
-      label: "Status KSO",
-      value: p.kso_non_kso ?? "-",
-    },
-    {
-      icon: BadgeCheck,
-      label: "Person Grade · Gol. PHDP",
-      value: joinOrDash([p.person_grade, p.golongan_phdp]),
-    },
-    {
-      icon: CalendarDays,
-      label: "Tanggal Acuan Masa Kerja",
-      value: formatTanggal(p.tanggal_acuan_masa_kerja),
-    },
-    {
-      icon: CalendarClock,
-      label: "Tanggal Pensiun",
-      value: formatTanggal(p.tanggal_pensiun),
-    },
-  ];
 }

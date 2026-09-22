@@ -1,88 +1,108 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { Plus, Loader2 } from "lucide-react";
-
+import { useCallback, useState } from "react";
+import { Plus } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
-import { PenyelenggaraTable } from "@/features/penyelenggara-pelatihan/components/PenyelenggaraTable";
-import { getVendors } from "@/features/penyelenggara-pelatihan/api/vendor";
-import { ApiError } from "@/lib/http-client";
-import type { VendorResource } from "@/types/api/vendor";
+import {
+  filterList,
+  filterText,
+  useServerDataTable,
+} from "@/components/shared/data-table";
+import { Alert, ButtonLink } from "@/components/ui";
+import { PenyelenggaraTable } from "./PenyelenggaraTable";
+import { deletePenyelenggara, getPenyelenggaraList } from "../api/vendor";
+import type { Penyelenggara, PenyelenggaraTipe } from "../model/penyelenggara";
 
 export default function PenyelenggaraPelatihanList() {
-    const [vendors, setVendors] = useState<VendorResource[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    // Daftar diambil di client, jadi setelah hapus harus refetch sendiri —
-    // router.refresh() tidak menyentuh state ini. Menaikkan key = muat ulang.
-    const [reloadKey, setReloadKey] = useState(0);
+  const [deleteTarget, setDeleteTarget] = useState<Penyelenggara | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const controller = new AbortController();
-        const { signal } = controller;
+  const { tableState, rows, total, loading, error, refresh, startIndex } =
+    useServerDataTable<Penyelenggara>({
+      defaultSorting: [{ id: "search", desc: false }],
+      fetcher: ({ filters, page, perPage }, signal) =>
+        getPenyelenggaraList(
+          {
+            search: filterText(filters.search),
+            tipe: filterList(filters.classification)?.[0] as
+              | PenyelenggaraTipe
+              | undefined,
+            page,
+            perPage,
+          },
+          signal,
+        ).then((res) => ({
+          rows: res.rows,
+          total: res.meta?.total ?? res.rows.length,
+        })),
+    });
 
-        getVendors({}, signal)
-            .then(({ rows }) => {
-                setVendors(rows);
-                setError(null);
-            })
-            .catch((err: unknown) => {
-                if (signal.aborted) return;
-                setError(
-                    err instanceof ApiError
-                        ? err.message
-                        : "Gagal memuat data penyelenggara",
-                );
-            })
-            .finally(() => {
-                if (!signal.aborted) setIsLoading(false);
-            });
+  const askDelete = useCallback((row: Penyelenggara) => {
+    setDeleteError(null);
+    setDeleteTarget(row);
+  }, []);
 
-        return () => controller.abort();
-    }, [reloadKey]);
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
 
-    const refreshVendors = useCallback(() => {
-        setIsLoading(true);
-        setReloadKey((key) => key + 1);
-    }, []);
+    try {
+      await deletePenyelenggara(deleteTarget.id);
+      setDeleteTarget(null);
+      refresh();
+    } catch (caught) {
+      // mis. 409 karena masih dipakai program pelatihan
+      setDeleteError((caught as Error).message);
+      setDeleteTarget(null);
+    }
+  }
 
-    return (
-        <div className="space-y-4">
-            <Breadcrumb
-                items={[
-                    { label: "Dashboard", href: "/dashboard" },
-                    { label: "Penyelenggara" },
-                ]}
-            />
+  return (
+    <div className="space-y-4">
+      <Breadcrumb
+        items={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Penyelenggara" },
+        ]}
+      />
 
-            <PageHeader
-                title="Penyelenggara"
-                description="Seluruh data penyelenggara pelatihan PTPN 1 di semua regional dan unit"
-                action={
-                    <Link
-                        href="/penyelenggara-pelatihan/create"
-                        className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Tambah Penyelenggara
-                    </Link>
-                }
-            />
+      <PageHeader
+        title="Penyelenggara"
+        description="Seluruh data penyelenggara pelatihan PTPN 1 di semua regional dan unit"
+        action={
+          <ButtonLink href="/penyelenggara-pelatihan/create" size="lg" icon={Plus}>
+            Tambah Penyelenggara
+          </ButtonLink>
+        }
+      />
 
-            {isLoading ? (
-                <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 text-slate-500">
-                    <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
-                    <p className="text-sm font-medium">Memuat data penyelenggara...</p>
-                </div>
-            ) : error ? (
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
-                    {error}
-                </div>
-            ) : (
-                <PenyelenggaraTable rows={vendors} onChanged={refreshVendors} />
-            )}
-        </div>
-    );
+      {error && <Alert tone="error">Gagal memuat data penyelenggara: {error}</Alert>}
+
+      {deleteError && (
+        <Alert tone="error" onDismiss={() => setDeleteError(null)}>
+          {deleteError}
+        </Alert>
+      )}
+
+      <PenyelenggaraTable
+        rows={rows}
+        rowCount={total}
+        tableState={tableState}
+        loading={loading}
+        startIndex={startIndex}
+        onDelete={askDelete}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title={`Hapus ${deleteTarget?.nama}?`}
+        description="Penyelenggara yang masih dipakai program pelatihan tidak bisa dihapus."
+        confirmLabel="Hapus"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+    </div>
+  );
 }

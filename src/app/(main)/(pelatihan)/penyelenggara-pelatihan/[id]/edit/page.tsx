@@ -9,5 +9,5 @@ export default async function EditPenyelenggaraPage({
 }: EditPenyelenggaraPageProps) {
   const { id } = await params;
 
-  return <PenyelenggaraForm mode="edit" vendorId={Number(id)} />;
+  return <PenyelenggaraForm mode="edit" vendorId={id} />;
 }

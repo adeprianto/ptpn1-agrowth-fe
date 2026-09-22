@@ -90,7 +90,11 @@ export function useServerDataTable<TRow>({
   // Fungsi fetch biasanya ditulis inline, jadi identitasnya berubah tiap
   // render. Disimpan di ref supaya tidak ikut memicu fetch ulang.
   const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
+  // efek ini sengaja dideklarasikan lebih dulu supaya ref sudah berisi versi
+  // terbaru sebelum efek pengambilan data di bawah dijalankan
+  useEffect(() => {
+    fetcherRef.current = fetcher;
+  });
 
   const [reloadToken, setReloadToken] = useState(0);
   const refresh = useCallback(() => setReloadToken((token) => token + 1), []);

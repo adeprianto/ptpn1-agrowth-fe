@@ -1,14 +1,194 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
 import {
   createDataTableColumnHelper,
   DataTable,
+  defineTableConfig,
+  optionsFilter,
+  textFilter,
+  toFilterOptions,
+  toValueOptions,
   type DataTableState,
+  type TableConfig,
 } from "@/components/shared/data-table";
+import { Badge, ButtonLink } from "@/components/ui";
 import { getJenisDisplay } from "@/features/organisasi/components/unit/jenisUnit";
-import type { Pegawai, PegawaiFilterOptions } from "../api/pegawai";
+import { ENTITY_TIPE_LABEL } from "@/features/organisasi/model/entity";
+import { orDash } from "@/lib/format";
+import {
+  levelBodLabel,
+  operasionalLabel,
+  type Pegawai,
+  type PegawaiFilterOptions,
+} from "../model/pegawai";
+
+const col = createDataTableColumnHelper<Pegawai>();
+
+/** Label "Kebun · Teh" untuk satu baris operasional pegawai. */
+export function pegawaiOperasionalLabel(pegawai: Pegawai) {
+  const jenis = pegawai.operasionalJenis
+    ? getJenisDisplay(pegawai.operasionalJenis)
+    : null;
+
+  return operasionalLabel(jenis, pegawai.operasionalKomoditas);
+}
+
+/**
+ * Konfigurasi tabel pegawai.
+ *
+ * Id kolom sengaja sama dengan nilai `sort`/filter di backend (lihat
+ * `EmployeeSortKey`), jadi `PegawaiList` bisa langsung meneruskannya ke API.
+ */
+export function createPegawaiTableConfig(
+  options: PegawaiFilterOptions | null,
+): TableConfig<Pegawai> {
+  return defineTableConfig<Pegawai>({
+    getRowId: (row) => row.id,
+    tableClassName: "min-w-300",
+    density: "compact",
+    defaultSorting: [{ id: "name", desc: false }],
+    emptyMessage: "Tidak ada pegawai yang cocok dengan filter.",
+    columns: col.columns([
+      col.accessor("nik", {
+        header: "NIK (SAP)",
+        meta: {
+          filter: textFilter("Cari kode SAP..."),
+          nowrap: true,
+          cellClassName: "font-mono text-xs text-slate-600",
+        },
+      }),
+      col.accessor("nama", {
+        id: "name",
+        header: "Nama Pegawai",
+        meta: { filter: textFilter("Cari nama...") },
+        cell: ({ getValue }) => (
+          <span className="font-medium text-slate-800">{getValue()}</span>
+        ),
+      }),
+      col.accessor("penempatanNama", {
+        id: "entity",
+        header: "Entity",
+        meta: {
+          filter: optionsFilter(
+            options?.entities.map((entity) => ({
+              value: entity.id,
+              label: entity.nama,
+              group: ENTITY_TIPE_LABEL[entity.tipe],
+            })) ?? [],
+          ),
+        },
+        cell: ({ row }) => (
+          <>
+            <p className="text-slate-700">{row.original.penempatanNama}</p>
+            {row.original.penempatanInduk && (
+              <p className="text-xs text-slate-400">{row.original.penempatanInduk}</p>
+            )}
+          </>
+        ),
+      }),
+      col.accessor(pegawaiOperasionalLabel, {
+        id: "operasional",
+        header: "Entity Operational",
+        meta: {
+          filter: optionsFilter(
+            options?.operasional.map((row) => ({
+              value: row.key,
+              label: operasionalLabel(
+                row.jenis ? getJenisDisplay(row.jenis) : null,
+                row.komoditas,
+              ),
+            })) ?? [],
+          ),
+        },
+        cell: ({ row, getValue }) =>
+          row.original.operasionalJenis || row.original.operasionalKomoditas ? (
+            <Badge tone={getJenisDisplay(row.original.operasionalJenis).tone}>
+              {getValue() as string}
+            </Badge>
+          ) : (
+            <span className="text-slate-300">-</span>
+          ),
+      }),
+      col.accessor("jabatan", {
+        id: "posisi",
+        header: "Posisi",
+        meta: {
+          filter: textFilter("Cari nama jabatan..."),
+          cellClassName: "text-slate-700",
+        },
+        cell: ({ getValue }) => orDash(getValue()),
+      }),
+      col.accessor("jobGroup", {
+        id: "job_group",
+        header: "Job Group",
+        meta: {
+          filter: optionsFilter(toFilterOptions(options?.jobGroups)),
+          cellClassName: "text-slate-600",
+        },
+        cell: ({ getValue }) => orDash(getValue()),
+      }),
+      col.accessor("jobFunction", {
+        id: "job_function",
+        header: "Job Function",
+        meta: {
+          filter: optionsFilter(toFilterOptions(options?.jobFunctions)),
+          cellClassName: "text-slate-600",
+        },
+        cell: ({ getValue }) => orDash(getValue()),
+      }),
+      col.accessor("levelBod", {
+        id: "level",
+        header: "Level",
+        meta: {
+          filter: optionsFilter(
+            options?.levelBod.map((level) => ({
+              value: String(level),
+              label: levelBodLabel(level),
+            })) ?? [],
+          ),
+          nowrap: true,
+          cellClassName: "font-medium text-slate-700",
+        },
+        cell: ({ getValue }) => levelBodLabel(getValue()),
+      }),
+      col.accessor("golonganPhdp", {
+        id: "golongan_phdp",
+        header: "Gol. PHDP",
+        meta: {
+          filter: optionsFilter(toValueOptions(options?.golonganPhdp)),
+          nowrap: true,
+          cellClassName: "text-slate-600",
+        },
+        cell: ({ getValue }) => orDash(getValue()),
+      }),
+      col.accessor("personGrade", {
+        id: "person_grade",
+        header: "Person Grade",
+        meta: {
+          filter: optionsFilter(toValueOptions(options?.personGrade)),
+          nowrap: true,
+          cellClassName: "text-slate-600",
+        },
+        cell: ({ getValue }) => orDash(getValue()),
+      }),
+      col.display({
+        id: "aksi",
+        header: "Aksi",
+        meta: { align: "right", nowrap: true },
+        cell: ({ row }) => (
+          <ButtonLink
+            href={`/pegawai/${row.original.id}`}
+            variant="outline"
+            size="sm"
+          >
+            Detail
+          </ButtonLink>
+        ),
+      }),
+    ]),
+  });
+}
 
 interface PegawaiTableProps {
   rows: Pegawai[];
@@ -16,180 +196,8 @@ interface PegawaiTableProps {
   rowCount: number;
   tableState: DataTableState;
   loading?: boolean;
+  /** Isi checklist filter; null selama belum selesai dimuat */
   options: PegawaiFilterOptions | null;
-}
-
-const ENTITY_GROUP_LABEL = {
-  HO: "Head Office",
-  Regional: "Regional",
-  Unit: "Unit",
-} as const;
-
-/** Label "Kebun · Teh" untuk satu baris operasional */
-export function operasionalLabel(
-  jenis: { code: string; name: string } | null,
-  komoditas: string | null,
-) {
-  const jenisLabel = jenis ? getJenisDisplay({ id: 0, ...jenis }).label : null;
-  return [jenisLabel, komoditas].filter(Boolean).join(" · ") || "-";
-}
-
-const col = createDataTableColumnHelper<Pegawai>();
-
-/**
- * Id kolom sengaja sama dengan nilai `sort` di backend (lihat PegawaiSortKey),
- * jadi `PegawaiList` bisa langsung meneruskannya ke API.
- */
-function buildColumns(options: PegawaiFilterOptions | null) {
-  const masterOptions = (list: { id: number; name: string }[] | undefined) =>
-    list?.map((item) => ({ value: String(item.id), label: item.name })) ?? [];
-  const valueOptions = (list: string[] | undefined) =>
-    list?.map((v) => ({ value: v, label: v })) ?? [];
-
-  return col.columns([
-    col.accessor("nik", {
-      header: "NIK (SAP)",
-      meta: {
-        filter: { type: "text", placeholder: "Cari kode SAP..." },
-        cellClassName: "whitespace-nowrap font-mono text-xs text-slate-600",
-      },
-    }),
-    col.accessor("nama", {
-      id: "name",
-      header: "Nama Pegawai",
-      meta: { filter: { type: "text", placeholder: "Cari nama..." } },
-      cell: ({ getValue }) => (
-        <span className="font-medium text-slate-800">{getValue()}</span>
-      ),
-    }),
-    col.accessor("penempatanNama", {
-      id: "entity",
-      header: "Entity",
-      meta: {
-        filter: {
-          type: "options",
-          options:
-            options?.entities.map((e) => ({
-              value: e.id,
-              label: e.nama,
-              group: ENTITY_GROUP_LABEL[e.tipe],
-            })) ?? [],
-        },
-      },
-      cell: ({ row }) => (
-        <>
-          <p className="text-slate-700">{row.original.penempatanNama}</p>
-          {row.original.penempatanInduk && (
-            <p className="text-xs text-slate-400">{row.original.penempatanInduk}</p>
-          )}
-        </>
-      ),
-    }),
-    col.accessor(
-      (row) => operasionalLabel(row.operasionalJenis, row.operasionalKomoditas),
-      {
-        id: "operasional",
-        header: "Entity Operational",
-        meta: {
-          filter: {
-            type: "options",
-            options:
-              options?.operasional.map((o) => ({
-                value: o.key,
-                label: operasionalLabel(o.jenis, o.komoditas),
-              })) ?? [],
-          },
-        },
-        cell: ({ row, getValue }) =>
-          row.original.operasionalJenis || row.original.operasionalKomoditas ? (
-            <span
-              className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                getJenisDisplay(row.original.operasionalJenis ?? undefined).badgeClass
-              }`}
-            >
-              {getValue()}
-            </span>
-          ) : (
-            <span className="text-slate-300">-</span>
-          ),
-      },
-    ),
-    col.accessor("jabatan", {
-      id: "posisi",
-      header: "Posisi",
-      meta: {
-        filter: { type: "text", placeholder: "Cari nama jabatan..." },
-        cellClassName: "text-slate-700",
-      },
-      cell: ({ getValue }) => getValue() ?? "-",
-    }),
-    col.accessor("jobGroup", {
-      id: "job_group",
-      header: "Job Group",
-      meta: {
-        filter: { type: "options", options: masterOptions(options?.jobGroups) },
-        cellClassName: "text-slate-600",
-      },
-      cell: ({ getValue }) => getValue() ?? "-",
-    }),
-    col.accessor("jobFunction", {
-      id: "job_function",
-      header: "Job Function",
-      meta: {
-        filter: { type: "options", options: masterOptions(options?.jobFunctions) },
-        cellClassName: "text-slate-600",
-      },
-      cell: ({ getValue }) => getValue() ?? "-",
-    }),
-    col.accessor("levelBod", {
-      id: "level",
-      header: "Level",
-      meta: {
-        filter: {
-          type: "options",
-          options:
-            options?.levelBod.map((l) => ({ value: String(l), label: `BOD-${l}` })) ??
-            [],
-        },
-        cellClassName: "whitespace-nowrap font-medium text-slate-700",
-      },
-      cell: ({ getValue }) => {
-        const level = getValue();
-        return level ? `BOD-${level}` : "-";
-      },
-    }),
-    col.accessor("golonganPhdp", {
-      id: "golongan_phdp",
-      header: "Gol. PHDP",
-      meta: {
-        filter: { type: "options", options: valueOptions(options?.golonganPhdp) },
-        cellClassName: "whitespace-nowrap text-slate-600",
-      },
-      cell: ({ getValue }) => getValue() ?? "-",
-    }),
-    col.accessor("personGrade", {
-      id: "person_grade",
-      header: "Person Grade",
-      meta: {
-        filter: { type: "options", options: valueOptions(options?.personGrade) },
-        cellClassName: "whitespace-nowrap text-slate-600",
-      },
-      cell: ({ getValue }) => getValue() ?? "-",
-    }),
-    col.display({
-      id: "actions",
-      header: "Aksi",
-      meta: { headerClassName: "text-right", cellClassName: "text-right" },
-      cell: ({ row }) => (
-        <Link
-          href={`/pegawai/${row.original.id}`}
-          className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-200"
-        >
-          Detail
-        </Link>
-      ),
-    }),
-  ]);
 }
 
 export function PegawaiTable({
@@ -200,18 +208,15 @@ export function PegawaiTable({
   options,
 }: PegawaiTableProps) {
   // kolom dibuat ulang hanya saat isi checklist filter selesai dimuat
-  const columns = useMemo(() => buildColumns(options), [options]);
+  const config = useMemo(() => createPegawaiTableConfig(options), [options]);
 
   return (
     <DataTable
-      columns={columns}
+      config={config}
       data={rows}
-      getRowId={(row) => row.id}
       rowCount={rowCount}
       tableState={tableState}
       loading={loading}
-      emptyMessage="Tidak ada pegawai yang cocok dengan filter."
-      tableClassName="min-w-300"
     />
   );
 }

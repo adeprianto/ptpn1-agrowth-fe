@@ -6,5 +6,5 @@ export default async function UnitDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  return <DetailUnit id={Number(id)} />;
+  return <DetailUnit id={id} />;
 }

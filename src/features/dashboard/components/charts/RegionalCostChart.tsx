@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import type { ChartTooltipProps } from "./chartTooltip";
 
 // Rincian item yang menyusun angka realisasi suatu regional
 type BreakdownItem = {
@@ -193,15 +194,7 @@ const formatAxisTick = (value: number) => {
   }).format(value);
 };
 
-function CustomTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: any[];
-  label?: string;
-}) {
+function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) {
     return null;
   }
@@ -230,7 +223,7 @@ function CustomTooltip({
             </div>
 
             <span className="font-medium text-slate-800">
-              {formatValue(item.value)}
+              {formatValue(item.value ?? 0)}
             </span>
           </div>
         ))}

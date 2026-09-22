@@ -1,46 +1,69 @@
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/http-client";
-import type { UnitListResource, UnitPayload, UnitSummary } from "@/types/api/unit";
+import type { UnitListResource, UnitSummary } from "@/types/api/unit";
+import {
+  toUnit,
+  toUnitPayload,
+  toUnitSummary,
+  type Unit,
+  type UnitInput,
+} from "../model/unit";
 
-export type UnitQuery = {
+export interface UnitQuery {
   search?: string;
-  regional_id?: number | string;
-  operational_category_id?: number | string;
-  business_type_id?: number | string;
+  regionalId?: string;
+  jenisId?: string;
+  komoditasId?: string;
   page?: number;
-  per_page?: number;
-};
+  perPage?: number;
+}
 
 /** GET /api/units */
 export async function getUnits(query: UnitQuery = {}, signal?: AbortSignal) {
-  const { data, meta } = await apiGet<UnitListResource[]>("/api/units", query, signal);
-  return { rows: data, meta };
+  const { data, meta } = await apiGet<UnitListResource[]>(
+    "/api/units",
+    {
+      search: query.search,
+      regional_id: query.regionalId,
+      operational_category_id: query.jenisId,
+      business_type_id: query.komoditasId,
+      page: query.page,
+      per_page: query.perPage,
+    },
+    signal,
+  );
+
+  return { rows: data.map(toUnit), meta };
 }
 
 /** GET /api/units/summary */
 export async function getUnitSummary(signal?: AbortSignal) {
   const { data } = await apiGet<UnitSummary>("/api/units/summary", undefined, signal);
-  return data;
+  return toUnitSummary(data);
 }
 
 /** GET /api/units/{id} */
-export async function getUnit(id: number, signal?: AbortSignal) {
+export async function getUnit(id: string, signal?: AbortSignal): Promise<Unit> {
   const { data } = await apiGet<UnitListResource>(`/api/units/${id}`, undefined, signal);
-  return data;
+  return toUnit(data);
 }
 
 /** POST /api/units */
-export async function createUnit(payload: UnitPayload) {
-  const { data } = await apiPost<UnitListResource>("/api/units", payload);
-  return data;
+export async function createUnit(input: UnitInput) {
+  const { data } = await apiPost<UnitListResource>("/api/units", toUnitPayload(input));
+  return toUnit(data);
 }
 
 /** PUT /api/units/{id} */
-export async function updateUnit(id: number, payload: UnitPayload) {
-  const { data } = await apiPut<UnitListResource>(`/api/units/${id}`, payload);
-  return data;
+export async function updateUnit(id: string, input: UnitInput) {
+  const { data } = await apiPut<UnitListResource>(
+    `/api/units/${id}`,
+    toUnitPayload(input),
+  );
+
+  return toUnit(data);
 }
 
 /** DELETE /api/units/{id} */
-export async function deleteUnit(id: number) {
+export async function deleteUnit(id: string) {
   await apiDelete(`/api/units/${id}`);
 }

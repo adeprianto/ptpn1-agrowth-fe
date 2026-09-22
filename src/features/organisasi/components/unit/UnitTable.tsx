@@ -1,171 +1,199 @@
 "use client";
 
-import { Eye, MapPin, Pencil, Trash2, Users } from "lucide-react";
-import { RowActionMenu } from "@/components/shared/RowActionMenu";
-import type { UnitListResource } from "@/types/api/unit";
-import { getJenisDisplay } from "./jenisUnit";
+import { useMemo } from "react";
+import { Eye, MapPin, Pencil, Trash2 } from "lucide-react";
+import {
+  actionsColumn,
+  createDataTableColumnHelper,
+  DataTable,
+  defineTableConfig,
+  numberColumn,
+  optionsFilter,
+  rowNumberColumn,
+  textFilter,
+  type DataTableState,
+  type TableConfig,
+} from "@/components/shared/data-table";
+import { Badge, type BadgeTone } from "@/components/ui";
+import type { MasterItem } from "../../model/masterData";
+import type { Unit } from "../../model/unit";
+import { getJenisDisplay, getKomoditasTone } from "./jenisUnit";
 
-interface UnitTableProps {
-  rows: UnitListResource[];
-  /** Nomor urut baris pertama (untuk kolom No di halaman > 1) */
-  startIndex: number;
-  loading?: boolean;
-  onDeleteClick: (row: UnitListResource) => void;
+const col = createDataTableColumnHelper<Unit>();
+
+/** Daftar badge untuk kolom yang isinya bisa lebih dari satu nilai. */
+function BadgeList({
+  items,
+  render,
+}: {
+  items: MasterItem[];
+  render: (item: MasterItem) => { label: string; tone: BadgeTone };
+}) {
+  if (items.length === 0) return <span className="text-slate-300">-</span>;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {items.map((item) => {
+        const display = render(item);
+        return (
+          <Badge key={item.id} tone={display.tone}>
+            {display.label}
+          </Badge>
+        );
+      })}
+    </div>
+  );
 }
 
-// Warna badge per komoditas (business_types.code) — tinggal tambah baris kalau perlu
-const KOMODITAS_COLOR: Record<string, string> = {
-  TEH: "bg-teal-100 text-teal-700",
-  KOPI: "bg-orange-100 text-orange-700",
-  KAKAO: "bg-stone-100 text-stone-700",
-  TEMBAKAU: "bg-lime-100 text-lime-700",
-  SAWIT: "bg-yellow-100 text-yellow-700",
-  KELAPA: "bg-yellow-100 text-yellow-700",
-  KARET: "bg-sky-100 text-sky-700",
-  TEBU: "bg-green-100 text-green-700",
-};
+export interface UnitTableOptions {
+  startIndex?: number;
+  /** Isi checklist filter kolom; kosongkan kalau tabel dipakai mode client */
+  regionalOptions?: MasterItem[];
+  jenisOptions?: MasterItem[];
+  komoditasOptions?: MasterItem[];
+  onDelete?: (row: Unit) => void;
+}
 
-const DEFAULT_KOMODITAS_COLOR = "bg-slate-100 text-slate-600";
+/**
+ * Konfigurasi tabel unit. Id kolom sengaja sama dengan nama parameter filter
+ * di backend supaya `UnitList` bisa meneruskannya langsung.
+ */
+export function createUnitTableConfig({
+  startIndex = 1,
+  regionalOptions,
+  jenisOptions,
+  komoditasOptions,
+  onDelete,
+}: UnitTableOptions = {}): TableConfig<Unit> {
+  const asOptions = (items?: MasterItem[]) =>
+    items?.map((item) => ({ value: item.id, label: item.nama })) ?? [];
+
+  return defineTableConfig<Unit>({
+    getRowId: (row) => row.id,
+    tableClassName: "min-w-200",
+    emptyMessage: "Tidak ada unit yang cocok dengan pencarian atau filter.",
+    columns: col.columns([
+      rowNumberColumn<Unit>(startIndex),
+      col.accessor("nama", {
+        id: "search",
+        header: "Unit",
+        meta: { filter: textFilter("Cari nama atau kode unit...") },
+        cell: ({ row }) => {
+          // Ikon unit mengikuti kategori operasional pertamanya
+          const primary = getJenisDisplay(row.original.jenis[0]);
+          const PrimaryIcon = primary.icon;
+
+          return (
+            <div className="flex items-center gap-3">
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${primary.iconBg}`}
+              >
+                <PrimaryIcon className={`h-4 w-4 ${primary.iconColor}`} />
+              </span>
+              <div>
+                <p className="font-medium text-slate-800">{row.original.nama}</p>
+                <p className="text-xs text-slate-400">{row.original.kode}</p>
+              </div>
+            </div>
+          );
+        },
+      }),
+      col.accessor((row) => row.regionalId ?? "", {
+        id: "regional_id",
+        header: "Regional",
+        meta: { filter: optionsFilter(asOptions(regionalOptions)) },
+        cell: ({ row }) => (
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <MapPin className="h-4 w-4 text-slate-300" />
+            {row.original.regionalNama ?? "-"}
+          </span>
+        ),
+      }),
+      col.display({
+        id: "operational_category_id",
+        header: "Kategori",
+        meta: { label: "Kategori", filter: optionsFilter(asOptions(jenisOptions)) },
+        cell: ({ row }) => (
+          <BadgeList
+            items={row.original.jenis}
+            render={(item) => {
+              const display = getJenisDisplay(item);
+              return { label: display.label, tone: display.tone };
+            }}
+          />
+        ),
+      }),
+      col.display({
+        id: "business_type_id",
+        header: "Komoditas",
+        meta: { label: "Komoditas", filter: optionsFilter(asOptions(komoditasOptions)) },
+        cell: ({ row }) => (
+          <BadgeList
+            items={row.original.komoditas}
+            render={(item) => ({ label: item.nama, tone: getKomoditasTone(item) })}
+          />
+        ),
+      }),
+      numberColumn<Unit>({
+        id: "jumlah_karyawan",
+        header: "Karyawan",
+        value: (row) => row.jumlahKaryawan,
+      }),
+      actionsColumn<Unit>({
+        ariaLabel: (row) => `Aksi untuk ${row.nama}`,
+        actions: (row) => [
+          { label: "Lihat Detail", icon: Eye, href: `/organisasi/unit/${row.id}` },
+          { label: "Edit", icon: Pencil, href: `/organisasi/unit/${row.id}/edit` },
+          ...(onDelete
+            ? [
+                {
+                  label: "Hapus",
+                  icon: Trash2,
+                  variant: "danger" as const,
+                  onClick: () => onDelete(row),
+                },
+              ]
+            : []),
+        ],
+      }),
+    ]),
+  });
+}
+
+interface UnitTableProps extends UnitTableOptions {
+  rows: Unit[];
+  rowCount: number;
+  tableState: DataTableState;
+  loading?: boolean;
+}
 
 export function UnitTable({
   rows,
-  startIndex,
+  rowCount,
+  tableState,
   loading = false,
-  onDeleteClick,
+  ...options
 }: UnitTableProps) {
+  const config = useMemo(
+    () => createUnitTableConfig(options),
+    // opsi filter datang dari fetch terpisah; cukup dibandingkan per bagian
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      options.startIndex,
+      options.regionalOptions,
+      options.jenisOptions,
+      options.komoditasOptions,
+      options.onDelete,
+    ],
+  );
+
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-300 bg-white">
-      <table className="w-full min-w-200 text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-300 text-xs font-medium uppercase tracking-wide text-slate-400">
-            <th className="px-6 py-4">No</th>
-            <th className="px-6 py-4">Unit</th>
-            <th className="px-6 py-4">Regional</th>
-            <th className="px-6 py-4">Kategori</th>
-            <th className="px-6 py-4">Komoditas</th>
-            <th className="px-6 py-4">Karyawan</th>
-            <th className="px-6 py-4 text-right">Action</th>
-          </tr>
-        </thead>
-        <tbody className={loading ? "opacity-50" : undefined}>
-          {rows.map((row, index) => {
-            // Icon unit mengikuti kategori operasional pertamanya
-            const primary = getJenisDisplay(row.jenis[0]);
-            const PrimaryIcon = primary.icon;
-
-            return (
-              <tr
-                key={row.id}
-                className="border-b border-slate-50 last:border-0"
-              >
-                <td className="px-6 py-4">
-                  <p className="font-medium text-slate-800">
-                    {startIndex + index}
-                  </p>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${primary.iconBg}`}
-                    >
-                      <PrimaryIcon className={`h-4 w-4 ${primary.iconColor}`} />
-                    </span>
-                    <div>
-                      <p className="font-medium text-slate-800">{row.name}</p>
-                      <p className="text-xs text-slate-400">{row.code}</p>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1.5 text-slate-500">
-                    <MapPin className="h-4 w-4 text-slate-300" />
-                    {row.regional?.name ?? "-"}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {row.jenis.length === 0 && (
-                      <span className="text-slate-300">-</span>
-                    )}
-                    {row.jenis.map((j) => {
-                      const display = getJenisDisplay(j);
-                      return (
-                        <span
-                          key={j.id}
-                          className={`rounded-full px-3 py-1 text-xs font-medium ${display.badgeClass}`}
-                        >
-                          {display.label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex flex-wrap gap-1">
-                    {row.komoditas.length === 0 && (
-                      <span className="text-slate-300">-</span>
-                    )}
-                    {row.komoditas.map((k) => (
-                      <span
-                        key={k.id}
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${
-                          KOMODITAS_COLOR[k.code] ?? DEFAULT_KOMODITAS_COLOR
-                        }`}
-                      >
-                        {k.name}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1.5 text-slate-500">
-                    <Users className="h-4 w-4 text-slate-300" />
-                    {row.jumlah_karyawan.toLocaleString("id-ID")}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex justify-end">
-                    <RowActionMenu
-                      label={`Aksi untuk ${row.name}`}
-                      actions={[
-                        {
-                          label: "Lihat Detail",
-                          icon: Eye,
-                          href: `/organisasi/unit/${row.id}`,
-                        },
-                        {
-                          label: "Edit",
-                          icon: Pencil,
-                          href: `/organisasi/unit/${row.id}/edit`,
-                        },
-                        {
-                          label: "Hapus",
-                          icon: Trash2,
-                          variant: "danger",
-                          onClick: () => onDeleteClick(row),
-                        },
-                      ]}
-                    />
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-
-          {rows.length === 0 && (
-            <tr>
-              <td
-                colSpan={7}
-                className="px-6 py-10 text-center text-sm text-slate-400"
-              >
-                {loading
-                  ? "Memuat data unit..."
-                  : "Tidak ada unit yang cocok dengan pencarian/filter."}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
+    <DataTable
+      config={config}
+      data={rows}
+      rowCount={rowCount}
+      tableState={tableState}
+      loading={loading}
+    />
   );
 }

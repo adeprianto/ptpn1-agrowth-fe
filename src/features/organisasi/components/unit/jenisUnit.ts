@@ -1,5 +1,6 @@
 import { Building2, Factory, Sprout, type LucideIcon } from "lucide-react";
-import type { MasterRef } from "@/types/api/master-data";
+import type { BadgeTone } from "@/components/ui";
+import type { MasterItem } from "../../model/masterData";
 
 // Tampilan per kategori operasional (operational_categories.code).
 // Kategori yang belum didaftarkan di sini pakai nama dari master + warna netral.
@@ -8,7 +9,7 @@ interface JenisConfig {
   icon: LucideIcon;
   iconBg: string;
   iconColor: string;
-  badgeClass: string;
+  tone: BadgeTone;
 }
 
 const JENIS_CONFIG: Record<string, JenisConfig> = {
@@ -17,14 +18,14 @@ const JENIS_CONFIG: Record<string, JenisConfig> = {
     icon: Sprout,
     iconBg: "bg-emerald-100",
     iconColor: "text-emerald-600",
-    badgeClass: "bg-emerald-100 text-emerald-700",
+    tone: "emerald",
   },
   FAC: {
     label: "Pabrik",
     icon: Factory,
     iconBg: "bg-amber-100",
     iconColor: "text-amber-600",
-    badgeClass: "bg-amber-100 text-amber-700",
+    tone: "amber",
   },
 };
 
@@ -32,10 +33,28 @@ const DEFAULT_CONFIG: JenisConfig = {
   icon: Building2,
   iconBg: "bg-slate-100",
   iconColor: "text-slate-500",
-  badgeClass: "bg-slate-100 text-slate-600",
+  tone: "slate",
 };
 
-export function getJenisDisplay(jenis?: MasterRef) {
-  const config = (jenis && JENIS_CONFIG[jenis.code]) || DEFAULT_CONFIG;
-  return { ...config, label: config.label ?? jenis?.name ?? "-" };
+/** Ikon, warna, dan label tampilan untuk satu kategori operasional. */
+export function getJenisDisplay(jenis?: MasterItem | null) {
+  const config = (jenis && JENIS_CONFIG[jenis.kode]) || DEFAULT_CONFIG;
+  return { ...config, label: config.label ?? jenis?.nama ?? "-" };
+}
+
+// Warna badge per komoditas (business_types.code) — tinggal tambah baris kalau perlu
+const KOMODITAS_TONE: Record<string, BadgeTone> = {
+  TEH: "emerald",
+  KOPI: "amber",
+  KAKAO: "slate",
+  TEMBAKAU: "violet",
+  SAWIT: "amber",
+  KELAPA: "amber",
+  KARET: "blue",
+  TEBU: "emerald",
+};
+
+/** Warna badge untuk satu komoditas. */
+export function getKomoditasTone(komoditas: MasterItem): BadgeTone {
+  return KOMODITAS_TONE[komoditas.kode] ?? "slate";
 }

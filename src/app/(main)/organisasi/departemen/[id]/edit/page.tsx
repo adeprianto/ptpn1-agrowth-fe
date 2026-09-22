@@ -9,5 +9,5 @@ export default async function EditDepartemenPage({
 }: EditDepartemenPageProps) {
   const { id } = await params;
 
-  return <StrukturDepartemenForm mode="edit" departemenId={Number(id)} />;
+  return <StrukturDepartemenForm mode="edit" departemenId={id} />;
 }

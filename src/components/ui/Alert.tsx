@@ -22,6 +22,8 @@ interface AlertProps {
   tone?: AlertTone;
   title?: ReactNode;
   children?: ReactNode;
+  /** Kalau diisi, muncul tombol Tutup di kanan pesan */
+  onDismiss?: () => void;
   className?: string;
 }
 
@@ -31,8 +33,15 @@ interface AlertProps {
  *
  * @example
  * {error && <Alert tone="error">Gagal memuat data pegawai: {error}</Alert>}
+ * {hapusError && <Alert tone="error" onDismiss={clearHapusError}>{hapusError}</Alert>}
  */
-export function Alert({ tone = "info", title, children, className }: AlertProps) {
+export function Alert({
+  tone = "info",
+  title,
+  children,
+  onDismiss,
+  className,
+}: AlertProps) {
   const { box, icon: Icon } = toneStyle[tone];
 
   return (
@@ -41,10 +50,19 @@ export function Alert({ tone = "info", title, children, className }: AlertProps)
       className={cn("flex gap-2.5 rounded-xl border px-4 py-3 text-sm", box, className)}
     >
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-      <div>
+      <div className="flex-1">
         {title && <p className="font-medium">{title}</p>}
         {children && <div className={cn(Boolean(title) && "mt-0.5")}>{children}</div>}
       </div>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="shrink-0 self-start font-medium hover:underline"
+        >
+          Tutup
+        </button>
+      )}
     </div>
   );
 }

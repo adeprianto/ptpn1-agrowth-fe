@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import Link from "next/link";
+
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
-import { FormField, formInputClass } from "@/components/shared/FormField";
-import { ApiError } from "@/lib/http-client";
+import { FormPageLayout } from "@/components/shared/FormPageLayout";
+import { Field, Input, Select } from "@/components/ui";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { useFormValues } from "@/hooks/useFormValues";
 import {
   createDepartemen,
   getDepartemen,
@@ -14,52 +14,51 @@ import {
   updateDepartemen,
 } from "../../api/departemen";
 import { getJobFunctions, getOrganizationTypes } from "../../api/masterData";
-import { getEntityOptions, type EntityOption } from "../../api/entityOptions";
-import type { EntityType } from "@/types/api/entity";
-import type { MasterRef } from "@/types/api/master-data";
-import type {
-  OrganizationPayload,
-  OrganizationResource,
-} from "@/types/api/organization";
+import { getEntityOptions } from "../../api/entityOptions";
+import { toSelectOptions } from "../../model/masterData";
+import type { Departemen, DepartemenInput } from "../../model/departemen";
+import { EntityPicker } from "../shared/EntityPicker";
 
-/**
- * Key form = field StoreOrganizationRequest, supaya error 422 langsung cocok.
- * Semua bernilai string karena isinya dari <input>/<select>.
- */
-interface FormValues {
-  code: string;
-  name: string;
+/** Isian form; semua string karena datang dari input/select. */
+interface FormValues extends Omit<DepartemenInput, "level"> {
   level: string;
-  organization_type_id: string;
-  entity_id: string;
-  job_function_id: string;
-  parent_id: string;
 }
 
 const emptyValues: FormValues = {
-  code: "",
-  name: "",
+  kode: "",
+  nama: "",
   level: "1",
-  organization_type_id: "",
-  entity_id: "",
-  job_function_id: "",
-  parent_id: "",
+  tipeId: "",
+  entityId: "",
+  jobFunctionId: "",
+  indukId: "",
 };
 
-type FieldErrors = Partial<Record<keyof FormValues, string>>;
+// Nama field di backend berbeda dengan key form, jadi error 422 perlu dipetakan.
+const FIELD_MAP = {
+  code: "kode",
+  name: "nama",
+  organization_type_id: "tipeId",
+  entity_id: "entityId",
+  job_function_id: "jobFunctionId",
+  parent_id: "indukId",
+} as const;
 
-const ENTITY_TYPE_LABEL: Record<EntityType, string> = {
-  HEAD_OFFICE: "Head Office",
-  REGIONAL: "Regional",
-  UNIT: "Unit",
-};
+function toInput(values: FormValues): DepartemenInput {
+  return {
+    ...values,
+    level: Number(values.level),
+    jobFunctionId: values.jobFunctionId || null,
+    indukId: values.indukId || null,
+  };
+}
 
 interface StrukturDepartemenFormProps {
   mode: "create" | "edit";
-  /** Dipakai saat mode "create" buat prefill Entity dari halaman List */
+  /** Dipakai saat mode "create" untuk prefill Entity dari halaman daftar */
   defaultEntityId?: string;
   /** Wajib untuk mode edit */
-  departemenId?: number;
+  departemenId?: string;
 }
 
 export function StrukturDepartemenForm({
@@ -70,353 +69,186 @@ export function StrukturDepartemenForm({
   const router = useRouter();
   const isEdit = mode === "edit";
 
-  const [values, setValues] = useState<FormValues>({
-    ...emptyValues,
-    entity_id: defaultEntityId ?? "",
+  const { data: entityOptions } = useAsyncData(getEntityOptions);
+  const { data: tipeOptions } = useAsyncData(getOrganizationTypes);
+  const { data: functionOptions } = useAsyncData(getJobFunctions);
+
+  const detail = useAsyncData(
+    (signal) => getDepartemen(departemenId as string, signal),
+    { deps: [departemenId], enabled: isEdit && Boolean(departemenId) },
+  );
+
+  const [values, setValues] = useFormValues<Departemen, FormValues>(
+    detail.data,
+    (departemen) => ({
+      kode: departemen.kode,
+      nama: departemen.nama,
+      level: String(departemen.level),
+      tipeId: departemen.tipe?.id ?? "",
+      entityId: departemen.entityId ?? "",
+      jobFunctionId: departemen.jobFunction?.id ?? "",
+      indukId: departemen.indukId ?? "",
+    }),
+    { ...emptyValues, entityId: defaultEntityId ?? "" },
+  );
+
+  // mode tambah tanpa prefill: pakai entity pertama yang tersedia
+  const entityId =
+    values.entityId || (!isEdit ? (entityOptions?.[0]?.id ?? "") : "");
+
+  const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
+    fieldMap: FIELD_MAP,
+    validate: (form) => ({
+      entityId: entityId ? undefined : "Entity wajib dipilih",
+      kode: form.kode.trim() ? undefined : "Kode wajib diisi",
+      nama: form.nama.trim() ? undefined : "Nama Departemen wajib diisi",
+      tipeId: form.tipeId ? undefined : "Tipe wajib dipilih",
+    }),
+    onSubmit: async (form) => {
+      const input = toInput({ ...form, entityId });
+
+      if (isEdit && departemenId) {
+        await updateDepartemen(departemenId, input);
+      } else {
+        await createDepartemen(input);
+      }
+
+      router.push("/organisasi/departemen");
+    },
   });
-  const [entityOptions, setEntityOptions] = useState<EntityOption[]>([]);
-  const [tipeOptions, setTipeOptions] = useState<MasterRef[]>([]);
-  const [functionOptions, setFunctionOptions] = useState<MasterRef[]>([]);
-  const [parentOptions, setParentOptions] = useState<OrganizationResource[]>([]);
-
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [formError, setFormError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(isEdit);
-
-  // opsi dropdown yang tidak tergantung entity
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-
-    Promise.all([
-      getEntityOptions(signal),
-      getOrganizationTypes(signal),
-      getJobFunctions(signal),
-    ])
-      .then(([entities, tipe, functions]) => {
-        setEntityOptions(entities);
-        setTipeOptions(tipe);
-        setFunctionOptions(functions);
-        // create tanpa prefill: pakai entity pertama
-        setValues((prev) =>
-          prev.entity_id || entities.length === 0
-            ? prev
-            : { ...prev, entity_id: String(entities[0].id) },
-        );
-      })
-      .catch((e: unknown) => {
-        if (!signal.aborted) setFormError((e as Error).message);
-      });
-
-    return () => controller.abort();
-  }, []);
-
-  // data departemen yang diedit
-  useEffect(() => {
-    if (!isEdit || !departemenId) return;
-
-    const controller = new AbortController();
-    getDepartemen(departemenId, controller.signal)
-      .then((d) => {
-        setValues({
-          code: d.code,
-          name: d.name,
-          level: String(d.level),
-          organization_type_id: String(d.organization_type?.id ?? ""),
-          entity_id: String(d.entity?.id ?? ""),
-          job_function_id: String(d.job_function?.id ?? ""),
-          parent_id: String(d.parent?.id ?? ""),
-        });
-        setLoading(false);
-      })
-      .catch((e: Error) => {
-        if (controller.signal.aborted) return;
-        setFormError(
-          e instanceof ApiError && e.status === 404
-            ? "Departemen tidak ditemukan."
-            : e.message,
-        );
-        setLoading(false);
-      });
-
-    return () => controller.abort();
-  }, [isEdit, departemenId]);
 
   // Induk HARUS dari entity yang sama, jadi daftarnya ikut entity terpilih
-  useEffect(() => {
-    if (!values.entity_id) return;
+  const { data: indukOptions } = useAsyncData(
+    (signal) => getDepartemenOptions(entityId, signal),
+    { deps: [entityId], enabled: Boolean(entityId) },
+  );
 
-    const controller = new AbortController();
-    getDepartemenOptions(Number(values.entity_id), controller.signal)
-      .then(setParentOptions)
-      .catch((e: unknown) => {
-        if (!controller.signal.aborted) console.error(e);
-      });
-
-    return () => controller.abort();
-  }, [values.entity_id]);
-
-  function handleChange<K extends keyof FormValues>(
-    key: K,
-    value: FormValues[K],
-  ) {
+  function handleChange<K extends keyof FormValues>(key: K, value: FormValues[K]) {
     setValues((prev) => ({
       ...prev,
       [key]: value,
       // pindah entity = induk lama tidak valid lagi
-      ...(key === "entity_id" ? { parent_id: "" } : {}),
+      ...(key === "entityId" ? { indukId: "" } : {}),
     }));
   }
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-
-    const payload: OrganizationPayload = {
-      code: values.code.trim(),
-      name: values.name.trim(),
-      level: Number(values.level),
-      organization_type_id: Number(values.organization_type_id),
-      entity_id: Number(values.entity_id),
-      job_function_id: values.job_function_id
-        ? Number(values.job_function_id)
-        : null,
-      parent_id: values.parent_id ? Number(values.parent_id) : null,
-    };
-
-    setSaving(true);
-    setErrors({});
-    setFormError(null);
-
-    try {
-      if (isEdit && departemenId) {
-        await updateDepartemen(departemenId, payload);
-      } else {
-        await createDepartemen(payload);
-      }
-      router.push("/organisasi/departemen");
-    } catch (err) {
-      if (err instanceof ApiError && err.errors) {
-        const fieldErrors: FieldErrors = {};
-        Object.entries(err.errors).forEach(([field, messages]) => {
-          if (field in emptyValues) {
-            fieldErrors[field as keyof FormValues] = messages[0];
-          }
-        });
-        setErrors(fieldErrors);
-        if (Object.keys(fieldErrors).length === 0) setFormError(err.message);
-      } else {
-        setFormError((err as Error).message);
-      }
-      setSaving(false);
-    }
-  }
-
-  const entityTypes: EntityType[] = ["HEAD_OFFICE", "REGIONAL", "UNIT"];
-
   return (
-    <div className="space-y-5">
-      <Breadcrumb
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
-          { label: "Struktur Departemen", href: "/organisasi/departemen" },
-          { label: isEdit ? "Edit Departemen" : "Tambah Departemen" },
-        ]}
-      />
+    <FormPageLayout
+      breadcrumb={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Organisasi", href: "/organisasi" },
+        { label: "Struktur Departemen", href: "/organisasi/departemen" },
+        { label: isEdit ? "Edit Departemen" : "Tambah Departemen" },
+      ]}
+      title={isEdit ? "Edit Departemen" : "Tambah Departemen"}
+      description="Susunan departemen di dalam satu entity (Head Office, Regional, atau Unit)"
+      backHref="/organisasi/departemen"
+      loading={detail.loading}
+      loadingLabel="Memuat data departemen..."
+      error={formError ?? detail.error}
+      saving={saving}
+      submitLabel={isEdit ? "Simpan Perubahan" : "Simpan Departemen"}
+      onSubmit={() => submit(values)}
+    >
+      <Field label="Entity" required error={errors.entityId}>
+        <EntityPicker
+          options={entityOptions}
+          value={entityId}
+          invalid={Boolean(errors.entityId)}
+          placeholder="Pilih..."
+          onChange={(value) => handleChange("entityId", value)}
+        />
+      </Field>
 
-      <div className="flex items-center gap-4">
-        <Link
-          href="/organisasi/departemen"
-          aria-label="Kembali ke daftar departemen"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 hover:bg-slate-50"
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <Field label="Kode" required error={errors.kode}>
+          <Input
+            value={values.kode}
+            invalid={Boolean(errors.kode)}
+            placeholder="Cth. HO-SDM-REK"
+            onChange={(event) => handleChange("kode", event.target.value)}
+          />
+        </Field>
+
+        <Field label="Nama Departemen" required error={errors.nama}>
+          <Input
+            value={values.nama}
+            invalid={Boolean(errors.nama)}
+            placeholder="Cth. Bagian Rekrutmen"
+            onChange={(event) => handleChange("nama", event.target.value)}
+          />
+        </Field>
+
+        <Field label="Tipe" required error={errors.tipeId}>
+          <Select
+            value={values.tipeId}
+            invalid={Boolean(errors.tipeId)}
+            placeholder="Pilih..."
+            options={toSelectOptions(tipeOptions ?? [])}
+            onChange={(event) => handleChange("tipeId", event.target.value)}
+          />
+        </Field>
+
+        <Field
+          label="Level"
+          required
+          error={errors.level}
+          hint="1 = paling atas (mis. Direktorat), makin besar makin dalam"
         >
-          <ChevronLeft className="h-4 w-4" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">
-            {isEdit ? "Edit Departemen" : "Tambah Departemen"}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Susunan departemen di dalam satu entity (Head Office, Regional, atau
-            Unit)
-          </p>
-        </div>
+          <Input
+            type="number"
+            min={1}
+            max={5}
+            value={values.level}
+            invalid={Boolean(errors.level)}
+            onChange={(event) => handleChange("level", event.target.value)}
+          />
+        </Field>
       </div>
 
-      {formError && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {formError}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
-          Memuat data departemen...
-        </div>
-      ) : (
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6"
+      <Field
+        label="Job Function"
+        error={errors.jobFunctionId}
+        hint={
+          functionOptions?.length === 0
+            ? "Master Job Function masih kosong, jadi field ini belum bisa diisi"
+            : "Opsional"
+        }
+      >
+        <Select
+          value={values.jobFunctionId ?? ""}
+          disabled={functionOptions?.length === 0}
+          onChange={(event) => handleChange("jobFunctionId", event.target.value)}
         >
-          <FormField label="Entity" required error={errors.entity_id}>
-            <select
-              required
-              value={values.entity_id}
-              onChange={(e) => handleChange("entity_id", e.target.value)}
-              className={formInputClass}
-            >
-              <option value="" disabled>
-                Pilih...
+          <option value="">Tidak ada</option>
+          {toSelectOptions(functionOptions ?? []).map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      <Field
+        label="Induk Departemen"
+        error={errors.indukId}
+        hint="Kosongkan kalau ini departemen paling atas (root) di entity tersebut"
+      >
+        <Select
+          value={values.indukId ?? ""}
+          onChange={(event) => handleChange("indukId", event.target.value)}
+        >
+          <option value="">Tidak ada (root)</option>
+          {(indukOptions ?? [])
+            // sebuah departemen tidak boleh jadi induk dirinya sendiri
+            .filter((option) => option.id !== departemenId)
+            .map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.nama} ({option.kode})
               </option>
-              {entityTypes.map((type) => {
-                const options = entityOptions.filter((e) => e.type === type);
-                if (options.length === 0) return null;
-
-                return (
-                  <optgroup key={type} label={ENTITY_TYPE_LABEL[type]}>
-                    {options.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {e.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                );
-              })}
-            </select>
-          </FormField>
-
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <FormField label="Kode" required error={errors.code}>
-              <input
-                type="text"
-                required
-                value={values.code}
-                onChange={(e) => handleChange("code", e.target.value)}
-                placeholder="Cth. HO-SDM-REK"
-                className={formInputClass}
-              />
-            </FormField>
-
-            <FormField label="Nama Departemen" required error={errors.name}>
-              <input
-                type="text"
-                required
-                value={values.name}
-                onChange={(e) => handleChange("name", e.target.value)}
-                placeholder="Cth. Bagian Rekrutmen"
-                className={formInputClass}
-              />
-            </FormField>
-
-            <FormField
-              label="Tipe"
-              required
-              error={errors.organization_type_id}
-            >
-              <select
-                required
-                value={values.organization_type_id}
-                onChange={(e) =>
-                  handleChange("organization_type_id", e.target.value)
-                }
-                className={formInputClass}
-              >
-                <option value="" disabled>
-                  Pilih...
-                </option>
-                {tipeOptions.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-
-            <FormField
-              label="Level"
-              required
-              error={errors.level}
-              hint="1 = paling atas (mis. Direktorat), makin besar makin dalam"
-            >
-              <input
-                type="number"
-                min={1}
-                max={5}
-                required
-                value={values.level}
-                onChange={(e) => handleChange("level", e.target.value)}
-                className={formInputClass}
-              />
-            </FormField>
-          </div>
-
-          <FormField
-            label="Job Function"
-            error={errors.job_function_id}
-            hint={
-              functionOptions.length === 0
-                ? "Master Job Function masih kosong, jadi field ini belum bisa diisi"
-                : "Opsional"
-            }
-          >
-            <select
-              value={values.job_function_id}
-              onChange={(e) => handleChange("job_function_id", e.target.value)}
-              disabled={functionOptions.length === 0}
-              className={formInputClass}
-            >
-              <option value="">Tidak ada</option>
-              {functionOptions.map((fn) => (
-                <option key={fn.id} value={fn.id}>
-                  {fn.name}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <FormField
-            label="Induk Departemen"
-            error={errors.parent_id}
-            hint="Kosongkan kalau ini departemen paling atas (root) di entity tersebut"
-          >
-            <select
-              value={values.parent_id}
-              onChange={(e) => handleChange("parent_id", e.target.value)}
-              className={formInputClass}
-            >
-              <option value="">Tidak ada (root)</option>
-              {parentOptions
-                .filter((p) => p.id !== departemenId)
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.code})
-                  </option>
-                ))}
-            </select>
-          </FormField>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Link
-              href="/organisasi/departemen"
-              className="rounded-xl bg-slate-400 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-500"
-            >
-              Batal
-            </Link>
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-60"
-            >
-              {saving
-                ? "Menyimpan..."
-                : isEdit
-                  ? "Simpan Perubahan"
-                  : "Simpan Departemen"}
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
+            ))}
+        </Select>
+      </Field>
+    </FormPageLayout>
   );
 }

@@ -31,11 +31,11 @@ export function optionsFilter(options: FilterOption[]): ColumnFilterConfig {
   return { type: "options", options };
 }
 
-/** Ubah daftar master (id + name) jadi opsi checklist */
+/** Ubah daftar master domain (id + nama) jadi opsi checklist */
 export function toFilterOptions(
-  items: { id: number | string; name: string }[] | undefined,
+  items: { id: number | string; nama: string }[] | undefined,
 ): FilterOption[] {
-  return items?.map((item) => ({ value: String(item.id), label: item.name })) ?? [];
+  return items?.map((item) => ({ value: String(item.id), label: item.nama })) ?? [];
 }
 
 /** Ubah daftar nilai teks jadi opsi checklist */

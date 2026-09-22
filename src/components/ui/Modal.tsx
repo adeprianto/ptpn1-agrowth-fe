@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -58,10 +58,6 @@ export function Modal({
   children,
   className,
 }: ModalProps) {
-  // portal hanya boleh dibuat setelah komponen terpasang di browser
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   useEffect(() => {
     if (!open) return;
 
@@ -80,7 +76,8 @@ export function Modal({
     };
   }, [open, dismissable, onClose]);
 
-  if (!open || !mounted) return null;
+  // portal hanya bisa dibuat di browser
+  if (!open || typeof document === "undefined") return null;
 
   return createPortal(
     <div

@@ -1,165 +1,92 @@
 "use client";
 
+import { useCallback, useState } from "react";
 import { Factory, LandPlot, Plus, Sprout, User } from "lucide-react";
-import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { useAuth } from "@/hooks/useAuth";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
-import { Pagination } from "@/components/shared/Pagination";
-import type { PaginationMeta } from "@/lib/http-client";
-import { UnitFilterBar, type FilterOption } from "./UnitFilterBar";
+import {
+  filterList,
+  filterText,
+  useServerDataTable,
+} from "@/components/shared/data-table";
+import { Alert, ButtonLink } from "@/components/ui";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useAuth } from "@/hooks/useAuth";
+import { formatNumber } from "@/lib/format";
 import { UnitTable } from "./UnitTable";
 import { getJenisDisplay } from "./jenisUnit";
-import {
-  deleteUnit,
-  getUnits,
-  getUnitSummary,
-} from "../../api/unit";
-import type { UnitListResource, UnitSummary } from "@/types/api/unit";
+import { deleteUnit, getUnits, getUnitSummary } from "../../api/unit";
 import { getRegionals } from "../../api/regional";
-import {
-  getBusinessTypes,
-  getOperationalCategories,
-} from "../../api/masterData";
+import { getBusinessTypes, getOperationalCategories } from "../../api/masterData";
+import { withDistinctLabels, type MasterItem } from "../../model/masterData";
+import type { Unit } from "../../model/unit";
 
-const PAGE_SIZE = 10;
+interface UnitFilterOptions {
+  regional: MasterItem[];
+  jenis: MasterItem[];
+  komoditas: MasterItem[];
+}
 
-interface FilterOptions {
-  regional: FilterOption[];
-  jenis: FilterOption[];
-  komoditas: FilterOption[];
+/** Isi checklist filter kolom; sumbernya beda-beda jadi diambil sekaligus. */
+async function getUnitFilterOptions(signal: AbortSignal): Promise<UnitFilterOptions> {
+  const [regionals, categories, businessTypes] = await Promise.all([
+    getRegionals({ perPage: 100 }, signal),
+    getOperationalCategories(signal),
+    getBusinessTypes(signal),
+  ]);
+
+  return {
+    regional: regionals.rows.map((row) => ({
+      id: row.id,
+      kode: row.kode,
+      nama: row.nama,
+    })),
+    // kategori operasional ditampilkan dengan label UI-nya (Kebun / Pabrik)
+    jenis: categories.map((item) => ({ ...item, nama: getJenisDisplay(item).label })),
+    komoditas: withDistinctLabels(businessTypes),
+  };
 }
 
 export function UnitList() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState<UnitSummary | null>(null);
-  const [options, setOptions] = useState<FilterOptions>({
-    regional: [],
-    jenis: [],
-    komoditas: [],
-  });
+  // akun Unit tidak bisa membuat unit baru (regional induknya di luar cakupannya)
+  const canCreate = user.role !== "UNIT";
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [regional, setRegional] = useState("all");
-  const [jenis, setJenis] = useState("all");
-  const [komoditas, setKomoditas] = useState("all");
-  const [page, setPage] = useState(1);
-  // dinaikkan setelah hapus supaya list & summary di-fetch ulang
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const [deleteTarget, setDeleteTarget] = useState<UnitListResource | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Unit | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  // dinaikkan setelah hapus supaya ringkasan ikut diambil ulang
+  const [dataVersion, setDataVersion] = useState(0);
 
-  // Hasil fetch disimpan bersama key query-nya; loading = key belum cocok.
-  // Baris lama tetap tampil (redup) selama halaman/filter baru dimuat.
-  const queryKey = [
-    debouncedSearch,
-    regional,
-    jenis,
-    komoditas,
-    page,
-    refreshKey,
-  ].join("|");
-  const [result, setResult] = useState<{
-    key: string;
-    rows: UnitListResource[];
-    meta: PaginationMeta | null;
-    error: string | null;
-  } | null>(null);
-  const loading = result?.key !== queryKey;
-  const rows = result?.rows ?? [];
-  const meta = result?.meta ?? null;
-  const error = result?.key === queryKey ? result.error : null;
+  const { tableState, rows, total, loading, error, refresh, startIndex } =
+    useServerDataTable<Unit>({
+      defaultSorting: [{ id: "search", desc: false }],
+      fetcher: ({ filters, page, perPage }, signal) =>
+        getUnits(
+          {
+            // id kolom di tabel = nama parameter filter di backend
+            search: filterText(filters.search),
+            regionalId: filterList(filters.regional_id)?.[0],
+            jenisId: filterList(filters.operational_category_id)?.[0],
+            komoditasId: filterList(filters.business_type_id)?.[0],
+            page,
+            perPage,
+          },
+          signal,
+        ).then((res) => ({
+          rows: res.rows,
+          total: res.meta?.total ?? res.rows.length,
+        })),
+    });
 
-  // Tunda pencarian 400ms supaya tidak hit API di setiap ketikan
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      setPage(1);
-    }, 400);
-    return () => clearTimeout(t);
-  }, [search]);
+  const { data: summary } = useAsyncData(getUnitSummary, { deps: [dataVersion] });
+  const { data: options } = useAsyncData(getUnitFilterOptions);
 
-  // Ringkasan + opsi filter cukup diambil sekali
-  useEffect(() => {
-    const controller = new AbortController();
-    const { signal } = controller;
-
-    getUnitSummary(signal)
-      .then(setSummary)
-      .catch((e: unknown) => {
-        if (!signal.aborted) console.error(e);
-      });
-
-    Promise.all([
-      getRegionals({ per_page: 100 }, signal),
-      getOperationalCategories(signal),
-      getBusinessTypes(signal),
-    ])
-      .then(([regionals, categories, businessTypes]) => {
-        // Nama komoditas bisa kembar di master (mis. "Kelapa Sawit" KELAPA & SAWIT),
-        // jadi yang kembar diberi kode supaya bisa dibedakan
-        const nameCount = new Map<string, number>();
-        businessTypes.forEach((b) =>
-          nameCount.set(b.name, (nameCount.get(b.name) ?? 0) + 1),
-        );
-
-        setOptions({
-          regional: regionals.rows.map((r) => ({ value: String(r.id), label: r.name })),
-          jenis: categories.map((c) => ({
-            value: String(c.id),
-            label: getJenisDisplay(c).label,
-          })),
-          komoditas: businessTypes.map((b) => ({
-            value: String(b.id),
-            label: nameCount.get(b.name)! > 1 ? `${b.name} (${b.code})` : b.name,
-          })),
-        });
-      })
-      .catch((e: unknown) => {
-        if (!signal.aborted) console.error(e);
-      });
-
-    return () => controller.abort();
-  }, [refreshKey]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const key = [
-      debouncedSearch,
-      regional,
-      jenis,
-      komoditas,
-      page,
-      refreshKey,
-    ].join("|");
-    const pick = (v: string) => (v === "all" ? undefined : v);
-
-    getUnits(
-      {
-        search: debouncedSearch,
-        regional_id: pick(regional),
-        operational_category_id: pick(jenis),
-        business_type_id: pick(komoditas),
-        page,
-        per_page: PAGE_SIZE,
-      },
-      controller.signal,
-    )
-      .then((res) =>
-        setResult({ key, rows: res.rows, meta: res.meta ?? null, error: null }),
-      )
-      .catch((e: Error) => {
-        if (controller.signal.aborted) return;
-        setResult({ key, rows: [], meta: null, error: e.message });
-      });
-
-    return () => controller.abort();
-  }, [debouncedSearch, regional, jenis, komoditas, page, refreshKey]);
+  const askDelete = useCallback((row: Unit) => {
+    setDeleteError(null);
+    setDeleteTarget(row);
+  }, []);
 
   async function handleConfirmDelete() {
     if (!deleteTarget) return;
@@ -167,22 +94,14 @@ export function UnitList() {
     try {
       await deleteUnit(deleteTarget.id);
       setDeleteTarget(null);
-      setRefreshKey((k) => k + 1);
-    } catch (e) {
+      refresh();
+      setDataVersion((version) => version + 1);
+    } catch (caught) {
       // mis. 409 karena unit masih punya pegawai
-      setDeleteError((e as Error).message);
+      setDeleteError((caught as Error).message);
       setDeleteTarget(null);
     }
   }
-
-  // Ganti filter selalu balik ke halaman 1
-  const withPageReset = (setter: (v: string) => void) => (value: string) => {
-    setter(value);
-    setPage(1);
-  };
-
-  const formatNumber = (n?: number) =>
-    n === undefined ? "-" : n.toLocaleString("id-ID");
 
   return (
     <div className="space-y-4">
@@ -198,98 +117,60 @@ export function UnitList() {
         title="Unit"
         description="Kebun dan Pabrik di seluruh wilayah PTPN 1"
         action={
-          // akun Unit tidak bisa membuat unit baru (regional induknya di luar cakupannya)
-          user.role === "UNIT" ? null : (
-            <Link
-              href="/organisasi/unit/create"
-              className="flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600"
-            >
-              <Plus className="h-4 w-4" />
+          canCreate ? (
+            <ButtonLink href="/organisasi/unit/create" size="lg" icon={Plus}>
               Tambah Unit
-            </Link>
-          )
+            </ButtonLink>
+          ) : null
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryStatCard
           label="Total Unit"
-          value={formatNumber(summary?.total_unit)}
+          value={formatNumber(summary?.totalUnit)}
           icon={LandPlot}
         />
         <SummaryStatCard
           label="Kebun"
-          value={formatNumber(summary?.total_kebun)}
+          value={formatNumber(summary?.totalKebun)}
           icon={Sprout}
         />
         <SummaryStatCard
           label="Pabrik"
-          value={formatNumber(summary?.total_pabrik)}
+          value={formatNumber(summary?.totalPabrik)}
           icon={Factory}
         />
         <SummaryStatCard
           label="Total Karyawan"
-          value={formatNumber(summary?.total_karyawan)}
+          value={formatNumber(summary?.totalKaryawan)}
           icon={User}
         />
       </div>
 
-      <UnitFilterBar
-        searchValue={search}
-        onSearchChange={setSearch}
-        regionalOptions={options.regional}
-        regionalValue={regional}
-        onRegionalChange={withPageReset(setRegional)}
-        jenisOptions={options.jenis}
-        jenisValue={jenis}
-        onJenisChange={withPageReset(setJenis)}
-        komoditasOptions={options.komoditas}
-        komoditasValue={komoditas}
-        onKomoditasChange={withPageReset(setKomoditas)}
-      />
-
-      {error && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          Gagal memuat data unit: {error}
-        </div>
-      )}
+      {error && <Alert tone="error">Gagal memuat data unit: {error}</Alert>}
 
       {deleteError && (
-        <div className="flex items-start justify-between gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          <span>{deleteError}</span>
-          <button
-            type="button"
-            onClick={() => setDeleteError(null)}
-            className="font-medium hover:underline"
-          >
-            Tutup
-          </button>
-        </div>
+        <Alert tone="error" onDismiss={() => setDeleteError(null)}>
+          {deleteError}
+        </Alert>
       )}
 
       <UnitTable
         rows={rows}
-        startIndex={meta?.from ?? 1}
+        rowCount={total}
+        tableState={tableState}
         loading={loading}
-        onDeleteClick={(row) => {
-          setDeleteError(null);
-          setDeleteTarget(row);
-        }}
+        startIndex={startIndex}
+        regionalOptions={options?.regional}
+        jenisOptions={options?.jenis}
+        komoditasOptions={options?.komoditas}
+        onDelete={askDelete}
       />
-
-      {meta && meta.total > 0 && (
-        <Pagination
-          currentPage={meta.current_page}
-          totalPages={meta.last_page}
-          onPageChange={setPage}
-          totalItems={meta.total}
-          pageSize={meta.per_page}
-        />
-      )}
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.name}?`}
+        title={`Hapus ${deleteTarget?.nama}?`}
         description="Unit hanya bisa dihapus kalau sudah tidak punya pegawai maupun user. Data jenis & komoditasnya ikut terhapus."
         confirmLabel="Hapus"
         variant="danger"
