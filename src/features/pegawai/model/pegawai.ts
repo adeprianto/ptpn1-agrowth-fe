@@ -1,5 +1,6 @@
 import type { BadgeTone } from "@/components/ui";
 import type {
+  EmployeeEntity,
   EmployeeFilterOptions,
   EmployeeResource,
   EmployeeSummary,
@@ -26,6 +27,11 @@ export interface Pegawai {
   /** Konteks induk, mis. "Regional 3" untuk Unit, "Head Office" untuk Regional */
   penempatanInduk: string | null;
   penempatanTipe: EntityTipe | null;
+  /**
+   * Regional tempat pegawai bernaung. Pegawai Head Office tidak punya
+   * regional, jadi diisi "Head Office".
+   */
+  regional: string;
   jabatan: string | null;
   jobGroup: string | null;
   jobFunction: string | null;
@@ -89,6 +95,22 @@ export interface PegawaiFilterOptions {
   personGrade: string[];
 }
 
+/**
+ * Regional penempatan seorang pegawai, diturunkan dari hierarki entity
+ * (Head Office -> Regional -> Unit):
+ *
+ * - pegawai Unit     -> regionalnya adalah entity induk
+ * - pegawai Regional -> entity-nya sendiri sudah regional
+ * - pegawai HO       -> tidak bernaung di regional mana pun
+ */
+export function regionalPenempatan(entity: EmployeeEntity | null | undefined): string {
+  if (!entity) return "-";
+  if (entity.type === "HEAD_OFFICE") return "Head Office";
+  if (entity.type === "REGIONAL") return entity.name;
+
+  return entity.parent?.name ?? "-";
+}
+
 export function toPegawai(resource: EmployeeResource): Pegawai {
   return {
     id: String(resource.id),
@@ -99,6 +121,7 @@ export function toPegawai(resource: EmployeeResource): Pegawai {
     penempatanTipe: resource.entity
       ? ENTITY_TIPE_BY_TYPE[resource.entity.type]
       : null,
+    regional: regionalPenempatan(resource.entity),
     jabatan: resource.jabatan?.name ?? null,
     jobGroup: resource.jabatan?.job_group?.name ?? null,
     jobFunction: resource.jabatan?.job_function?.name ?? null,

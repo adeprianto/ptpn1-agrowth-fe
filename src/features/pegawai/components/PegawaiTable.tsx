@@ -78,7 +78,7 @@ export function createPegawaiTableConfig(
 
   return defineTableConfig<Pegawai>({
     getRowId: (row) => row.id,
-    tableClassName: "min-w-300",
+    tableClassName: "min-w-320",
     density: "compact",
     emptyMessage: "Tidak ada pegawai yang cocok dengan pencarian atau filter.",
     columns: col.columns([
@@ -97,6 +97,15 @@ export function createPegawaiTableConfig(
         cell: ({ getValue }) => (
           <span className="font-medium text-slate-800">{getValue()}</span>
         ),
+      }),
+      col.accessor("regional", {
+        id: "regional",
+        header: "Regional",
+        // Belum ada parameter sort/filter untuk kolom ini di backend, jadi
+        // pengurutannya dimatikan supaya tidak menjanjikan yang tidak bisa
+        // dipenuhi. Nilainya diturunkan di model dari hierarki entity.
+        enableSorting: false,
+        meta: { nowrap: true, cellClassName: "text-slate-700" },
       }),
       col.accessor("penempatanNama", {
         id: "entity",
