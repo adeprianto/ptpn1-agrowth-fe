@@ -1,7 +1,7 @@
 "use client";
 
+import { ColumnFilterModal } from "./ColumnFilterModal";
 import { useDataTableContext } from "./DataTableContext";
-import { DataTableFilterModal } from "./DataTableFilterModal";
 import { DataTablePagination } from "./DataTablePagination";
 
 /**
@@ -27,22 +27,25 @@ export function DataTablePaginationBar({ className }: { className?: string }) {
 }
 
 /**
- * Modal filter semua kolom, tersambung ke konteks tabel.
- * Hanya dirender saat terbuka supaya draft filternya selalu mulai dari
- * filter yang sedang aktif.
+ * Modal filter untuk kolom yang ikon corongnya diklik, tersambung ke konteks
+ * tabel. Hanya satu kolom yang diubah tiap kali Terapkan ditekan.
+ *
+ * Pakai `ColumnFilterModal` langsung kalau butuh di luar `DataTable`.
  */
 export function DataTableFilterDialog() {
-  const { filterFields, filterFocusId, state, closeFilter } = useDataTableContext();
+  const { openFilterField, closeFilter, filterValueOf, setColumnFilter } =
+    useDataTableContext();
 
-  if (filterFocusId === null || filterFields.length === 0) return null;
+  if (!openFilterField) return null;
 
   return (
-    <DataTableFilterModal
-      fields={filterFields}
-      value={state.columnFilters}
-      focusId={filterFocusId || null}
+    <ColumnFilterModal
+      open
+      label={openFilterField.label}
+      config={openFilterField.config}
+      value={filterValueOf(openFilterField.id)}
       // satu kali update state = satu kali fetch, halaman ikut kembali ke 1
-      onApply={(filters) => state.setColumnFilters(filters)}
+      onApply={(value) => setColumnFilter(openFilterField.id, value)}
       onClose={closeFilter}
     />
   );

@@ -15,11 +15,11 @@ interface DataTableProps<TRow extends RowData>
 
 /**
  * Tabel generik berbasis TanStack Table v9 dengan susunan bawaan:
- * toolbar filter → tabel → pagination → modal filter.
+ * toolbar → tabel → pagination → modal filter.
  *
- * Sort lewat klik judul kolom, filter semua kolom sekaligus lewat modal
- * (tombol Filter atau ikon corong di header), dan pagination dengan pilihan
- * jumlah baris per halaman.
+ * Sort lewat klik judul kolom. Filter dipasang per kolom lewat ikon corong di
+ * header kolomnya; toolbar menampilkan chip filter yang sedang aktif. Paging
+ * dengan pilihan jumlah baris per halaman.
  *
  * Butuh susunan lain? Pakai `DataTableProvider` dan rangkai sendiri
  * `DataTableToolbar`, `DataTableContent`, `DataTablePaginationBar`, dan

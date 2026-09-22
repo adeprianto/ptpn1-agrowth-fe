@@ -16,6 +16,7 @@ export {
   DataTableProvider,
   useDataTableContext,
   type DataTableProviderProps,
+  type FilterField,
 } from "./DataTableContext";
 export {
   DataTableBody,
@@ -28,7 +29,6 @@ export {
 } from "./DataTableConnected";
 export {
   DataTableActiveFilters,
-  DataTableFilterButton,
   DataTableResetButton,
   DataTableToolbar,
 } from "./DataTableToolbar";
@@ -41,7 +41,12 @@ export {
   type SortState,
 } from "./ColumnHeader";
 export { FilterChecklist } from "./FilterChecklist";
-export { DataTableFilterModal, type FilterField } from "./DataTableFilterModal";
+export {
+  ColumnFilterModal,
+  isFilterFilled,
+  type ColumnFilterModalProps,
+  type ColumnFilterValue,
+} from "./ColumnFilterModal";
 
 // Definisi kolom
 export {

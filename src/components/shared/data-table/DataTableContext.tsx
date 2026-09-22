@@ -8,12 +8,13 @@ import {
   type ReactNode,
 } from "react";
 import { useTable, type ReactTable, type RowData } from "@tanstack/react-table";
+import type { ColumnFilterValue } from "./ColumnFilterModal";
 import {
   dataTableFeatures,
+  type ColumnFilterConfig,
   type DataTableColumnMeta,
   type DataTableFeatures,
 } from "./dataTableFeatures";
-import type { FilterField } from "./DataTableFilterModal";
 import {
   densityCellClass,
   TABLE_CONFIG_DEFAULTS,
@@ -35,6 +36,14 @@ export interface ColumnLike {
   columnDef: { header?: unknown; meta?: unknown };
 }
 
+/** Satu kolom yang bisa difilter, sudah siap diberikan ke modal filter. */
+export interface FilterField {
+  /** Id kolom, sekaligus key di `columnFilters` */
+  id: string;
+  label: string;
+  config: ColumnFilterConfig;
+}
+
 interface DataTableContextValue {
   table: AnyTable;
   /** Sort, filter, dan halaman yang sedang berlaku */
@@ -50,12 +59,17 @@ interface DataTableContextValue {
   /** Kelas padding sel sesuai kerapatan tabel */
   cellPaddingClass: string;
   pageSizeOptions: number[];
-  /** Kolom yang punya konfigurasi filter, siap dipakai modal filter */
+  /** Kolom yang punya konfigurasi filter */
   filterFields: FilterField[];
-  /** Id kolom yang disorot saat modal dibuka; null = modal tertutup */
-  filterFocusId: string | null;
-  openFilter: (columnId?: string) => void;
+  /** Kolom yang modal filternya sedang terbuka; null = tidak ada */
+  openFilterField: FilterField | null;
+  /** Buka modal filter untuk satu kolom */
+  openFilter: (columnId: string) => void;
   closeFilter: () => void;
+  /** Filter yang sedang berlaku untuk sebuah kolom */
+  filterValueOf: (columnId: string) => ColumnFilterValue | undefined;
+  /** Pasang atau hapus (`undefined`) filter satu kolom */
+  setColumnFilter: (columnId: string, value: ColumnFilterValue | undefined) => void;
   /** Judul kolom untuk header, chip filter, dan label modal */
   columnLabel: (column: ColumnLike) => string;
 }
@@ -154,13 +168,10 @@ export function DataTableProvider<TRow extends RowData>({
     autoResetPageIndex: false,
   });
 
-  // null = modal tertutup; string = terbuka ("" berarti tanpa kolom yang disorot)
-  const [filterFocusId, setFilterFocusId] = useState<string | null>(null);
-  const openFilter = useCallback(
-    (columnId?: string) => setFilterFocusId(columnId ?? ""),
-    [],
-  );
-  const closeFilter = useCallback(() => setFilterFocusId(null), []);
+  // id kolom yang modal filternya terbuka; null = tidak ada yang terbuka
+  const [filterColumnId, setFilterColumnId] = useState<string | null>(null);
+  const openFilter = useCallback((columnId: string) => setFilterColumnId(columnId), []);
+  const closeFilter = useCallback(() => setFilterColumnId(null), []);
 
   const filterFields: FilterField[] = table.getAllLeafColumns().flatMap((column) => {
     const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
@@ -188,9 +199,19 @@ export function DataTableProvider<TRow extends RowData>({
     cellPaddingClass: densityCellClass[settings.density],
     pageSizeOptions: [...settings.pageSizeOptions],
     filterFields,
-    filterFocusId,
+    openFilterField:
+      filterFields.find((field) => field.id === filterColumnId) ?? null,
     openFilter,
     closeFilter,
+    filterValueOf: (columnId) =>
+      state.columnFilters.find((filter) => filter.id === columnId)?.value as
+        | ColumnFilterValue
+        | undefined,
+    setColumnFilter: (columnId, value) =>
+      state.setColumnFilters((previous) => {
+        const others = previous.filter((filter) => filter.id !== columnId);
+        return value === undefined ? others : [...others, { id: columnId, value }];
+      }),
     columnLabel: labelOf,
   };
 

@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SlidersHorizontal, X } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { X } from "lucide-react";
 import { useDataTableContext } from "./DataTableContext";
 
 function describeFilter(value: unknown) {
@@ -10,40 +9,19 @@ function describeFilter(value: unknown) {
   return `"${String(value)}"`;
 }
 
-/** Tombol pembuka modal filter, lengkap dengan jumlah filter yang aktif. */
-export function DataTableFilterButton({ className }: { className?: string }) {
-  const { state, openFilter } = useDataTableContext();
-  const count = state.columnFilters.length;
-
-  return (
-    <button
-      type="button"
-      onClick={() => openFilter()}
-      className={cn(
-        "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-medium transition-colors",
-        count > 0
-          ? "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50",
-        className,
-      )}
-    >
-      <SlidersHorizontal className="h-4 w-4" />
-      Filter
-      {count > 0 && (
-        <span className="rounded-full bg-emerald-600 px-1.5 py-0.5 text-[11px] leading-none text-white">
-          {count}
-        </span>
-      )}
-    </button>
-  );
-}
-
-/** Deretan chip filter yang sedang aktif; tiap chip bisa dilepas satu-satu. */
+/**
+ * Deretan chip filter yang sedang aktif; tiap chip bisa dilepas satu-satu,
+ * atau diklik untuk membuka kembali modal filter kolomnya.
+ */
 export function DataTableActiveFilters() {
-  const { state, table, columnLabel } = useDataTableContext();
+  const { state, table, columnLabel, openFilter } = useDataTableContext();
 
   if (state.columnFilters.length === 0) {
-    return <p className="text-slate-400">Klik judul kolom untuk mengurutkan.</p>;
+    return (
+      <p className="text-slate-400">
+        Klik judul kolom untuk mengurutkan, atau ikon corong untuk memfilter.
+      </p>
+    );
   }
 
   return (
@@ -56,9 +34,15 @@ export function DataTableActiveFilters() {
         return (
           <span
             key={filter.id}
-            className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-3 pr-1.5 text-xs font-medium text-emerald-700"
+            className="flex items-center gap-1 rounded-full bg-emerald-50 py-1 pl-1 pr-1.5 text-xs font-medium text-emerald-700"
           >
-            {label}: {describeFilter(filter.value)}
+            <button
+              type="button"
+              onClick={() => openFilter(filter.id)}
+              className="rounded-full px-2 py-0.5 hover:bg-emerald-100"
+            >
+              {label}: {describeFilter(filter.value)}
+            </button>
             <button
               type="button"
               onClick={() =>
@@ -96,8 +80,10 @@ export function DataTableResetButton() {
 }
 
 /**
- * Baris di atas tabel: tombol filter, chip filter aktif, tombol reset.
- * Otomatis tidak dirender kalau tabel tidak punya satu pun kolom berfilter.
+ * Baris di atas tabel: chip filter yang sedang aktif dan tombol reset.
+ *
+ * Filter dipasang lewat ikon corong di header masing-masing kolom, jadi
+ * baris ini hanya menampilkan hasilnya.
  *
  * @example Tambahkan kontrol sendiri di sisi kiri
  * <DataTableToolbar>
@@ -112,7 +98,6 @@ export function DataTableToolbar({ children }: { children?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       {children}
-      <DataTableFilterButton />
       <DataTableActiveFilters />
       <DataTableResetButton />
     </div>

@@ -89,7 +89,7 @@ mapper-nya — komponen tidak ikut terdampak.
 Semua tabel memakai satu komponen: `src/components/shared/data-table`.
 Tiga lapis, pilih sesuai kebutuhan.
 
-**1. Susunan bawaan** — toolbar filter, tabel, pagination, modal filter:
+**1. Susunan bawaan** — toolbar chip filter, tabel, pagination, modal filter:
 
 ```tsx
 <DataTable config={regionalTableConfig} data={rows} />
@@ -120,6 +120,36 @@ const ringkas = extendTableConfig(unitTableConfig, { density: "compact", showToo
 Kolom siap pakai ada di `columnPresets`: `rowNumberColumn`, `numberColumn`,
 `badgeColumn`, `linkColumn`, `titleColumn`, `actionsColumn`. Perilaku per
 kolom diatur lewat `meta`: `filter`, `align`, `width`, `nowrap`, `label`.
+
+### Filter
+
+Kolom yang `meta.filter`-nya diisi otomatis mendapat ikon corong di headernya.
+Ikon itu membuka `ColumnFilterModal` **untuk kolom itu saja** — satu modal,
+satu kolom, satu nilai. Filter kolom lain tidak ikut tersentuh. Chip di
+toolbar menampilkan filter yang sedang aktif; klik chip untuk mengubahnya,
+klik tanda silang untuk melepasnya.
+
+Ada dua bentuk filter:
+
+```ts
+meta: { filter: { type: "text", placeholder: "Cari nama..." } }        // kotak cari
+meta: { filter: { type: "options", options: [{ value, label, group? }] } } // checklist
+```
+
+`ColumnFilterModal` tidak bergantung pada tabel, jadi bisa dipakai sendiri:
+
+```tsx
+const [nama, setNama] = useState<string>();
+
+<ColumnFilterModal
+  open={open}
+  label="Nama Pegawai"
+  config={{ type: "text", placeholder: "Cari nama..." }}
+  value={nama}
+  onApply={(next) => setNama(next as string | undefined)}  // undefined = filter dihapus
+  onClose={() => setOpen(false)}
+/>
+```
 
 **3. Susunan sendiri** — pakai `DataTableProvider` lalu rangkai sub-komponennya:
 
