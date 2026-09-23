@@ -80,6 +80,7 @@ export function PilihKaryawanTable({ peserta, onChange, disabled = false }: Pili
             posisi: filterText(filters.posisi),
             regionalIds: filterList(filters.regional),
             entityIds: filterList(filters.entity),
+            levelBod: filterList(filters.level),
             sort: sort as PegawaiSortKey | undefined,
             direction,
             page,
@@ -102,6 +103,13 @@ export function PilihKaryawanTable({ peserta, onChange, disabled = false }: Pili
         value: entity.id,
         label: entity.nama,
         group: ENTITY_TIPE_LABEL[entity.tipe],
+      })) ?? [];
+
+    // mis. value "3" -> label "BOD-3"
+    const levelBodOptions =
+      options?.levelBod.map((level) => ({
+        value: String(level),
+        label: levelBodLabel(level),
       })) ?? [];
 
     const terpilih = new Set(peserta.map((item) => item.pegawaiId));
@@ -193,7 +201,11 @@ export function PilihKaryawanTable({ peserta, onChange, disabled = false }: Pili
         col.accessor("levelBod", {
           id: "level",
           header: "BOD Level",
-          meta: { nowrap: true, cellClassName: "text-slate-700" },
+          meta: {
+            filter: { options: levelBodOptions },
+            nowrap: true,
+            cellClassName: "text-slate-700",
+          },
           cell: ({ getValue }) => levelBodLabel(getValue()),
         }),
         col.accessor((row) => row.personGrade ?? "", {
