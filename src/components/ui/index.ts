@@ -29,3 +29,4 @@ export { TagChip, TagChipList, tagToneClass } from "./TagChip";
 export { TagInput } from "./TagInput";
 export { Textarea, type TextareaProps } from "./Textarea";
 export { TabBar, type TabItem } from "./TabBar";
+export { CurrencyInput } from "./CurrencyInput";

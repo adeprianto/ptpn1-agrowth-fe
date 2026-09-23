@@ -10,6 +10,7 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
+  NUMBER_CELL_CLASS,
   numberColumn,
   rowNumberColumn,
   useServerDataTable,
@@ -60,7 +61,7 @@ function buildColumns(startIndex: number, onDelete: (row: Laporan) => void) {
     col.accessor((row) => row.totalBiaya, {
       id: "biaya",
       header: "Total Biaya",
-      meta: { align: "right", nowrap: true },
+      meta: { align: "right", nowrap: true, cellClassName: NUMBER_CELL_CLASS },
       cell: ({ getValue }) => formatRupiah(getValue() as number),
     }),
     actionsColumn<Laporan>({

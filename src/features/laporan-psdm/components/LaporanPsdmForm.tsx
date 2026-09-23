@@ -8,6 +8,7 @@ import {
   Badge,
   Card,
   CardHeader,
+  CurrencyInput,
   Field,
   Input,
   Select,
@@ -405,19 +406,17 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
           </div>
 
           <Field
-            label="Biaya Pelatihan per Peserta (Rp)"
+            label="Biaya Pelatihan per Peserta"
             required
             error={errors.biayaPelatihan}
             hint="Berlaku sama untuk setiap peserta yang dipilih"
           >
-            <Input
-              type="number"
-              min={0}
+            <CurrencyInput
               value={values.biayaPelatihan}
               invalid={Boolean(errors.biayaPelatihan)}
               disabled={saving}
-              placeholder="Cth. 7500000"
-              onChange={(event) => setField("biayaPelatihan", event.target.value)}
+              placeholder="Cth. 7.500.000"
+              onValueChange={(digits) => setField("biayaPelatihan", digits)}
             />
           </Field>
         </div>

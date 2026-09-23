@@ -136,7 +136,10 @@ export function DataTableContent({ className }: { className?: string }) {
         className,
       )}
     >
-      <table className={cn("w-full text-left text-sm", tableClassName)}>
+      {/* text-slate-700 = warna teks bawaan sel. Tanpa ini sel mewarisi warna
+          body (var(--foreground)) yang jadi #ededed di mode gelap sistem
+          operasi — nyaris tak terbaca di atas latar tabel yang putih. */}
+      <table className={cn("w-full text-left text-sm text-slate-700", tableClassName)}>
         <DataTableHead />
         <DataTableBody />
       </table>

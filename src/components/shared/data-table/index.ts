@@ -66,6 +66,7 @@ export {
   actionsColumn,
   badgeColumn,
   linkColumn,
+  NUMBER_CELL_CLASS,
   numberColumn,
   rowNumberColumn,
   selectColumn,

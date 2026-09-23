@@ -8,7 +8,7 @@ import {
   defineTableConfig,
   rowNumberColumn,
 } from "@/components/shared/data-table";
-import { Input } from "@/components/ui";
+import { CurrencyInput } from "@/components/ui";
 import { formatRupiah, orDash } from "@/lib/format";
 import {
   participantTotalCost,
@@ -52,20 +52,15 @@ export function PesertaBiayaTable({
         id: field,
         header,
         enableSorting: false,
-        meta: { width: "min-w-36" },
+        meta: { width: "min-w-40" },
         cell: ({ row }) => (
-          <Input
-            type="number"
-            min={0}
-            inputMode="numeric"
+          <CurrencyInput
             aria-label={`${header} ${row.original.nama}`}
-            // 0 ditampilkan sebagai kotak kosong supaya ketikan tidak jadi "05"
-            value={row.original[field] || ""}
+            // biaya disimpan sebagai angka; 0 ditampilkan sebagai kotak kosong
+            value={row.original[field] ? String(row.original[field]) : ""}
             placeholder="0"
             disabled={disabled}
-            onChange={(event) =>
-              onCostChange(row.original.pegawaiId, field, Number(event.target.value) || 0)
-            }
+            onValueChange={(digits) => onCostChange(row.original.pegawaiId, field, Number(digits))}
           />
         ),
       });

@@ -170,6 +170,9 @@ export function actionsColumn<TRow extends RowData>({
   });
 }
 
+/** Warna & bentuk angka di kolom angka/uang; pakai juga untuk kolom angka buatan sendiri. */
+export const NUMBER_CELL_CLASS = "text-slate-600 tabular-nums";
+
 interface NumberColumnOptions<TRow> {
   id: string;
   header: string;
@@ -193,7 +196,9 @@ export function numberColumn<TRow extends RowData>({
     id,
     header,
     sortFn: "basic",
-    meta: { align: "right", nowrap: true, ...meta },
+    // angka sedikit lebih lembut dari teks utama dan lebar digitnya seragam
+    // (tabular-nums) supaya mudah dibandingkan antar baris
+    meta: { align: "right", nowrap: true, cellClassName: NUMBER_CELL_CLASS, ...meta },
     cell: ({ getValue }) => {
       const text = formatNumber(getValue() as number);
       return suffix ? `${text} ${suffix}` : text;
