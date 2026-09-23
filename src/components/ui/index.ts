@@ -28,3 +28,4 @@ export { StaticValue } from "./StaticValue";
 export { TagChip, TagChipList, tagToneClass } from "./TagChip";
 export { TagInput } from "./TagInput";
 export { Textarea, type TextareaProps } from "./Textarea";
+export { TabBar, type TabItem } from "./TabBar";

@@ -109,18 +109,21 @@ export function PesertaBiayaTable({
         costColumn("biayaTransport", "Transport"),
         costColumn("biayaPerDiem", "Per Diem"),
         costColumn("biayaPenginapan", "Penginapan"),
-        col.accessor((row) => totalTransportCost(row), {
+        // Kolom hasil hitungan sengaja memakai `col.display` (bukan `col.accessor`):
+        // nilai accessor disimpan tabel per baris dan tidak dihitung ulang saat
+        // `biayaPelatihan` dari form berubah, sedangkan display selalu dihitung
+        // ulang setiap kali tabel tampil.
+        col.display({
           id: "totalTransport",
           header: "Total Biaya Transport",
-          enableSorting: false,
           meta: { align: "right", nowrap: true, cellClassName: "text-slate-700" },
-          cell: ({ getValue }) => formatRupiah(getValue() as number),
+          cell: ({ row }) => formatRupiah(totalTransportCost(row.original)),
         }),
-        col.accessor((row) => participantTotalCost(row, biayaPelatihan), {
+        col.display({
           id: "total",
           header: "Total Biaya",
           meta: { align: "right", nowrap: true, cellClassName: "font-semibold text-slate-800" },
-          cell: ({ getValue }) => formatRupiah(getValue() as number),
+          cell: ({ row }) => formatRupiah(participantTotalCost(row.original, biayaPelatihan)),
         }),
         col.display({
           id: "hapus",

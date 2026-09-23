@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FileSpreadsheet, Table2 } from "lucide-react";
 import { FormPageLayout } from "@/components/shared/FormPageLayout";
 import {
   Badge,
@@ -11,7 +12,9 @@ import {
   Input,
   Select,
   StaticValue,
+  TabBar,
   Textarea,
+  type TabItem,
 } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
@@ -21,6 +24,7 @@ import { notBefore, requireText, requireSelection } from "@/lib/validation";
 import { getTraining } from "@/features/program-pelatihan/api/pelatihan";
 import { PesertaBiayaTable } from "./PesertaBiayaTable";
 import { PilihKaryawanTable } from "./PilihKaryawanTable";
+import { UnggahPesertaExcel } from "./UnggahPesertaExcel";
 import { createTrainingRealization, getTrainingRealizationForEdit, updateTrainingRealization } from "../api/laporan";
 import {
   ALOKASI_BIAYA_OPTIONS,
@@ -46,6 +50,14 @@ const FIELD_MAP = {
   cost_allocation: "alokasiBiaya",
 } as const;
 
+/** Dua cara memilih peserta di bagian "Karyawan Peserta Pelatihan". */
+type CaraPilihPeserta = "tabel" | "excel";
+
+const PESERTA_TABS: TabItem<CaraPilihPeserta>[] = [
+  { value: "tabel", label: "Pilih dari Tabel Karyawan", icon: Table2 },
+  { value: "excel", label: "Unggah Excel", icon: FileSpreadsheet },
+];
+
 interface LaporanPsdmFormProps {
   /** Mode tambah: laporan baru untuk pelatihan ini */
   trainingId?: string;
@@ -67,6 +79,7 @@ interface LaporanPsdmFormProps {
 export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFormProps) {
   const router = useRouter();
   const isEdit = Boolean(laporanId);
+  const [pesertaTab, setPesertaTab] = useState<CaraPilihPeserta>("tabel");
 
   // Mode ubah: muat laporannya dulu, id pelatihannya ikut dari situ.
   const laporan = useAsyncData((signal) => getTrainingRealizationForEdit(laporanId as string, signal), {
@@ -222,13 +235,9 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
 
       {/* 2. Waktu & Lokasi Pelatihan ---------------------------------------- */}
       <Card padding="roomy">
-        <CardHeader title="Waktu & Lokasi Pelatihan" />
+        <CardHeader title="Waktu & Lokasi Pelatihan" description="Waktu dan lokasi pelatihan yang dilaksanakan" />
 
         <div className="mt-5 space-y-5">
-          <Field label="Nama PIC" hint="Diambil dari penyelenggara pelatihan">
-            <StaticValue>{data?.penyelenggara}</StaticValue>
-          </Field>
-
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Tanggal Mulai" required error={errors.tanggalMulai}>
               <Input
@@ -423,15 +432,23 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
               <Badge tone="emerald">{values.peserta.length} Dipilih</Badge>
             </span>
           }
-          description="Centang karyawan yang mengikuti pelatihan. Pilihan tetap tersimpan saat berpindah halaman atau mencari."
+          description="Pilih karyawan dari tabel atau unggah daftar dari Excel. Pilihan tetap tersimpan saat berpindah tab, halaman, atau pencarian."
+          action={<TabBar tabs={PESERTA_TABS} value={pesertaTab} onChange={setPesertaTab} />}
         />
 
-        <div className="mt-5">
+        {/* Kedua tab selalu terpasang; yang tidak aktif hanya disembunyikan
+            (`hidden`). Dengan begitu halaman, filter, dan pencarian tabel
+            karyawan tidak ter-reset saat berpindah tab. */}
+        <div className="mt-5" hidden={pesertaTab !== "tabel"}>
           <PilihKaryawanTable
             peserta={values.peserta}
             onChange={changeParticipants}
             disabled={saving}
           />
+        </div>
+
+        <div className="mt-5" hidden={pesertaTab !== "excel"}>
+          <UnggahPesertaExcel />
         </div>
       </Card>
 
