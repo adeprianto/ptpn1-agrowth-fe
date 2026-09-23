@@ -64,7 +64,7 @@ export function PegawaiList() {
         title="Pegawai"
         description="Seluruh data pegawai karyawan PTPN 1 di semua regional dan unit"
         action={
-          <ButtonLink href="/pegawai/create" size="lg" icon={Plus}>
+          <ButtonLink href="/dashboard/pegawai/create" size="lg" icon={Plus}>
             Tambah Pegawai
           </ButtonLink>
         }

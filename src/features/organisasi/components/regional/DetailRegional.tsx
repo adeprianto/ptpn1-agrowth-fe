@@ -30,7 +30,7 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <DetailPageState
         query={query}
         resource="regional"
-        backHref="/organisasi/regional"
+        backHref="/dashboard/organisasi/regional"
         backLabel="Kembali ke daftar Regional"
       />
     );
@@ -48,8 +48,8 @@ export function DetailRegional({ id }: DetailRegionalProps) {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
-          { label: "Regional", href: "/organisasi/regional" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
+          { label: "Regional", href: "/dashboard/organisasi/regional" },
           { label: regional.nama },
         ]}
       />

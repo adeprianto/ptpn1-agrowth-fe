@@ -120,7 +120,7 @@ export function TambahPegawaiForm() {
     onSubmit: async () => {
       // DUMMY — endpoint tambah pegawai belum tersedia.
       // TODO: POST /api/v1/employees
-      router.push("/pegawai");
+      router.push("/dashboard/pegawai");
     },
   });
 
@@ -133,12 +133,12 @@ export function TambahPegawaiForm() {
       variant="plain"
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Data Pegawai", href: "/pegawai" },
+        { label: "Data Pegawai", href: "/dashboard/pegawai" },
         { label: "Tambah Pegawai" },
       ]}
       title="Tambah Pegawai Baru"
       description="Lengkapi Identitas dan Kepegawaian"
-      backHref="/pegawai"
+      backHref="/dashboard/pegawai"
       error={formError}
       saving={saving}
       submitLabel="Simpan Pegawai"

@@ -203,7 +203,7 @@ export function createEmployeeTableConfig(
         meta: { align: "right", nowrap: true },
         cell: ({ row }) => (
           <ButtonLink
-            href={`/pegawai/${row.original.id}`}
+            href={`/dashboard/pegawai/${row.original.id}`}
             variant="outline"
             size="sm"
           >

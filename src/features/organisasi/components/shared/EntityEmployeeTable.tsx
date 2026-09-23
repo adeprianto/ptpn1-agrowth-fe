@@ -73,7 +73,7 @@ export function createEntityEmployeeTableConfig(
         meta: { align: "right", nowrap: true },
         cell: ({ row }) => (
           <Link
-            href={`/pegawai/${row.original.id}`}
+            href={`/dashboard/pegawai/${row.original.id}`}
             className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:underline"
           >
             Lihat

@@ -104,12 +104,12 @@ function buildColumns(startIndex: number, tagOptions: string[]) {
         {
           label: "Tambah Laporan",
           icon: FilePlus,
-          href: `/laporan-psdm/pelatihan/${row.id}/create`,
+          href: `/dashboard/laporan-psdm/pelatihan/${row.id}/create`,
         },
         {
           label: "Lihat / Ubah Laporan",
           icon: FileText,
-          href: `/laporan-psdm/pelatihan/${row.id}`,
+          href: `/dashboard/laporan-psdm/pelatihan/${row.id}`,
           // belum ada laporan yang bisa dilihat atau diubah
           disabled: row.jumlahRealisasi === 0,
         },

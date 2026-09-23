@@ -115,7 +115,7 @@ export type ButtonLinkProps = Omit<ButtonBaseProps, "loading"> &
  * `<Link>` sehingga navigasinya tetap client-side.
  *
  * @example
- * <ButtonLink href="/pegawai/create" icon={Plus}>Tambah Pegawai</ButtonLink>
+ * <ButtonLink href="/dashboard/pegawai/create" icon={Plus}>Tambah Pegawai</ButtonLink>
  */
 export function ButtonLink({
   variant = "primary",

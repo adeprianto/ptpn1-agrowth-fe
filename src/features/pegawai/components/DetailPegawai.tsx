@@ -121,7 +121,7 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
       <DetailPageState
         query={query}
         resource="pegawai"
-        backHref="/pegawai"
+        backHref="/dashboard/pegawai"
         backLabel="Kembali ke daftar Pegawai"
       />
     );
@@ -132,7 +132,7 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Pegawai", href: "/pegawai" },
+          { label: "Pegawai", href: "/dashboard/pegawai" },
           { label: pegawai.nama },
         ]}
       />
@@ -143,7 +143,7 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
         jabatan={pegawai.jabatan}
         penempatanNama={pegawai.penempatanNama}
         penempatanInduk={pegawai.penempatanInduk}
-        backHref="/pegawai"
+        backHref="/dashboard/pegawai"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -66,7 +66,7 @@ function buildColumns(startIndex: number, onDelete: (row: Laporan) => void) {
     actionsColumn<Laporan>({
       ariaLabel: () => "Aksi laporan",
       actions: (row) => [
-        { label: "Ubah Laporan", icon: Pencil, href: `/laporan-psdm/${row.id}/edit` },
+        { label: "Ubah Laporan", icon: Pencil, href: `/dashboard/laporan-psdm/${row.id}/edit` },
         { label: "Hapus", icon: Trash2, variant: "danger", onClick: () => onDelete(row) },
       ],
     }),
@@ -117,7 +117,7 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Laporan Realisasi PSDM", href: "/laporan-psdm" },
+          { label: "Laporan Realisasi PSDM", href: "/dashboard/laporan-psdm" },
           { label: namaPelatihan },
         ]}
       />
@@ -127,7 +127,7 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
         description={`Laporan realisasi pelatihan · Penyelenggara: ${orDash(pelatihan.data?.penyelenggara)}`}
         action={
           <ButtonLink
-            href={`/laporan-psdm/pelatihan/${trainingId}/create`}
+            href={`/dashboard/laporan-psdm/pelatihan/${trainingId}/create`}
             size="lg"
             icon={Plus}
           >

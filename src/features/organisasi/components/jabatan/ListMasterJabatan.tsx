@@ -46,7 +46,7 @@ export function ListMasterJabatan() {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Master Jabatan" },
         ]}
       />
@@ -55,7 +55,7 @@ export function ListMasterJabatan() {
         title="Master Jabatan"
         description="Daftar jabatan beserta Job Family dan posisinya di struktur organisasi"
         action={
-          <ButtonLink href="/organisasi/jabatan/create" size="lg" icon={Plus}>
+          <ButtonLink href="/dashboard/organisasi/jabatan/create" size="lg" icon={Plus}>
             Tambah Jabatan
           </ButtonLink>
         }

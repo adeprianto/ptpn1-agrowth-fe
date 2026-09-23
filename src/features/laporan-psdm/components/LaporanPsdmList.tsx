@@ -154,7 +154,7 @@ function BelumAdaPelatihan() {
           lalu kembali ke halaman ini untuk melaporkan realisasinya.
         </p>
 
-        <ButtonLink href="/program-pelatihan/create" size="lg" icon={FilePlus}>
+        <ButtonLink href="/dashboard/program-pelatihan/create" size="lg" icon={FilePlus}>
           Tambah Program Pelatihan
         </ButtonLink>
       </div>

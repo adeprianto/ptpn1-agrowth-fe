@@ -105,9 +105,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
               <div className="space-y-1">
                 {group.items.map((item) => {
+                  // Semua halaman diawali /dashboard, jadi menu Dashboard hanya
+                  // aktif di /dashboard itu sendiri; menu lain ikut aktif di
+                  // sub-halamannya (mis. /dashboard/pegawai/123).
                   const isActive =
-                    pathname === item.href ||
-                    pathname.startsWith(`${item.href}/`);
+                    item.href === "/dashboard"
+                      ? pathname === item.href
+                      : pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
 
                   return (

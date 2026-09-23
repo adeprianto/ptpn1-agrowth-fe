@@ -135,7 +135,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
         await createUnit(input);
       }
 
-      router.push("/organisasi/unit");
+      router.push("/dashboard/organisasi/unit");
     },
   });
 
@@ -156,13 +156,13 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Unit", href: "/organisasi/unit" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Unit", href: "/dashboard/organisasi/unit" },
         { label: isEdit ? "Edit Unit" : "Tambah Unit" },
       ]}
       title={isEdit ? "Edit Unit" : "Tambah Unit"}
       description="Satu unit bisa punya lebih dari satu pasangan jenis dan komoditas."
-      backHref="/organisasi/unit"
+      backHref="/dashboard/organisasi/unit"
       loading={detail.loading}
       loadingLabel="Memuat data unit..."
       error={formError ?? detail.error ?? optionsError}

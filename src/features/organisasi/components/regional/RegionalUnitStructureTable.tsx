@@ -69,7 +69,7 @@ export function createRegionalUnitTableConfig(): TableConfig<Unit> {
         meta: { align: "right", nowrap: true },
         cell: ({ row }) => (
           <Link
-            href={`/organisasi/unit/${row.original.id}`}
+            href={`/dashboard/organisasi/unit/${row.original.id}`}
             className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:underline"
           >
             Lihat

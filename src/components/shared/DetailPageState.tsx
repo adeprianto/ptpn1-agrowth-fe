@@ -23,7 +23,7 @@ interface DetailPageStateProps {
  *     <DetailPageState
  *       query={query}
  *       resource="regional"
- *       backHref="/organisasi/regional"
+ *       backHref="/dashboard/organisasi/regional"
  *       backLabel="Kembali ke daftar Regional"
  *     />
  *   );

@@ -61,7 +61,7 @@ export default function PenyelenggaraPelatihanList() {
         title="Penyelenggara"
         description="Seluruh data penyelenggara pelatihan PTPN 1 di semua regional dan unit"
         action={
-          <ButtonLink href="/penyelenggara-pelatihan/create" size="lg" icon={Plus}>
+          <ButtonLink href="/dashboard/penyelenggara-pelatihan/create" size="lg" icon={Plus}>
             Tambah Penyelenggara
           </ButtonLink>
         }

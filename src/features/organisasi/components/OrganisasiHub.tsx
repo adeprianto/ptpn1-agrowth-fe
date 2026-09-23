@@ -90,7 +90,7 @@ export function OrganisasiHub() {
   const hubCards: HubCardData[] = [
     {
       id: "head-office",
-      href: "/organisasi/head-office",
+      href: "/dashboard/organisasi/head-office",
       icon: Landmark,
       title: "Head Office",
       desc: "Kantor pusat PTPN 1 - ringkasan dan daftar karyawan yang ditempatkan di HO.",
@@ -100,7 +100,7 @@ export function OrganisasiHub() {
     },
     {
       id: "regional",
-      href: "/organisasi/regional",
+      href: "/dashboard/organisasi/regional",
       icon: Flag,
       title: "Regional",
       desc: "Kelola wilayah regional di bawah Head Office, termasuk kepala regional dan ringkasan SDM-nya.",
@@ -110,7 +110,7 @@ export function OrganisasiHub() {
     },
     {
       id: "unit",
-      href: "/organisasi/unit",
+      href: "/dashboard/organisasi/unit",
       icon: Network,
       title: "Unit",
       desc: "Kebun dan pabrik di seluruh wilayah kerja, dikelompokkan per regional dan komoditas.",
@@ -119,7 +119,7 @@ export function OrganisasiHub() {
     },
     {
       id: "jabatan",
-      href: "/organisasi/jabatan",
+      href: "/dashboard/organisasi/jabatan",
       icon: Briefcase,
       title: "Master Jabatan",
       desc: "Daftar jabatan beserta Job Group, Job Function, dan Level BOD.",
@@ -128,7 +128,7 @@ export function OrganisasiHub() {
     },
     {
       id: "struktur",
-      href: "/organisasi/struktur",
+      href: "/dashboard/organisasi/struktur",
       icon: GitBranch,
       title: "Struktur Organisasi",
       desc: "Visualisasi hierarki organisasi dari Head Office sampai Unit dalam bentuk pohon interaktif.",
@@ -137,7 +137,7 @@ export function OrganisasiHub() {
     },
     {
       id: "departemen",
-      href: "/organisasi/departemen",
+      href: "/dashboard/organisasi/departemen",
       icon: Layers,
       title: "Struktur Departemen",
       desc: "Susunan direktorat, divisi, bagian dan seterusnya di dalam tiap entity (HO, Regional, Unit).",

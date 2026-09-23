@@ -123,7 +123,7 @@ export function PelatihanForm({ mode, trainingId }: PelatihanFormProps) {
         await createTraining(input);
       }
 
-      router.push("/program-pelatihan");
+      router.push("/dashboard/program-pelatihan");
     },
   });
 
@@ -136,14 +136,14 @@ export function PelatihanForm({ mode, trainingId }: PelatihanFormProps) {
       variant="plain"
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Program Pelatihan", href: "/program-pelatihan" },
+        { label: "Program Pelatihan", href: "/dashboard/program-pelatihan" },
         { label: isEdit ? "Edit Program Pelatihan" : "Tambah Program Pelatihan" },
       ]}
       title={
         isEdit ? "Edit Program Pelatihan" : "Tambah Program Pelatihan Baru"
       }
       description="Lengkapi Data Program Pelatihan"
-      backHref="/program-pelatihan"
+      backHref="/dashboard/program-pelatihan"
       loading={detail.loading}
       loadingLabel="Memuat data pelatihan..."
       error={formError ?? detail.error}

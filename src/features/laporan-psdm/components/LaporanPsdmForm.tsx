@@ -87,7 +87,7 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
     emptyLaporanForm,
   );
 
-  const kembaliKe = idPelatihan ? `/laporan-psdm/pelatihan/${idPelatihan}` : "/laporan-psdm";
+  const kembaliKe = idPelatihan ? `/dashboard/laporan-psdm/pelatihan/${idPelatihan}` : "/dashboard/laporan-psdm";
 
   const { submit, saving, errors, formError } = useFormSubmit<LaporanFormValues>({
     fieldMap: FIELD_MAP,
@@ -172,7 +172,7 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
       variant="plain"
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Laporan Realisasi PSDM", href: "/laporan-psdm" },
+        { label: "Laporan Realisasi PSDM", href: "/dashboard/laporan-psdm" },
         { label: data?.nama ?? "Pelatihan", href: kembaliKe },
         { label: isEdit ? "Ubah Laporan" : "Tambah Laporan" },
       ]}

@@ -150,8 +150,8 @@ export function createUnitTableConfig({
       actionsColumn<Unit>({
         ariaLabel: (row) => `Aksi untuk ${row.nama}`,
         actions: (row) => [
-          { label: "Lihat Detail", icon: Eye, href: `/organisasi/unit/${row.id}` },
-          { label: "Edit", icon: Pencil, href: `/organisasi/unit/${row.id}/edit` },
+          { label: "Lihat Detail", icon: Eye, href: `/dashboard/organisasi/unit/${row.id}` },
+          { label: "Edit", icon: Pencil, href: `/dashboard/organisasi/unit/${row.id}/edit` },
           ...(onDelete
             ? [
                 {

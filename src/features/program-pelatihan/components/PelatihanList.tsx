@@ -86,7 +86,7 @@ export default function PelatihanList() {
         title="Program Pelatihan"
         description="Seluruh data program pelatihan PTPN 1 di semua regional dan unit"
         action={
-          <ButtonLink href="/program-pelatihan/create" size="lg" icon={Plus}>
+          <ButtonLink href="/dashboard/program-pelatihan/create" size="lg" icon={Plus}>
             Program Pelatihan
           </ButtonLink>
         }

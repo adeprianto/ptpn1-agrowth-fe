@@ -140,7 +140,7 @@ interface ActionsColumnOptions<TRow> {
  * actionsColumn<Unit>({
  *   ariaLabel: (unit) => `Aksi untuk ${unit.nama}`,
  *   actions: (unit) => [
- *     { label: "Lihat Detail", icon: Eye, href: `/organisasi/unit/${unit.id}` },
+ *     { label: "Lihat Detail", icon: Eye, href: `/dashboard/organisasi/unit/${unit.id}` },
  *     { label: "Hapus", icon: Trash2, variant: "danger", onClick: () => onDelete(unit) },
  *   ],
  * })

@@ -52,7 +52,7 @@ export function ListStrukturDepartemen() {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Struktur Departemen" },
         ]}
       />
@@ -62,7 +62,7 @@ export function ListStrukturDepartemen() {
         description="Susunan direktorat, divisi, bagian dan seterusnya di dalam tiap entity"
         action={
           <ButtonLink
-            href={`/organisasi/departemen/create${entityId ? `?entity=${entityId}` : ""}`}
+            href={`/dashboard/organisasi/departemen/create${entityId ? `?entity=${entityId}` : ""}`}
             size="lg"
             icon={Plus}
           >

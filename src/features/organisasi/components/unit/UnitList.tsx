@@ -99,7 +99,7 @@ export function UnitList() {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Unit" },
         ]}
       />
@@ -109,7 +109,7 @@ export function UnitList() {
         description="Kebun dan Pabrik di seluruh wilayah PTPN 1"
         action={
           canCreate ? (
-            <ButtonLink href="/organisasi/unit/create" size="lg" icon={Plus}>
+            <ButtonLink href="/dashboard/organisasi/unit/create" size="lg" icon={Plus}>
               Tambah Unit
             </ButtonLink>
           ) : null

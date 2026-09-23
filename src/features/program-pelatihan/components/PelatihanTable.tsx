@@ -161,7 +161,7 @@ export function createTrainingTableConfig({
       actionsColumn<Pelatihan>({
         ariaLabel: (row) => `Aksi untuk ${row.nama}`,
         actions: (row) => [
-          { label: "Edit", icon: Pencil, href: `/program-pelatihan/${row.id}/edit` },
+          { label: "Edit", icon: Pencil, href: `/dashboard/program-pelatihan/${row.id}/edit` },
           ...(onDelete
             ? [
                 {

@@ -115,7 +115,7 @@ export function StrukturDepartemenForm({
         await createDepartment(input);
       }
 
-      router.push("/organisasi/departemen");
+      router.push("/dashboard/organisasi/departemen");
     },
   });
 
@@ -138,13 +138,13 @@ export function StrukturDepartemenForm({
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Struktur Departemen", href: "/organisasi/departemen" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Struktur Departemen", href: "/dashboard/organisasi/departemen" },
         { label: isEdit ? "Edit Departemen" : "Tambah Departemen" },
       ]}
       title={isEdit ? "Edit Departemen" : "Tambah Departemen"}
       description="Susunan departemen di dalam satu entity (Head Office, Regional, atau Unit)"
-      backHref="/organisasi/departemen"
+      backHref="/dashboard/organisasi/departemen"
       loading={detail.loading}
       loadingLabel="Memuat data departemen..."
       error={formError ?? detail.error}

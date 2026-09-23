@@ -32,7 +32,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
       <DetailPageState
         query={query}
         resource="unit"
-        backHref="/organisasi/unit"
+        backHref="/dashboard/organisasi/unit"
         backLabel="Kembali ke daftar Unit"
       />
     );
@@ -61,7 +61,7 @@ export function DetailUnit({ id }: DetailUnitProps) {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Unit", href: "/organisasi/unit" },
+          { label: "Unit", href: "/dashboard/organisasi/unit" },
           { label: unit.nama },
         ]}
       />

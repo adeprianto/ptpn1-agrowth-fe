@@ -97,7 +97,7 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
         await createVendor(input);
       }
 
-      router.push("/penyelenggara-pelatihan");
+      router.push("/dashboard/penyelenggara-pelatihan");
     },
   });
 
@@ -132,7 +132,7 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
       variant="plain"
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Data Penyelenggara", href: "/penyelenggara-pelatihan" },
+        { label: "Data Penyelenggara", href: "/dashboard/penyelenggara-pelatihan" },
         { label: isEdit ? "Edit Penyelenggara" : "Tambah Penyelenggara" },
       ]}
       title={
@@ -141,7 +141,7 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
           : "Tambah Penyelenggara Pelatihan Baru"
       }
       description="Lengkapi Identitas Penyelenggara Pelatihan"
-      backHref="/penyelenggara-pelatihan"
+      backHref="/dashboard/penyelenggara-pelatihan"
       loading={detail.loading}
       loadingLabel="Memuat data penyelenggara..."
       error={formError ?? detail.error}

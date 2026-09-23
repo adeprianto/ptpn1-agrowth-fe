@@ -75,7 +75,7 @@ export function MasterJabatanForm({
     onSubmit: async () => {
       // DUMMY — master jabatan belum punya endpoint.
       // TODO: POST/PUT /api/v1/master/jabatan
-      router.push("/organisasi/jabatan");
+      router.push("/dashboard/organisasi/jabatan");
     },
   });
 
@@ -83,13 +83,13 @@ export function MasterJabatanForm({
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Master Jabatan", href: "/organisasi/jabatan" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Master Jabatan", href: "/dashboard/organisasi/jabatan" },
         { label: mode === "create" ? "Tambah Jabatan" : "Edit Jabatan" },
       ]}
       title={mode === "create" ? "Tambah Jabatan Baru" : "Edit Jabatan"}
       description="Lengkapi kode, level, Job Family, dan posisi di struktur organisasi"
-      backHref="/organisasi/jabatan"
+      backHref="/dashboard/organisasi/jabatan"
       error={formError}
       saving={saving}
       submitLabel={mode === "create" ? "Simpan Jabatan" : "Simpan Perubahan"}

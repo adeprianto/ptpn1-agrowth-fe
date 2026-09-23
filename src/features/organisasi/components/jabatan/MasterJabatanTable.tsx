@@ -114,7 +114,7 @@ export function createMasterPositionTableConfig({
           {
             label: "Edit",
             icon: Pencil,
-            href: `/organisasi/jabatan/${row.id}/edit`,
+            href: `/dashboard/organisasi/jabatan/${row.id}/edit`,
           },
           {
             label: "Hapus",

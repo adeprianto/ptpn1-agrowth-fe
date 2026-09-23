@@ -122,7 +122,7 @@ export function createVendorTableConfig({
           {
             label: "Edit",
             icon: Pencil,
-            href: `/penyelenggara-pelatihan/${row.id}/edit`,
+            href: `/dashboard/penyelenggara-pelatihan/${row.id}/edit`,
           },
           ...(onDelete
             ? [

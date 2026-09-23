@@ -38,8 +38,8 @@ function getNodeIcon(node: StrukturNode) {
 }
 
 const DETAIL_HREF: Partial<Record<EntityTipe, (id: string) => string>> = {
-  Regional: (id) => `/organisasi/regional/${id}`,
-  Unit: (id) => `/organisasi/unit/${id}`,
+  Regional: (id) => `/dashboard/organisasi/regional/${id}`,
+  Unit: (id) => `/dashboard/organisasi/unit/${id}`,
 };
 
 interface OrgTreeRowProps {
