@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import {
   MasterJabatanForm,
-  jabatanRowToFormValues,
+  positionRowToFormValues,
 } from "@/features/organisasi/components/jabatan/MasterJabatanForm";
 import { jabatanMasterRows } from "@/features/organisasi/components/departemen/masterJabatanDummyData";
 
@@ -20,7 +20,7 @@ export default async function EditJabatanPage({
   return (
     <MasterJabatanForm
       mode="edit"
-      initialValues={jabatanRowToFormValues(row)}
+      initialValues={positionRowToFormValues(row)}
     />
   );
 }

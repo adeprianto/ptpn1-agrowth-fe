@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { ChevronDown, ChevronRight, Landmark, Network, Users } from "lucide-react";
 import { Badge } from "@/components/ui";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 import { formatNumber } from "@/lib/format";
 import type { TreeExpansion } from "@/hooks/useTreeExpansion";
 import type { EntityTipe, StrukturNode } from "../../model/entity";
-import { getJenisDisplay } from "../unit/jenisUnit";
+import { getUnitTypeDisplay } from "../unit/jenisUnit";
 
 /** Simpul cocok kalau nama/kodenya cocok, atau salah satu anaknya cocok. */
 function nodeMatches(node: StrukturNode, query: string): boolean {
@@ -33,7 +33,7 @@ function getNodeIcon(node: StrukturNode) {
     return { Icon: Network, className: "bg-blue-50 text-blue-700" };
   }
 
-  const jenis = getJenisDisplay(node.jenis[0]);
+  const jenis = getUnitTypeDisplay(node.jenis[0]);
   return { Icon: jenis.icon, className: `${jenis.iconBg} ${jenis.iconColor}` };
 }
 
@@ -64,7 +64,13 @@ export function OrgTreeRow({ node, level, expansion, query }: OrgTreeRowProps) {
     <div>
       <div
         className={cn(
-          "group flex cursor-pointer items-center gap-2.5 rounded-lg py-2 pr-2 hover:bg-slate-50",
+          // tata letak
+          "group flex items-center gap-2.5",
+          // tampilan
+          "rounded-lg py-2 pr-2",
+          // interaksi
+          "cursor-pointer hover:bg-slate-50",
+          // keadaan
           highlighted && "bg-emerald-50/60",
         )}
         style={{ paddingLeft: level * 24 + 8 }}
@@ -82,7 +88,10 @@ export function OrgTreeRow({ node, level, expansion, query }: OrgTreeRowProps) {
 
         <div
           className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+            // tata letak
+            "flex h-7 w-7 shrink-0 items-center justify-center",
+            // tampilan — warnanya mengikuti tipe node
+            "rounded-lg",
             iconClass,
           )}
         >
@@ -101,7 +110,7 @@ export function OrgTreeRow({ node, level, expansion, query }: OrgTreeRowProps) {
 
         {node.tipe === "Unit" &&
           node.jenis.map((item) => {
-            const display = getJenisDisplay(item);
+            const display = getUnitTypeDisplay(item);
             return (
               <Badge key={item.id} tone={display.tone} className="px-1.5 py-0.5 text-[10px]">
                 {display.label}

@@ -39,7 +39,7 @@ interface PenyelenggaraTableOptions {
 }
 
 /** Konfigurasi tabel penyelenggara pelatihan. */
-export function createPenyelenggaraTableConfig({
+export function createVendorTableConfig({
   startIndex = 1,
   onDelete,
 }: PenyelenggaraTableOptions = {}): TableConfig<Penyelenggara> {
@@ -156,7 +156,7 @@ export function PenyelenggaraTable({
   onDelete,
 }: PenyelenggaraTableProps) {
   const config = useMemo(
-    () => createPenyelenggaraTableConfig({ startIndex, onDelete }),
+    () => createVendorTableConfig({ startIndex, onDelete }),
     [startIndex, onDelete],
   );
 

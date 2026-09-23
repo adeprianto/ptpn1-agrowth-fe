@@ -11,12 +11,12 @@ import {
   type TableConfig,
 } from "@/components/shared/data-table";
 import { Badge, ButtonLink } from "@/components/ui";
-import { getJenisDisplay } from "@/features/organisasi/components/unit/jenisUnit";
+import { getUnitTypeDisplay } from "@/features/organisasi/components/unit/jenisUnit";
 import { ENTITY_TIPE_LABEL } from "@/features/organisasi/model/entity";
 import { orDash } from "@/lib/format";
 import {
   levelBodLabel,
-  operasionalLabel,
+  operationalLabel,
   type Pegawai,
   type PegawaiFilterOptions,
 } from "../model/pegawai";
@@ -24,12 +24,12 @@ import {
 const col = createDataTableColumnHelper<Pegawai>();
 
 /** Label "Kebun · Teh" untuk satu baris operasional pegawai. */
-export function pegawaiOperasionalLabel(pegawai: Pegawai) {
+export function employeeOperationalLabel(pegawai: Pegawai) {
   const jenis = pegawai.operasionalJenis
-    ? getJenisDisplay(pegawai.operasionalJenis)
+    ? getUnitTypeDisplay(pegawai.operasionalJenis)
     : null;
 
-  return operasionalLabel(jenis, pegawai.operasionalKomoditas);
+  return operationalLabel(jenis, pegawai.operasionalKomoditas);
 }
 
 /**
@@ -54,8 +54,8 @@ function buildChecklistOptions(options: PegawaiFilterOptions | null) {
     operasional:
       options?.operasional.map((row) => ({
         value: row.key,
-        label: operasionalLabel(
-          row.jenis ? getJenisDisplay(row.jenis) : null,
+        label: operationalLabel(
+          row.jenis ? getUnitTypeDisplay(row.jenis) : null,
           row.komoditas,
         ),
       })) ?? [],
@@ -78,7 +78,7 @@ function buildChecklistOptions(options: PegawaiFilterOptions | null) {
  * EmployeeController::SORTABLE), jadi `PegawaiList` bisa meneruskannya
  * langsung ke API tanpa tabel penerjemah.
  */
-export function createPegawaiTableConfig(
+export function createEmployeeTableConfig(
   options: PegawaiFilterOptions | null,
 ): TableConfig<Pegawai> {
   const checklist = buildChecklistOptions(options);
@@ -127,13 +127,13 @@ export function createPegawaiTableConfig(
           </>
         ),
       }),
-      col.accessor(pegawaiOperasionalLabel, {
+      col.accessor(employeeOperationalLabel, {
         id: "operasional",
         header: "Entity Operational",
         meta: { filter: { options: checklist.operasional } },
         cell: ({ row, getValue }) =>
           row.original.operasionalJenis || row.original.operasionalKomoditas ? (
-            <Badge tone={getJenisDisplay(row.original.operasionalJenis).tone}>
+            <Badge tone={getUnitTypeDisplay(row.original.operasionalJenis).tone}>
               {getValue() as string}
             </Badge>
           ) : (
@@ -233,7 +233,7 @@ export function PegawaiTable({
   options,
 }: PegawaiTableProps) {
   // kolom dibuat ulang hanya saat isi daftar centang selesai dimuat
-  const config = useMemo(() => createPegawaiTableConfig(options), [options]);
+  const config = useMemo(() => createEmployeeTableConfig(options), [options]);
 
   return (
     <DataTable

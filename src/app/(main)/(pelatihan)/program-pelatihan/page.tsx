@@ -1,5 +1,5 @@
-import PelatihanList from "../../../../features/program-pelatihan/components/PelatihanList";
+import PelatihanList from "@/features/program-pelatihan/components/PelatihanList";
 
 export default function ProgramPelatihan() {
-    return <PelatihanList />
+  return <PelatihanList />;
 }

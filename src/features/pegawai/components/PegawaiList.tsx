@@ -14,9 +14,9 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { formatNumber } from "@/lib/format";
 import { PegawaiTable } from "./PegawaiTable";
 import {
-  getPegawaiFilterOptions,
-  getPegawaiList,
-  getPegawaiSummary,
+  getEmployeeFilterOptions,
+  getEmployeeList,
+  getEmployeeSummary,
   type PegawaiSortKey,
 } from "../api/pegawai";
 import type { Pegawai } from "../model/pegawai";
@@ -25,7 +25,7 @@ export function PegawaiList() {
   const { tableState, rows, total, loading, error } = useServerDataTable<Pegawai>({
     fetcher: ({ filters, sort, direction, page, perPage }, signal) =>
       // id kolom di tabel = nama parameter sort/filter di backend
-      getPegawaiList(
+      getEmployeeList(
         {
           nik: filterText(filters.nik),
           name: filterText(filters.name),
@@ -51,8 +51,8 @@ export function PegawaiList() {
   });
 
   // Ringkasan + isi checklist filter cukup diambil sekali
-  const { data: summary } = useAsyncData(getPegawaiSummary);
-  const { data: options } = useAsyncData(getPegawaiFilterOptions);
+  const { data: summary } = useAsyncData(getEmployeeSummary);
+  const { data: options } = useAsyncData(getEmployeeFilterOptions);
 
   return (
     <div className="space-y-4">

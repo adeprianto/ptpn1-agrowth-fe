@@ -56,7 +56,7 @@ export interface HeadOfficeDetail {
   jumlahUnit: number;
 }
 
-export function toStrukturNode(node: EntityTreeNode): StrukturNode {
+export function toStructureNode(node: EntityTreeNode): StrukturNode {
   return {
     id: String(node.id),
     parentId: node.parent_id === null ? null : String(node.parent_id),
@@ -68,7 +68,7 @@ export function toStrukturNode(node: EntityTreeNode): StrukturNode {
     jenis: toMasterItems(node.jenis),
     jumlahKaryawan: node.jumlah_karyawan,
     totalKaryawan: node.total_karyawan,
-    children: node.children.map(toStrukturNode),
+    children: node.children.map(toStructureNode),
   };
 }
 

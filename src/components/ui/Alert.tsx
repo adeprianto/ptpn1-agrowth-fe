@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export type AlertTone = "info" | "success" | "warning" | "error";
 
@@ -47,7 +47,17 @@ export function Alert({
   return (
     <div
       role="alert"
-      className={cn("flex gap-2.5 rounded-xl border px-4 py-3 text-sm", box, className)}
+      className={cn(
+        // tata letak
+        "flex gap-2.5",
+        // tampilan
+        "rounded-xl border px-4 py-3",
+        // teks
+        "text-sm",
+        // warna mengikuti tone
+        box,
+        className,
+      )}
     >
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex-1">

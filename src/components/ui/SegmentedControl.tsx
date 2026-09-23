@@ -1,7 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export interface SegmentedOption<TValue extends string> {
   value: TValue;
@@ -58,7 +58,15 @@ export function SegmentedControl<TValue extends string>({
             aria-pressed={isActive}
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-medium transition-colors",
+              // tata letak
+              "flex items-center gap-2.5",
+              // tampilan
+              "rounded-xl border px-4 py-3",
+              // teks
+              "text-sm font-medium",
+              // interaksi
+              "transition-colors",
+              // keadaan
               isActive
                 ? "border-emerald-400 bg-emerald-50 text-emerald-700"
                 : "border-slate-300 text-slate-600 hover:bg-slate-50",

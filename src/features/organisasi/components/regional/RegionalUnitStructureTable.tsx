@@ -13,8 +13,8 @@ import {
 } from "@/components/shared/data-table";
 import { Alert, Badge, Card, CardHeader } from "@/components/ui";
 import { getRegionalUnits } from "../../api/regional";
-import { komoditasLabel, type Unit } from "../../model/unit";
-import { getJenisDisplay } from "../unit/jenisUnit";
+import { commodityLabel, type Unit } from "../../model/unit";
+import { getUnitTypeDisplay } from "../unit/jenisUnit";
 
 const col = createDataTableColumnHelper<Unit>();
 
@@ -43,7 +43,7 @@ export function createRegionalUnitTableConfig(): TableConfig<Unit> {
           ) : (
             <div className="flex flex-wrap gap-1">
               {row.original.jenis.map((item) => {
-                const display = getJenisDisplay(item);
+                const display = getUnitTypeDisplay(item);
                 return (
                   <Badge key={item.id} tone={display.tone}>
                     {display.label}
@@ -58,7 +58,7 @@ export function createRegionalUnitTableConfig(): TableConfig<Unit> {
         header: "Karyawan",
         value: (row) => row.jumlahKaryawan,
       }),
-      col.accessor(komoditasLabel, {
+      col.accessor(commodityLabel, {
         id: "komoditas",
         header: "Komoditas",
         meta: { cellClassName: "text-slate-600" },

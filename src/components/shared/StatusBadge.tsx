@@ -1,3 +1,5 @@
+import { cn } from "cn";
+
 export type BadgeTone = "slate" | "amber" | "blue" | "emerald" | "rose";
 
 const toneClass: Record<BadgeTone, string> = {
@@ -22,7 +24,16 @@ interface StatusBadgeProps {
 export function StatusBadge({ tone, label }: StatusBadgeProps) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center rounded-full px-3 py-1 text-xs font-medium ${toneClass[tone]}`}
+      className={cn(
+        // tata letak
+        "inline-flex shrink-0 items-center",
+        // tampilan
+        "rounded-full px-3 py-1",
+        // teks
+        "text-xs font-medium",
+        // warna mengikuti tone
+        toneClass[tone],
+      )}
     >
       {label}
     </span>

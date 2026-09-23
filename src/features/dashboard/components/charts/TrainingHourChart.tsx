@@ -33,7 +33,7 @@ const data: TrainingHourDatum[] = [
   { regional: "8", target: 240, realisasi: 80 },
 ];
 
-const formatJam = (value: number) => `${value.toLocaleString("id-ID")} Jam`;
+const formatHours = (value: number) => `${value.toLocaleString("id-ID")} Jam`;
 
 interface TooltipPayloadItem {
   dataKey?: string | number;
@@ -76,7 +76,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
               <span className="text-slate-500">{item.name}</span>
             </div>
             <span className="font-medium text-slate-800">
-              {formatJam(Number(item.value))}
+              {formatHours(Number(item.value))}
             </span>
           </div>
         ))}
@@ -116,7 +116,7 @@ function TrainingHourSummary() {
               <span className="text-xs text-slate-600">{row.name}</span>
             </div>
             <span className="text-xs font-semibold text-slate-800">
-              {formatJam(row.value)}
+              {formatHours(row.value)}
             </span>
           </div>
         ))}

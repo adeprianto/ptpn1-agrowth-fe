@@ -42,7 +42,7 @@ export interface DepartemenInput {
   indukId: string | null;
 }
 
-export function toDepartemen(resource: OrganizationResource): Departemen {
+export function toDepartment(resource: OrganizationResource): Departemen {
   return {
     id: String(resource.id),
     kode: resource.code,
@@ -58,7 +58,7 @@ export function toDepartemen(resource: OrganizationResource): Departemen {
   };
 }
 
-export function toDepartemenNode(node: OrganizationTreeNode): DepartemenNode {
+export function toDepartmentNode(node: OrganizationTreeNode): DepartemenNode {
   return {
     id: String(node.id),
     kode: node.code,
@@ -66,11 +66,11 @@ export function toDepartemenNode(node: OrganizationTreeNode): DepartemenNode {
     level: node.level,
     tipe: node.organization_type ? toMasterItem(node.organization_type) : null,
     jobFunction: node.job_function ? toMasterItem(node.job_function) : null,
-    children: node.children.map(toDepartemenNode),
+    children: node.children.map(toDepartmentNode),
   };
 }
 
-export function toDepartemenPayload(input: DepartemenInput): OrganizationPayload {
+export function toDepartmentPayload(input: DepartemenInput): OrganizationPayload {
   return {
     code: input.kode.trim(),
     name: input.nama.trim(),

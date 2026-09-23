@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentProps, ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 import { controlClasses } from "./Field";
 
 export interface SelectOption {
@@ -40,7 +40,11 @@ export function Select({
   ...rest
 }: SelectProps) {
   return (
-    <select {...rest} className={cn(controlClasses(invalid, className), "pr-8")}>
+    <select
+      {...rest}
+      aria-invalid={invalid || undefined}
+      className={cn(controlClasses(invalid, className), "pr-8")}
+    >
       {placeholder && <option value="">{placeholder}</option>}
       {options?.map((option) => (
         <option key={option.value} value={option.value} disabled={option.disabled}>

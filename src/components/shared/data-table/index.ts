@@ -68,6 +68,7 @@ export {
   linkColumn,
   numberColumn,
   rowNumberColumn,
+  selectColumn,
   titleColumn,
   toFilterOptions,
   toValueOptions,

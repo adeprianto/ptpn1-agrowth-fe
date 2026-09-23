@@ -1,9 +1,24 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ApiError } from "@/lib/http-client";
 
 export type FieldErrors<TValues> = Partial<Record<keyof TValues, string>>;
+
+/**
+ * Gulir ke isian pertama yang sedang menampilkan pesan error, lalu taruh
+ * kursor di kontrolnya. Isian ditandai oleh komponen `Field` lewat atribut
+ * `data-field-error`, jadi semua jenis kontrol ikut tercakup.
+ */
+function scrollToFirstError() {
+  const field = document.querySelector("[data-field-error]");
+  if (!field) return;
+
+  field.scrollIntoView({ behavior: "smooth", block: "center" });
+  field
+    .querySelector<HTMLElement>("input, select, textarea")
+    ?.focus({ preventScroll: true });
+}
 
 interface UseFormSubmitOptions<TValues> {
   /** Validasi di browser sebelum request dikirim */
@@ -49,6 +64,13 @@ export function useFormSubmit<TValues extends object>({
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<TValues>>({});
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Tombol simpan biasanya di bawah, sedangkan isian yang salah bisa jauh di
+  // atas. Setiap kali ada error baru (dari validasi lokal maupun 422 backend),
+  // tampilan digulir ke isian pertama yang salah.
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) scrollToFirstError();
+  }, [errors]);
 
   const clearErrors = useCallback(() => {
     setErrors({});

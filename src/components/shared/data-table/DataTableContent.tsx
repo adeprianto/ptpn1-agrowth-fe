@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 import { ColumnHeader } from "./ColumnHeader";
 import { useDataTableContext } from "./DataTableContext";
 import { DataTableSearchRow } from "./DataTableSearchRow";
@@ -28,6 +28,18 @@ export function DataTableHead() {
             const meta = column.columnDef.meta as DataTableColumnMeta | undefined;
             const sorted = column.getIsSorted();
             const canSort = column.getCanSort();
+
+            // judul khusus, mis. checkbox "pilih semua" dari selectColumn
+            if (meta?.headerContent) {
+              return (
+                <th
+                  key={header.id}
+                  className={cn(cellPaddingClass, headerClassFromMeta(meta))}
+                >
+                  {meta.headerContent}
+                </th>
+              );
+            }
 
             return (
               <ColumnHeader
@@ -74,7 +86,7 @@ export function DataTableBody() {
         <tr>
           <td
             colSpan={columnCount}
-            className="px-6 py-10 text-center text-sm text-slate-400"
+            className="px-4 py-10 text-center text-sm text-slate-400 sm:px-6"
           >
             {loading ? "Memuat data..." : emptyMessage}
           </td>
@@ -117,7 +129,10 @@ export function DataTableContent({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-2xl border border-slate-300 bg-white",
+        // tata letak — tabel lebar digulir di dalam kotak ini, bukan di halaman
+        "overflow-x-auto",
+        // tampilan
+        "rounded-2xl border border-slate-300 bg-white",
         className,
       )}
     >

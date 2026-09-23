@@ -6,10 +6,10 @@ import type {
   EmployeeSummary,
 } from "@/types/api/employee";
 import {
-  toPegawai,
-  toPegawaiDetail,
-  toPegawaiFilterOptions,
-  toPegawaiSummary,
+  toEmployee,
+  toEmployeeDetail,
+  toEmployeeFilterOptions,
+  toEmployeeSummary,
   type PegawaiDetail,
   type PegawaiFilterOptions,
 } from "../model/pegawai";
@@ -43,7 +43,7 @@ export interface PegawaiQuery extends PegawaiFilters {
 }
 
 /** GET /api/employees */
-export async function getPegawaiList(query: PegawaiQuery = {}, signal?: AbortSignal) {
+export async function getEmployeeList(query: PegawaiQuery = {}, signal?: AbortSignal) {
   const { data, meta } = await apiGet<EmployeeResource[]>(
     "/api/employees",
     {
@@ -69,22 +69,22 @@ export async function getPegawaiList(query: PegawaiQuery = {}, signal?: AbortSig
     signal,
   );
 
-  return { rows: data.map(toPegawai), meta };
+  return { rows: data.map(toEmployee), meta };
 }
 
 /** GET /api/employees/summary */
-export async function getPegawaiSummary(signal?: AbortSignal) {
+export async function getEmployeeSummary(signal?: AbortSignal) {
   const { data } = await apiGet<EmployeeSummary>(
     "/api/employees/summary",
     undefined,
     signal,
   );
 
-  return toPegawaiSummary(data);
+  return toEmployeeSummary(data);
 }
 
 /** GET /api/employees/filter-options — isi checklist di header kolom */
-export async function getPegawaiFilterOptions(
+export async function getEmployeeFilterOptions(
   signal?: AbortSignal,
 ): Promise<PegawaiFilterOptions> {
   const { data } = await apiGet<EmployeeFilterOptions>(
@@ -93,11 +93,11 @@ export async function getPegawaiFilterOptions(
     signal,
   );
 
-  return toPegawaiFilterOptions(data);
+  return toEmployeeFilterOptions(data);
 }
 
 /** GET /api/employees/{id} — versi lengkap, termasuk riwayat pelatihan */
-export async function getPegawaiDetail(
+export async function getEmployeeDetail(
   id: string,
   signal?: AbortSignal,
 ): Promise<PegawaiDetail> {
@@ -107,5 +107,5 @@ export async function getPegawaiDetail(
     signal,
   );
 
-  return toPegawaiDetail(data);
+  return toEmployeeDetail(data);
 }

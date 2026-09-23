@@ -59,7 +59,7 @@ export interface PenyelenggaraInput {
   aktif: boolean;
 }
 
-export function toPenyelenggara(resource: VendorResource): Penyelenggara {
+export function toVendor(resource: VendorResource): Penyelenggara {
   return {
     id: String(resource.id),
     nama: resource.name,
@@ -87,7 +87,7 @@ const orNull = (value: string) => {
   return trimmed === "" ? null : trimmed;
 };
 
-export function toPenyelenggaraPayload(input: PenyelenggaraInput): VendorPayload {
+export function toVendorPayload(input: PenyelenggaraInput): VendorPayload {
   return {
     name: input.nama.trim(),
     classification: input.tipe,
@@ -105,7 +105,7 @@ export function toPenyelenggaraPayload(input: PenyelenggaraInput): VendorPayload
 }
 
 /** Isi form dari data yang sedang diedit. */
-export function toPenyelenggaraInput(row: Penyelenggara): PenyelenggaraInput {
+export function toVendorInput(row: Penyelenggara): PenyelenggaraInput {
   return {
     nama: row.nama,
     tipe: row.tipe ?? "eksternal",

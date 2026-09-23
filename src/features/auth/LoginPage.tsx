@@ -6,7 +6,9 @@ import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import Image from "next/image";
 import { useAuthContext } from "./AuthProvider";
-import { ApiError, apiPost } from "@/lib/http-client";
+import { apiPost } from "@/lib/http-client";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { mustBeEmail, requireText } from "@/lib/validation";
 import type { UserResource } from "@/types/api/user";
 import { toAuthUser } from "@/types/auth";
 
@@ -18,21 +20,24 @@ export function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
 
   // User yang sudah punya sesi dialihkan ke dashboard oleh proxy (src/proxy.ts),
   // jadi halaman ini tidak perlu memeriksanya lagi.
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
-
-    try {
+  // Error 401 (kredensial salah) / 429 (rate limit) tampil di kotak merah di
+  // atas form; error 422 dari backend otomatis menempel ke isiannya.
+  const { submit, saving, errors, formError } = useFormSubmit<{
+    email: string;
+    password: string;
+  }>({
+    validate: (form) => ({
+      email: requireText(form.email, "Email Akun") ?? mustBeEmail(form.email, "Email Akun"),
+      password: requireText(form.password, "Kata Sandi"),
+    }),
+    onSubmit: async (form) => {
       const { data } = await apiPost<UserResource>("/api/auth/login", {
-        email: email.trim(),
-        password,
+        email: form.email.trim(),
+        password: form.password,
         rememberMe,
       });
 
@@ -40,17 +45,16 @@ export function LoginPage() {
 
       const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
       router.replace(callbackUrl);
-    } catch (err) {
-      // 401 kredensial salah, 422 validasi, 429 rate limit
-      setError(
-        err instanceof ApiError ? err.message : "Login gagal, coba lagi.",
-      );
-      setSubmitting(false);
-    }
+    },
+  });
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    submit({ email, password });
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div className="flex min-h-dvh bg-white">
       {/* Panel kiri - branding, disembunyikan di layar sempit */}
       <div className="relative hidden w-full max-w-xl flex-col justify-between overflow-hidden bg-linear-to-br from-emerald-600 via-emerald-800 to-emerald-950 p-10 text-white lg:flex">
         {/* Dekorasi garis abstrak (SVG asli, bukan foto) */}
@@ -119,32 +123,38 @@ export function LoginPage() {
             mengakses portal Pengembangan SDM.
           </p>
 
-          {error && (
+          {formError && (
             <Alert tone="error" className="mt-6">
-              {error}
+              {formError}
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <Field label="Email Akun" required htmlFor="login-email">
+          {/* noValidate: pengecekan lewat `validate` supaya pesannya seragam */}
+          <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <Field label="Email Akun" required htmlFor="login-email" error={errors.email}>
               <Input
                 id="login-email"
                 type="email"
-                required
                 value={email}
+                invalid={Boolean(errors.email)}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="username"
                 placeholder="nama@ptpn1.test"
               />
             </Field>
 
-            <Field label="Kata Sandi" required htmlFor="login-password">
+            <Field
+              label="Kata Sandi"
+              required
+              htmlFor="login-password"
+              error={errors.password}
+            >
               <div className="relative">
                 <Input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
-                  required
                   value={password}
+                  invalid={Boolean(errors.password)}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
                   className="pr-10"
@@ -185,11 +195,11 @@ export function LoginPage() {
             <Button
               type="submit"
               block
-              loading={submitting}
+              loading={saving}
               className="bg-emerald-800 py-3 font-semibold hover:bg-emerald-900"
             >
-              {submitting ? "Memproses..." : "Masuk ke Dashboard"}
-              {!submitting && <ArrowRight className="h-4 w-4" />}
+              {saving ? "Memproses..." : "Masuk ke Dashboard"}
+              {!saving && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
 

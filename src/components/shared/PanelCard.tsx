@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { MoreVertical } from "lucide-react";
+import { cn } from "cn";
 
 export interface PanelCardMenuItem {
   label: string;
@@ -34,7 +35,11 @@ export function PanelCard({
 
   return (
     <div
-      className={`rounded-2xl border border-slate-300 bg-white p-5 ${className}`}
+      className={cn(
+        // tampilan
+        "rounded-2xl border border-slate-300 bg-white p-5",
+        className,
+      )}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">

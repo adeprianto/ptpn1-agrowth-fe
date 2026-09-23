@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { MoreVertical } from "lucide-react";
+import { cn } from "cn";
 
 export interface DashboardCardMenuItem {
   label: string;
@@ -34,7 +35,12 @@ export function DashboardCard({
 
   return (
     <div
-      className={`rounded-lg border border-slate-200 bg-white p-4 ${className} shadow-[0_3px_10px_rgb(0,0,0,0.2)]`}
+      className={cn(
+        // tampilan
+        "rounded-lg border border-slate-200 bg-white p-4",
+        "shadow-[0_3px_10px_rgb(0,0,0,0.2)]",
+        className,
+      )}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0">

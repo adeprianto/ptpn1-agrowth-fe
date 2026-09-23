@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -81,7 +81,7 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 sm:p-4"
       onMouseDown={(event) => {
         // klik di area gelap menutup modal
         if (dismissable && event.target === event.currentTarget) onClose();
@@ -91,13 +91,19 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "flex max-h-[90vh] w-full flex-col rounded-2xl bg-white shadow-xl",
+          // tata letak
+          "flex w-full flex-col",
+          // ukuran — dvh, bukan vh, supaya bilah alamat browser ponsel ikut dihitung
+          "max-h-[90dvh]",
+          // tampilan
+          "rounded-2xl bg-white shadow-xl",
+          // lebar maksimum per ukuran, lihat sizeClass
           sizeClass[size],
           className,
         )}
       >
         {(title || !hideCloseButton) && (
-          <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-4">
+          <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-6">
             <div>
               {title && (
                 <h2 className="text-lg font-bold text-slate-900">{title}</h2>
@@ -119,10 +125,10 @@ export function Modal({
           </div>
         )}
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">{children}</div>
 
         {footer && (
-          <div className="border-t border-slate-100 px-6 py-4">{footer}</div>
+          <div className="border-t border-slate-100 px-4 py-4 sm:px-6">{footer}</div>
         )}
       </div>
     </div>,

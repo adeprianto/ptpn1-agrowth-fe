@@ -25,4 +25,6 @@ export {
 export { Select, type SelectOption } from "./Select";
 export { Spinner } from "./Spinner";
 export { StaticValue } from "./StaticValue";
+export { TagChip, TagChipList, tagToneClass } from "./TagChip";
+export { TagInput } from "./TagInput";
 export { Textarea, type TextareaProps } from "./Textarea";

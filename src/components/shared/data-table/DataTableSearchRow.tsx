@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 import { useDataTableContext } from "./DataTableContext";
 import type { ColumnSearchConfig } from "./dataTableFeatures";
 

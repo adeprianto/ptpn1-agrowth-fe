@@ -8,7 +8,7 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { useTreeExpansion } from "@/hooks/useTreeExpansion";
 import { formatNumber } from "@/lib/format";
 import { OrgTreeRow } from "./OrgTreeRow";
-import { getStrukturOrganisasi } from "../../api/struktur";
+import { getOrganizationStructure } from "../../api/struktur";
 import type { StrukturNode } from "../../model/entity";
 
 /** Id semua simpul yang punya anak — untuk tombol "Perluas Semua". */
@@ -19,7 +19,7 @@ function collectExpandableIds(node: StrukturNode): string[] {
 
 export function StrukturOrganisasi() {
   const [query, setQuery] = useState("");
-  const { data, loading, error } = useAsyncData(getStrukturOrganisasi);
+  const { data, loading, error } = useAsyncData(getOrganizationStructure);
 
   const roots = data ?? [];
   const rootIds = roots.map((root) => root.id);

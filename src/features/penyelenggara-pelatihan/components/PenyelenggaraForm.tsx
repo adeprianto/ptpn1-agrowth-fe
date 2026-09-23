@@ -6,15 +6,16 @@ import { FormPageLayout } from "@/components/shared/FormPageLayout";
 import { Card, CardHeader, Field, Input, Select, Textarea } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { mustBeEmail, requireText, requireSelection } from "@/lib/validation";
 import { useFormValues } from "@/hooks/useFormValues";
 import {
-  createPenyelenggara,
-  getPenyelenggara,
-  updatePenyelenggara,
+  createVendor,
+  getVendor,
+  updateVendor,
 } from "../api/vendor";
 import {
   PENYELENGGARA_TIPE_LABEL,
-  toPenyelenggaraInput,
+  toVendorInput,
   type Penyelenggara,
   type PenyelenggaraInput,
   type PenyelenggaraTipe,
@@ -69,29 +70,31 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
   const isEdit = mode === "edit";
 
   const detail = useAsyncData(
-    (signal) => getPenyelenggara(vendorId as string, signal),
+    (signal) => getVendor(vendorId as string, signal),
     { deps: [vendorId], enabled: isEdit && Boolean(vendorId) },
   );
 
   const [values, setValues] = useFormValues<Penyelenggara, FormValues>(
     detail.data,
-    toPenyelenggaraInput,
+    toVendorInput,
     emptyForm,
   );
 
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
     validate: (form) => ({
-      nama: form.nama.trim() ? undefined : "Nama Penyelenggara wajib diisi",
-      tipe: form.tipe ? undefined : "Jenis Penyelenggara wajib dipilih",
+      nama: requireText(form.nama, "Nama Penyelenggara"),
+      tipe: requireSelection(form.tipe, "Jenis Penyelenggara"),
+      email: mustBeEmail(form.email, "E-Mail"),
+      picEmail: mustBeEmail(form.picEmail, "E-Mail PIC"),
     }),
     onSubmit: async (form) => {
       const input = { ...form, tipe: form.tipe as PenyelenggaraTipe };
 
       if (isEdit && vendorId) {
-        await updatePenyelenggara(vendorId, input);
+        await updateVendor(vendorId, input);
       } else {
-        await createPenyelenggara(input);
+        await createVendor(input);
       }
 
       router.push("/penyelenggara-pelatihan");
@@ -146,7 +149,7 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
       submitLabel={isEdit ? "Simpan Perubahan" : "Simpan Penyelenggara"}
       onSubmit={() => submit(values)}
     >
-      <Card className="p-6">
+      <Card padding="roomy">
         <CardHeader title="Informasi Penyelenggara" />
 
         <div className="mt-5 space-y-5">
@@ -196,7 +199,7 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card padding="roomy">
         <CardHeader title="Informasi PIC" />
 
         <div className="mt-5 space-y-5">

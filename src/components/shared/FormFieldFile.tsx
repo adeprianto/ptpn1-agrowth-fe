@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, DragEvent, ChangeEvent } from "react";
+import { cn } from "cn";
 
 interface FormFieldFileProps {
     onFileSelect?: (file: File) => void;
@@ -73,11 +74,20 @@ export default function FormFieldFile({
     return (
         <div className="w-full">
             <div
-                className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center transition-colors duration-200 ${
+                className={cn(
+                    // tata letak
+                    "relative flex flex-col items-center justify-center",
+                    // tampilan
+                    "rounded-2xl border-2 border-dashed p-10",
+                    // teks
+                    "text-center",
+                    // gerak
+                    "transition-colors duration-200",
+                    // keadaan
                     isDragging
                         ? "border-emerald-500 bg-emerald-50/50"
-                        : "border-emerald-200/80 bg-white hover:bg-emerald-200/10"
-                }`}
+                        : "border-emerald-200/80 bg-white hover:bg-emerald-200/10",
+                )}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}

@@ -36,9 +36,12 @@ export function ConfirmDialog({
       size="sm"
       title={title}
       hideCloseButton
+      // selama aksinya berjalan, dialog tidak bisa ditutup lewat Escape atau
+      // klik area gelap — permintaannya sudah terlanjur dikirim ke backend
+      dismissable={!loading}
       footer={
         <ModalActions>
-          <Button variant="ghost" onClick={onCancel}>
+          <Button variant="ghost" disabled={loading} onClick={onCancel}>
             {cancelLabel}
           </Button>
           <Button

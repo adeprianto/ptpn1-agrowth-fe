@@ -13,11 +13,11 @@ import { PengajuanPelatihanList } from "@/components/shared/PengajuanPelatihanLi
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { formatNumber, formatRupiah } from "@/lib/format";
 import { getUnit } from "../../api/unit";
-import { komoditasLabel } from "../../model/unit";
+import { commodityLabel } from "../../model/unit";
 import { getUnitDetailDummy } from "./unitDetailDummyData";
 import { UnitPositionTable } from "./UnitPositionTable";
 import { EntityEmployeeTable } from "../shared/EntityEmployeeTable";
-import { getJenisDisplay } from "./jenisUnit";
+import { getUnitTypeDisplay } from "./jenisUnit";
 
 interface DetailUnitProps {
   id: string;
@@ -41,8 +41,8 @@ export function DetailUnit({ id }: DetailUnitProps) {
   // DUMMY — struktur posisi, anggaran, distribusi & pengajuan belum dari API
   const detail = getUnitDetailDummy();
 
-  const jenisLabel = unit.jenis.map((item) => getJenisDisplay(item).label).join(", ");
-  const komoditas = komoditasLabel(unit);
+  const jenisLabel = unit.jenis.map((item) => getUnitTypeDisplay(item).label).join(", ");
+  const komoditas = commodityLabel(unit);
   const description = [
     unit.kode,
     unit.regionalNama,

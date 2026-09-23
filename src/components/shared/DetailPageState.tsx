@@ -37,7 +37,7 @@ export function DetailPageState({
 }: DetailPageStateProps) {
   if (query.loading) {
     return (
-      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400 sm:p-10">
         Memuat data {resource}...
       </div>
     );
@@ -51,7 +51,7 @@ export function DetailPageState({
         : `Gagal memuat data ${resource}: ${query.error ?? "penyebab tidak diketahui"}`;
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center sm:p-10">
       <p className="text-sm text-slate-500">{message}</p>
       <Link
         href={backHref}

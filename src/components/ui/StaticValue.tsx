@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 interface StaticValueProps {
   /** Kosongkan untuk menampilkan `placeholder` saja */
@@ -29,7 +29,13 @@ export function StaticValue({
   return (
     <div
       className={cn(
-        "w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm",
+        // ukuran
+        "w-full",
+        // tampilan
+        "rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5",
+        // teks
+        "text-sm",
+        // keadaan
         isEmpty ? "text-slate-400" : "text-slate-600",
         className,
       )}

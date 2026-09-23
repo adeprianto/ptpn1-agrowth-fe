@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { Factory, LandPlot, Plus, Sprout, User } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -14,9 +14,10 @@ import {
 import { Alert, ButtonLink } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useAuth } from "@/hooks/useAuth";
+import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
 import { formatNumber } from "@/lib/format";
 import { UnitTable } from "./UnitTable";
-import { getJenisDisplay } from "./jenisUnit";
+import { getUnitTypeDisplay } from "./jenisUnit";
 import { deleteUnit, getUnits, getUnitSummary } from "../../api/unit";
 import { getRegionals } from "../../api/regional";
 import { getBusinessTypes, getOperationalCategories } from "../../api/masterData";
@@ -44,7 +45,7 @@ async function getUnitFilterOptions(signal: AbortSignal): Promise<UnitFilterOpti
       nama: row.nama,
     })),
     // kategori operasional ditampilkan dengan label UI-nya (Kebun / Pabrik)
-    jenis: categories.map((item) => ({ ...item, nama: getJenisDisplay(item).label })),
+    jenis: categories.map((item) => ({ ...item, nama: getUnitTypeDisplay(item).label })),
     komoditas: withDistinctLabels(businessTypes),
   };
 }
@@ -54,8 +55,6 @@ export function UnitList() {
   // akun Unit tidak bisa membuat unit baru (regional induknya di luar cakupannya)
   const canCreate = user.role !== "UNIT";
 
-  const [deleteTarget, setDeleteTarget] = useState<Unit | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   // dinaikkan setelah hapus supaya ringkasan ikut diambil ulang
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -85,25 +84,15 @@ export function UnitList() {
   const { data: summary } = useAsyncData(getUnitSummary, { deps: [dataVersion] });
   const { data: options } = useAsyncData(getUnitFilterOptions);
 
-  const askDelete = useCallback((row: Unit) => {
-    setDeleteError(null);
-    setDeleteTarget(row);
-  }, []);
-
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-
-    try {
-      await deleteUnit(deleteTarget.id);
-      setDeleteTarget(null);
+  // Gagal menghapus (mis. 409 karena unit masih punya pegawai) tidak
+  // menyegarkan tabel maupun ringkasan — pesannya muncul di Alert di bawah.
+  const hapus = useDeleteConfirm<Unit>({
+    onDelete: (row) => deleteUnit(row.id),
+    onSuccess: () => {
       refresh();
       setDataVersion((version) => version + 1);
-    } catch (caught) {
-      // mis. 409 karena unit masih punya pegawai
-      setDeleteError((caught as Error).message);
-      setDeleteTarget(null);
-    }
-  }
+    },
+  });
 
   return (
     <div className="space-y-4">
@@ -152,9 +141,9 @@ export function UnitList() {
 
       {error && <Alert tone="error">Gagal memuat data unit: {error}</Alert>}
 
-      {deleteError && (
-        <Alert tone="error" onDismiss={() => setDeleteError(null)}>
-          {deleteError}
+      {hapus.error && (
+        <Alert tone="error" onDismiss={hapus.dismissError}>
+          {hapus.error}
         </Alert>
       )}
 
@@ -167,17 +156,18 @@ export function UnitList() {
         regionalOptions={options?.regional}
         jenisOptions={options?.jenis}
         komoditasOptions={options?.komoditas}
-        onDelete={askDelete}
+        onDelete={hapus.ask}
       />
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        open={hapus.target !== null}
+        title={`Hapus ${hapus.target?.nama}?`}
         description="Unit hanya bisa dihapus kalau sudah tidak punya pegawai maupun user. Data jenis & komoditasnya ikut terhapus."
         confirmLabel="Hapus"
         variant="danger"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        loading={hapus.deleting}
+        onConfirm={hapus.confirm}
+        onCancel={hapus.cancel}
       />
     </div>
   );

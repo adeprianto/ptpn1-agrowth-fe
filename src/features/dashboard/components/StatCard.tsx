@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { TrendingUp } from "lucide-react";
+import { cn } from "cn";
 
 interface StatCardProps {
   label: string;
@@ -21,40 +22,65 @@ export function StatCard({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-lg p-4 ${
+      className={cn(
+        // tata letak
+        "relative overflow-hidden",
+        // tampilan
+        "rounded-lg p-4",
+        // keadaan
         isFeatured
-          ? "bg-emerald-950 text-white "
-          : "border border-slate-200 bg-white text-slate-800 shadow-[0_3px_10px_rgb(0,0,0,0.2)]"
-      }`}
+          ? "bg-emerald-950 text-white"
+          : "border border-slate-200 bg-white text-slate-800 shadow-[0_3px_10px_rgb(0,0,0,0.2)]",
+      )}
     >
       {/* Dekorasi bentuk pojok, meniru aksen di desain */}
       <div
         aria-hidden
-        className={`pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 rounded-full ${
-          isFeatured ? "bg-emerald-800/40" : "bg-blue-200"
-        }`}
+        className={cn(
+          // tata letak
+          "pointer-events-none absolute -bottom-6 -right-6 h-28 w-28",
+          // tampilan
+          "rounded-full",
+          // keadaan
+          isFeatured ? "bg-emerald-800/40" : "bg-blue-200",
+        )}
       />
 
       <div className="relative flex items-start justify-between">
         <div
-          className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-            isFeatured ? "bg-white/10" : "bg-blue-100"
-          }`}
+          className={cn(
+            // tata letak
+            "flex h-9 w-9 items-center justify-center",
+            // tampilan
+            "rounded-lg",
+            // keadaan
+            isFeatured ? "bg-white/10" : "bg-blue-100",
+          )}
         >
           <Icon
-            className={`h-5 w-5 ${
-              isFeatured ? "text-emerald-300" : "text-slate-500"
-            }`}
+            className={cn(
+              // ukuran
+              "h-5 w-5",
+              // keadaan
+              isFeatured ? "text-emerald-300" : "text-slate-500",
+            )}
           />
         </div>
 
         {trend && (
           <span
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+            className={cn(
+              // tata letak
+              "flex items-center gap-1",
+              // tampilan
+              "rounded-full px-2 py-0.5",
+              // teks
+              "text-[11px] font-medium",
+              // keadaan
               isFeatured
                 ? "bg-white/10 text-emerald-200"
-                : "bg-slate-100 text-emerald-600"
-            }`}
+                : "bg-slate-100 text-emerald-600",
+            )}
           >
             <TrendingUp className="h-3 w-3" />+{trend}
           </span>
@@ -63,9 +89,12 @@ export function StatCard({
 
       <div className="relative mt-6">
         <p
-          className={`text-xs font-medium uppercase tracking-wide ${
-            isFeatured ? "text-emerald-300/70" : "text-slate-400"
-          }`}
+          className={cn(
+            // teks
+            "text-xs font-medium uppercase tracking-wide",
+            // keadaan
+            isFeatured ? "text-emerald-300/70" : "text-slate-400",
+          )}
         >
           {label}
         </p>

@@ -20,7 +20,8 @@ import type { Role } from "@/types/auth";
 import { getRegionalSummary } from "../api/regional";
 import { getHeadOffice } from "../api/headOffice";
 import { getPositionTitleCount } from "../api/masterData";
-import { getDepartemenCount } from "../api/departemen";
+import { getDepartmentCount } from "../api/departemen";
+import { cn } from "cn";
 
 interface HubCardData {
   id: string;
@@ -76,7 +77,7 @@ export function OrganisasiHub() {
       .then((total) => setStats((prev) => ({ ...prev, jabatan: total })))
       .catch(() => {});
 
-    getDepartemenCount(signal)
+    getDepartmentCount(signal)
       .then((total) => setStats((prev) => ({ ...prev, departemen: total })))
       .catch(() => {});
 
@@ -185,7 +186,13 @@ function HubCard({
     >
       <div className="mb-4 flex items-start justify-between">
         <div
-          className={`flex h-11 w-11 items-center justify-center rounded-xl ${colorClass}`}
+          className={cn(
+            // tata letak
+            "flex h-11 w-11 items-center justify-center",
+            // tampilan — warnanya dikirim pemanggil
+            "rounded-xl",
+            colorClass,
+          )}
         >
           <Icon className="h-5 w-5" />
         </div>

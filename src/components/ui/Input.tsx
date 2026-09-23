@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { Search } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 import { controlClasses } from "./Field";
 
 export type InputProps = Omit<ComponentProps<"input">, "className"> & {
@@ -12,7 +12,14 @@ export type InputProps = Omit<ComponentProps<"input">, "className"> & {
 
 /** Kotak isian teks standar. Pasangkan dengan `Field` untuk label & error. */
 export function Input({ invalid, className, type = "text", ...rest }: InputProps) {
-  return <input {...rest} type={type} className={controlClasses(invalid, className)} />;
+  return (
+    <input
+      {...rest}
+      type={type}
+      aria-invalid={invalid || undefined}
+      className={controlClasses(invalid, className)}
+    />
+  );
 }
 
 interface SearchInputProps extends Omit<InputProps, "onChange" | "value" | "type"> {

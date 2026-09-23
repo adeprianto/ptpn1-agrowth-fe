@@ -12,15 +12,15 @@ export function SummaryStatCard({
   icon: Icon,
 }: SummaryStatCardProps) {
   return (
-    <div className="border border-slate-300 bg-white text-slate-800 p-4 flex items-center gap-4 rounded-lg">
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-emerald-900">
+    <div className="flex items-center gap-3 rounded-lg border border-slate-300 bg-white p-4 text-slate-800 sm:gap-4">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-emerald-900 sm:h-12 sm:w-12">
         <Icon className="h-5 w-5 text-white" />
       </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+      <div className="min-w-0">
+        <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-400">
           {label}
         </p>
-        <p className="mt-1 text-2xl font-bold text-slate-800">{value}</p>
+        <p className="mt-1 text-xl font-bold text-slate-800 sm:text-2xl">{value}</p>
       </div>
     </div>
   );

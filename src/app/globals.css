@@ -24,3 +24,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Saat browser menggulir ke isian yang belum valid (validasi bawaan `required`),
+ * sisakan ruang di atasnya supaya label isian ikut terlihat.
+ */
+input,
+select,
+textarea {
+  scroll-margin-top: 4rem;
+}

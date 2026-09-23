@@ -205,7 +205,7 @@ export function getJobFamilyName(code: string): string {
   return jobFamilies.find((f) => f.code === code)?.name ?? code;
 }
 
-export function getOrganisasiNode(
+export function getOrganizationNode(
   code: string,
 ): StrukturDepartemenNode | undefined {
   return strukturDepartemen.find((n) => n.code === code);

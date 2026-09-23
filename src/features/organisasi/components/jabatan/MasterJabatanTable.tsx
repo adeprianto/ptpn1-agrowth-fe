@@ -16,15 +16,15 @@ import { Badge } from "@/components/ui";
 import {
   getEntityLabel,
   getJobFamilyName,
-  getOrganisasiNode,
+  getOrganizationNode,
   type JabatanMasterRow,
 } from "@/features/organisasi/components/departemen/masterJabatanDummyData";
 
 const col = createDataTableColumnHelper<JabatanMasterRow>();
 
 /** Kode entity tempat jabatan berada, lewat organisasi induknya. */
-export function jabatanEntityCode(row: JabatanMasterRow): string {
-  return getOrganisasiNode(row.organisasiCode)?.entityCode ?? "";
+export function positionEntityCode(row: JabatanMasterRow): string {
+  return getOrganizationNode(row.organisasiCode)?.entityCode ?? "";
 }
 
 interface MasterJabatanTableOptions {
@@ -40,7 +40,7 @@ interface MasterJabatanTableOptions {
  * Datanya masih dummy dan sudah lengkap di browser, jadi tabel ini dipakai
  * dalam mode client: sort, filter, dan pagination diproses TanStack Table.
  */
-export function createMasterJabatanTableConfig({
+export function createMasterPositionTableConfig({
   levelOptions,
   entityOptions,
   onDelete,
@@ -83,7 +83,7 @@ export function createMasterJabatanTableConfig({
           cellClassName: "text-slate-600",
         },
       }),
-      col.accessor(jabatanEntityCode, {
+      col.accessor(positionEntityCode, {
         id: "entity",
         header: "Organisasi",
         meta: {
@@ -96,7 +96,7 @@ export function createMasterJabatanTableConfig({
           },
         },
         cell: ({ row }) => {
-          const organisasi = getOrganisasiNode(row.original.organisasiCode);
+          const organisasi = getOrganizationNode(row.original.organisasiCode);
 
           return (
             <>
@@ -139,7 +139,7 @@ export function MasterJabatanTable({
   onDelete,
 }: MasterJabatanTableProps) {
   const config = useMemo(
-    () => createMasterJabatanTableConfig({ levelOptions, entityOptions, onDelete }),
+    () => createMasterPositionTableConfig({ levelOptions, entityOptions, onDelete }),
     [levelOptions, entityOptions, onDelete],
   );
 

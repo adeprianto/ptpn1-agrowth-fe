@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Layers, ListTree, Plus } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
 import { ButtonLink } from "@/components/ui";
-import { MasterJabatanTable, jabatanEntityCode } from "./MasterJabatanTable";
+import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
+import { MasterJabatanTable, positionEntityCode } from "./MasterJabatanTable";
 import {
   jabatanMasterRows as initialJabatanRows,
   getEntityLabel,
@@ -17,7 +18,6 @@ import {
 export function ListMasterJabatan() {
   // DUMMY — master jabatan belum ada endpoint-nya, jadi datanya di state lokal
   const [rows, setRows] = useState<JabatanMasterRow[]>(initialJabatanRows);
-  const [deleteTarget, setDeleteTarget] = useState<JabatanMasterRow | null>(null);
 
   // Isi checklist filter kolom diturunkan dari data yang ada
   const levelOptions = useMemo(
@@ -26,23 +26,20 @@ export function ListMasterJabatan() {
   );
 
   const entityOptions = useMemo(() => {
-    const codes = new Set(rows.map(jabatanEntityCode).filter(Boolean));
+    const codes = new Set(rows.map(positionEntityCode).filter(Boolean));
     return Array.from(codes).map((code) => ({ code, label: getEntityLabel(code) }));
   }, [rows]);
 
   const totalJobFamily = new Set(rows.map((row) => row.jobFamilyCode)).size;
 
-  const askDelete = useCallback(
-    (row: JabatanMasterRow) => setDeleteTarget(row),
-    [],
-  );
-
-  function handleConfirmDelete() {
-    if (deleteTarget) {
-      setRows((prev) => prev.filter((row) => row.id !== deleteTarget.id));
-    }
-    setDeleteTarget(null);
-  }
+  // Alurnya disamakan dengan modul lain lewat `useDeleteConfirm`, walau di
+  // sini penghapusannya masih di state lokal — begitu endpoint-nya ada, cukup
+  // ganti isi `onDelete` dengan panggilan API-nya.
+  const hapus = useDeleteConfirm<JabatanMasterRow>({
+    onDelete: async (target) => {
+      setRows((prev) => prev.filter((row) => row.id !== target.id));
+    },
+  });
 
   return (
     <div className="space-y-5">
@@ -82,17 +79,18 @@ export function ListMasterJabatan() {
         rows={rows}
         levelOptions={levelOptions}
         entityOptions={entityOptions}
-        onDelete={askDelete}
+        onDelete={hapus.ask}
       />
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.namaJabatanLengkap}?`}
+        open={hapus.target !== null}
+        title={`Hapus ${hapus.target?.namaJabatanLengkap}?`}
         description="Jabatan yang sudah dipakai pegawai tidak disarankan dihapus."
         confirmLabel="Hapus"
         variant="danger"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        loading={hapus.deleting}
+        onConfirm={hapus.confirm}
+        onCancel={hapus.cancel}
       />
     </div>
   );

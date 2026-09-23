@@ -17,7 +17,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-dvh items-center justify-center bg-slate-50">
         <p className="text-sm text-slate-400">
           {loading ? "Memeriksa sesi..." : "Mengalihkan ke halaman login..."}
         </p>
