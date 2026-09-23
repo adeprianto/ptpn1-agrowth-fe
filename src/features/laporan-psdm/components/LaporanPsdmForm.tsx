@@ -26,6 +26,7 @@ import { getTraining } from "@/features/program-pelatihan/api/pelatihan";
 import { PesertaBiayaTable } from "./PesertaBiayaTable";
 import { PilihKaryawanTable } from "./PilihKaryawanTable";
 import { UnggahPesertaExcel } from "./UnggahPesertaExcel";
+import type { ImportResult } from "../api/importPeserta";
 import { createTrainingRealization, getTrainingRealizationDetail, updateTrainingRealization } from "../api/laporan";
 import {
   ALOKASI_BIAYA_OPTIONS,
@@ -146,6 +147,17 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
 
   const changeParticipants = useCallback(
     (peserta: Peserta[]) => setValues((prev) => ({ ...prev, peserta })),
+    [setValues],
+  );
+
+  /** Hasil impor Excel mengganti seluruh daftar peserta (dan biaya pelatihan kalau diisi). */
+  const applyImport = useCallback(
+    (result: ImportResult) =>
+      setValues((prev) => ({
+        ...prev,
+        peserta: result.peserta,
+        biayaPelatihan: result.biayaPelatihan ?? prev.biayaPelatihan,
+      })),
     [setValues],
   );
 
@@ -454,7 +466,7 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
         </div>
 
         <div className="mt-5" hidden={pesertaTab !== "excel"}>
-          <UnggahPesertaExcel />
+          <UnggahPesertaExcel trainingId={idPelatihan} onImport={applyImport} />
         </div>
       </Card>
 

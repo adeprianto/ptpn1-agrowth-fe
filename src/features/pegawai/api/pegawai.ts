@@ -19,6 +19,8 @@ export type PegawaiSortKey = EmployeeSortKey;
 /** Filter per kolom; list boleh berisi banyak nilai, teks = pencarian "mengandung". */
 export interface PegawaiFilters {
   nik?: string;
+  /** Daftar NIK persis (bukan "mengandung"), mis. hasil impor Excel */
+  niks?: string[];
   name?: string;
   posisi?: string;
   entityIds?: string[];
@@ -49,6 +51,7 @@ export async function getEmployeeList(query: PegawaiQuery = {}, signal?: AbortSi
     {
       search: query.search,
       nik: query.nik,
+      niks: query.niks,
       name: query.name,
       posisi: query.posisi,
       // Array dikirim apa adanya; http-client merakitnya jadi `entity_id[]=1&entity_id[]=2`,
