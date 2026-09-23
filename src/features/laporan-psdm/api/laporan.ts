@@ -45,10 +45,10 @@ export async function getTrainingRealizationSummary(signal?: AbortSignal) {
 }
 
 /**
- * GET /api/training-realizations/{id} — untuk mengisi form edit.
+ * GET /api/training-realizations/{id} — dipakai form ubah dan halaman detail.
  * Selain isian form, `trainingId` ikut dikembalikan untuk memuat rincian pelatihannya.
  */
-export async function getTrainingRealizationForEdit(
+export async function getTrainingRealizationDetail(
   id: string,
   signal?: AbortSignal,
 ): Promise<{ trainingId: string; form: LaporanFormValues }> {

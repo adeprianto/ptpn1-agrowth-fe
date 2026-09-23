@@ -26,13 +26,14 @@ import { getTraining } from "@/features/program-pelatihan/api/pelatihan";
 import { PesertaBiayaTable } from "./PesertaBiayaTable";
 import { PilihKaryawanTable } from "./PilihKaryawanTable";
 import { UnggahPesertaExcel } from "./UnggahPesertaExcel";
-import { createTrainingRealization, getTrainingRealizationForEdit, updateTrainingRealization } from "../api/laporan";
+import { createTrainingRealization, getTrainingRealizationDetail, updateTrainingRealization } from "../api/laporan";
 import {
   ALOKASI_BIAYA_OPTIONS,
   needsLocation,
   emptyLaporanForm,
   countDays,
   KATEGORI_BIAYA_OPTIONS,
+  PESAN_PELATIHAN_NONAKTIF,
   METODE_OPTIONS,
   toNumber,
   type BiayaPesertaField,
@@ -83,7 +84,7 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
   const [pesertaTab, setPesertaTab] = useState<CaraPilihPeserta>("tabel");
 
   // Mode ubah: muat laporannya dulu, id pelatihannya ikut dari situ.
-  const laporan = useAsyncData((signal) => getTrainingRealizationForEdit(laporanId as string, signal), {
+  const laporan = useAsyncData((signal) => getTrainingRealizationDetail(laporanId as string, signal), {
     deps: [laporanId],
     enabled: isEdit,
   });
@@ -174,9 +175,15 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
   const jamPerHari =
     toNumber(values.jamExperiential) + toNumber(values.jamSocial) + toNumber(values.jamFormal);
   const data = pelatihan.data;
-  // Selama belum ada peserta, tombol Simpan dimatikan dengan alasan ini.
+  // Tombol Simpan dimatikan dengan alasan berikut (yang pertama cocok dipakai):
+  // 1. pelatihannya non-aktif -> laporan dikunci
+  // 2. belum ada peserta yang dipilih
   const alasanTidakBisaSimpan =
-    values.peserta.length === 0 ? "Pilih minimal satu karyawan peserta untuk menyimpan." : null;
+    data && !data.aktif
+      ? PESAN_PELATIHAN_NONAKTIF
+      : values.peserta.length === 0
+        ? "Pilih minimal satu karyawan peserta untuk menyimpan."
+        : null;
   const judul = isEdit
     ? "Ubah Laporan Realisasi Pengembangan SDM"
     : "Tambah Laporan Realisasi Pengembangan SDM";

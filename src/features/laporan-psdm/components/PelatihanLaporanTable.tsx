@@ -98,6 +98,16 @@ function buildColumns(startIndex: number, tagOptions: string[]) {
       // backend belum mengizinkan pengurutan berdasarkan jumlah realisasi
       enableSorting: false,
     },
+    col.accessor((row) => (row.aktif ? "Aktif" : "Non-aktif"), {
+      id: "status",
+      header: "Status",
+      meta: { nowrap: true },
+      cell: ({ row }) => (
+        <Badge tone={row.original.aktif ? "emerald" : "rose"}>
+          {row.original.aktif ? "Aktif" : "Non-aktif"}
+        </Badge>
+      ),
+    }),
     actionsColumn<Pelatihan>({
       ariaLabel: (row) => `Aksi laporan untuk ${row.nama}`,
       actions: (row) => [
@@ -105,9 +115,11 @@ function buildColumns(startIndex: number, tagOptions: string[]) {
           label: "Tambah Laporan",
           icon: FilePlus,
           href: `/dashboard/laporan-psdm/pelatihan/${row.id}/create`,
+          // pelatihan non-aktif tidak menerima laporan baru
+          disabled: !row.aktif,
         },
         {
-          label: "Lihat / Ubah Laporan",
+          label: row.aktif ? "Lihat / Ubah Laporan" : "Lihat Laporan",
           icon: FileText,
           href: `/dashboard/laporan-psdm/pelatihan/${row.id}`,
           // belum ada laporan yang bisa dilihat atau diubah

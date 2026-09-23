@@ -57,6 +57,13 @@ export function needsLocation(metode: string): boolean {
   return metode === "offline" || metode === "hybrid";
 }
 
+/**
+ * Pelatihan non-aktif dikunci: laporannya tidak bisa ditambah, diubah, maupun
+ * dihapus (hanya bisa dilihat). Backend menolak dengan aturan yang sama.
+ */
+export const PESAN_PELATIHAN_NONAKTIF =
+  "Pelatihan ini non-aktif, sehingga laporannya hanya dapat dilihat — tidak dapat ditambah, diubah, maupun dihapus.";
+
 /* -------------------------------------------------------------------------- */
 /* 2. Bentuk data untuk komponen                                               */
 /* -------------------------------------------------------------------------- */

@@ -6,6 +6,7 @@ import {
   createDataTableColumnHelper,
   DataTable,
   defineTableConfig,
+  NUMBER_CELL_CLASS,
   rowNumberColumn,
 } from "@/components/shared/data-table";
 import { CurrencyInput } from "@/components/ui";
@@ -23,11 +24,13 @@ interface PesertaBiayaTableProps {
   peserta: Peserta[];
   /** Biaya pelatihan per peserta dari form — sama untuk semua peserta */
   biayaPelatihan: number;
-  /** Ubah satu kolom biaya milik satu peserta */
-  onCostChange: (pegawaiId: string, field: BiayaPesertaField, nilai: number) => void;
-  /** Keluarkan peserta dari daftar (sama dengan melepas centangnya) */
-  onRemove: (pegawaiId: string) => void;
+  /** Ubah satu kolom biaya milik satu peserta (tidak dipakai saat `readOnly`) */
+  onCostChange?: (pegawaiId: string, field: BiayaPesertaField, nilai: number) => void;
+  /** Keluarkan peserta dari daftar (tidak dipakai saat `readOnly`) */
+  onRemove?: (pegawaiId: string) => void;
   disabled?: boolean;
+  /** Hanya tampil (halaman detail): biaya berupa teks dan tanpa tombol hapus */
+  readOnly?: boolean;
 }
 
 /**
@@ -44,6 +47,7 @@ export function PesertaBiayaTable({
   onCostChange,
   onRemove,
   disabled = false,
+  readOnly = false,
 }: PesertaBiayaTableProps) {
   const config = useMemo(() => {
     /** Kolom kotak isian rupiah untuk satu jenis biaya perjalanan dinas. */
@@ -52,15 +56,20 @@ export function PesertaBiayaTable({
         id: field,
         header,
         enableSorting: false,
-        meta: { width: "min-w-40" },
-        cell: ({ row }) => (
+        meta: readOnly
+          ? { align: "right", nowrap: true, cellClassName: NUMBER_CELL_CLASS }
+          : { width: "min-w-40" },
+        cell: ({ row }) =>
+          readOnly ? (
+            formatRupiah(row.original[field])
+          ) : (
           <CurrencyInput
             aria-label={`${header} ${row.original.nama}`}
             // biaya disimpan sebagai angka; 0 ditampilkan sebagai kotak kosong
             value={row.original[field] ? String(row.original[field]) : ""}
             placeholder="0"
             disabled={disabled}
-            onValueChange={(digits) => onCostChange(row.original.pegawaiId, field, Number(digits))}
+            onValueChange={(digits) => onCostChange?.(row.original.pegawaiId, field, Number(digits))}
           />
         ),
       });
@@ -70,7 +79,9 @@ export function PesertaBiayaTable({
       tableClassName: "min-w-360",
       density: "compact",
       showToolbar: false,
-      emptyMessage: "Belum ada peserta. Centang karyawan di tabel di atas.",
+      emptyMessage: readOnly
+        ? "Laporan ini tidak memiliki peserta."
+        : "Belum ada peserta. Centang karyawan di tabel di atas.",
       columns: col.columns([
         rowNumberColumn<Peserta>(1),
         col.accessor("nik", {
@@ -120,25 +131,30 @@ export function PesertaBiayaTable({
           meta: { align: "right", nowrap: true, cellClassName: "font-semibold text-slate-800" },
           cell: ({ row }) => formatRupiah(participantTotalCost(row.original, biayaPelatihan)),
         }),
-        col.display({
-          id: "hapus",
-          header: "",
-          meta: { align: "right", width: "w-12" },
-          cell: ({ row }) => (
-            <button
-              type="button"
-              aria-label={`Keluarkan ${row.original.nama} dari peserta`}
-              disabled={disabled}
-              onClick={() => onRemove(row.original.pegawaiId)}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          ),
-        }),
+        // tombol keluarkan peserta hanya ada di form, bukan di halaman detail
+        ...(readOnly
+          ? []
+          : [
+              col.display({
+                id: "hapus",
+                header: "",
+                meta: { align: "right", width: "w-12" },
+                cell: ({ row }) => (
+                  <button
+                    type="button"
+                    aria-label={`Keluarkan ${row.original.nama} dari peserta`}
+                    disabled={disabled}
+                    onClick={() => onRemove?.(row.original.pegawaiId)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                ),
+              }),
+            ]),
       ]),
     });
-  }, [biayaPelatihan, onCostChange, onRemove, disabled]);
+  }, [biayaPelatihan, onCostChange, onRemove, disabled, readOnly]);
 
   const totalSemua = peserta.reduce(
     (jumlah, item) => jumlah + participantTotalCost(item, biayaPelatihan),

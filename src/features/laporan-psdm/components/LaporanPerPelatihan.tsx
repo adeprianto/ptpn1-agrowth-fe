@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Eye, Pencil, Plus, Trash2 } from "lucide-react";
 import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -21,11 +21,16 @@ import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
 import { formatDateRange, formatRupiah, orDash } from "@/lib/format";
 import { getTraining } from "@/features/program-pelatihan/api/pelatihan";
 import { deleteTrainingRealization, getTrainingRealizationList } from "../api/laporan";
-import { methodLabel, type Laporan } from "../model/laporan";
+import { PESAN_PELATIHAN_NONAKTIF, methodLabel, type Laporan } from "../model/laporan";
 
 const col = createDataTableColumnHelper<Laporan>();
 
-function buildColumns(startIndex: number, onDelete: (row: Laporan) => void) {
+function buildColumns(
+  startIndex: number,
+  onDelete: (row: Laporan) => void,
+  /** true kalau pelatihannya non-aktif: Ubah & Hapus dimatikan */
+  terkunci: boolean,
+) {
   const columns = col.columns([
     rowNumberColumn<Laporan>(startIndex),
     col.accessor((row) => row.tanggalMulai, {
@@ -67,8 +72,21 @@ function buildColumns(startIndex: number, onDelete: (row: Laporan) => void) {
     actionsColumn<Laporan>({
       ariaLabel: () => "Aksi laporan",
       actions: (row) => [
-        { label: "Ubah Laporan", icon: Pencil, href: `/dashboard/laporan-psdm/${row.id}/edit` },
-        { label: "Hapus", icon: Trash2, variant: "danger", onClick: () => onDelete(row) },
+        // selalu aktif: laporan pelatihan non-aktif pun tetap bisa dilihat
+        { label: "Lihat Detail", icon: Eye, href: `/dashboard/laporan-psdm/${row.id}` },
+        {
+          label: "Ubah Laporan",
+          icon: Pencil,
+          href: `/dashboard/laporan-psdm/${row.id}/edit`,
+          disabled: terkunci,
+        },
+        {
+          label: "Hapus",
+          icon: Trash2,
+          variant: "danger",
+          onClick: () => onDelete(row),
+          disabled: terkunci,
+        },
       ],
     }),
   ]);
@@ -99,16 +117,20 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
     onSuccess: refresh,
   });
 
+  // Selama data pelatihan belum dimuat, anggap terkunci supaya tombol tidak
+  // sempat terlihat aktif sesaat.
+  const terkunci = pelatihan.data?.aktif !== true;
+
   const config = useMemo(
     () =>
       defineTableConfig<Laporan>({
-        columns: buildColumns(startIndex, hapus.ask),
+        columns: buildColumns(startIndex, hapus.ask, terkunci),
         getRowId: (row) => row.id,
         tableClassName: "min-w-220",
         showToolbar: false,
         emptyMessage: "Belum ada laporan realisasi untuk pelatihan ini.",
       }),
-    [startIndex, hapus.ask],
+    [startIndex, hapus.ask, terkunci],
   );
 
   const namaPelatihan = pelatihan.data?.nama ?? "Memuat...";
@@ -127,15 +149,21 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
         title={namaPelatihan}
         description={`Laporan realisasi pelatihan · Penyelenggara: ${orDash(pelatihan.data?.penyelenggara)}`}
         action={
-          <ButtonLink
-            href={`/dashboard/laporan-psdm/pelatihan/${trainingId}/create`}
-            size="lg"
-            icon={Plus}
-          >
-            Tambah Laporan
-          </ButtonLink>
+          !terkunci && (
+            <ButtonLink
+              href={`/dashboard/laporan-psdm/pelatihan/${trainingId}/create`}
+              size="lg"
+              icon={Plus}
+            >
+              Tambah Laporan
+            </ButtonLink>
+          )
         }
       />
+
+      {pelatihan.data && !pelatihan.data.aktif && (
+        <Alert tone="warning">{PESAN_PELATIHAN_NONAKTIF}</Alert>
+      )}
 
       {pelatihan.error && (
         <Alert tone="error">Gagal memuat data pelatihan: {pelatihan.error}</Alert>
