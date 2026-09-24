@@ -70,23 +70,23 @@ export function CostSummaryTiles() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiTile
-        label="Total Anggaran RKAP"
+        label="Total RKAP"
         value={formatRupiah(anggaran)}
         caption={`Alokasi tahun ${TAHUN_ANGGARAN}`}
       />
       <KpiTile
         label="Realisasi Biaya"
         value={formatRupiah(realisasi)}
-        caption={`Serapan ${formatPercent(serapan)} anggaran`}
+        caption={`Serapan ${formatPercent(serapan)} RKAP`}
         valueColor={GREEN}
       />
       <KpiTile
-        label="Sisa Saldo Anggaran"
+        label="Sisa Saldo RKAP"
         value={formatRupiah(anggaran - realisasi)}
         caption={`${formatPercent(100 - serapan)} kuota tersisa`}
       />
       <KpiTile
-        label="Entity Realisasi Biaya Tertinggi"
+        label="Entitas Realisasi Biaya Tertinggi"
         value={`Rp ${miliar} Miliar`}
         caption={`${formatEntityName(entityTertinggi.regional)} (${entityTertinggi.kategoriTerbesar})`}
         captionColor={GREEN}
@@ -108,7 +108,7 @@ export function ParticipantSummaryTiles() {
       <KpiTile
         label="Total Peserta Terealisasi"
         value={formatNumber(total)}
-        caption="Seluruh entity & regional"
+        caption="Seluruh entitas (HO & regional)"
       />
       <KpiTile
         label="Peserta (Karpim)"
@@ -125,7 +125,7 @@ export function ParticipantSummaryTiles() {
         captionColor={PESERTA_SERIES.karpel.color}
       />
       <KpiTile
-        label="Entity Peserta Terbanyak"
+        label="Entitas Peserta Terbanyak"
         value={`${formatNumber(terbanyak.total)} Orang`}
         caption={formatEntityName(terbanyak.regional)}
         captionColor={GREEN}
@@ -142,23 +142,21 @@ export function TrainingHourSummaryTiles() {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <KpiTile
-        label="Target Jam Pembelajaran"
+        label="RKAP Jam Pembelajaran"
         value={`${formatNumber(target)} Jam`}
-        caption="Target RKAP konsolidasi holding"
+        caption="RKAP konsolidasi holding"
       />
       <KpiTile
         label="Realisasi Jam Pembelajaran"
         value={`${formatNumber(realisasi)} Jam`}
-        caption={`${formatPercent(share(realisasi, target))} capaian pemenuhan target`}
+        caption={`${formatPercent(share(realisasi, target))} capaian pemenuhan RKAP`}
         valueColor={GREEN}
       />
       <KpiTile
         label="Gap Jam Pembelajaran"
         value={`${formatNumber(Math.max(gap, 0))} Jam`}
         caption={
-          gap > 0
-            ? "Selisih target yang harus dikejar"
-            : "Target sudah terpenuhi"
+          gap > 0 ? "Selisih RKAP yang harus dikejar" : "RKAP sudah terpenuhi"
         }
         valueColor={gap > 0 ? RED : GREEN}
       />

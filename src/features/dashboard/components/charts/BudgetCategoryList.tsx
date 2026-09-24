@@ -89,7 +89,7 @@ function CategoryRow({ label, anggaran, realisasi, toggle }: CategoryRowProps) {
           </span>
         </span>
         <span className="whitespace-nowrap">
-          Anggaran{" "}
+          RKAP{" "}
           <span className="font-medium text-slate-600">
             <Amount value={anggaran} />
           </span>
@@ -134,7 +134,7 @@ export function BudgetCategoryList({ data }: { data: KategoriRkap[] }) {
   return (
     <>
       <OverTargetNotice
-        subject="anggaran"
+        subject="RKAP"
         items={data.map((item) => ({
           label: item.group ? `${item.group} - ${item.name}` : item.name,
           realisasi: item.realisasi,
@@ -207,7 +207,7 @@ export function BudgetAvailableSummary({ data }: { data: KategoriRkap[] }) {
   return (
     <div className="flex flex-1 flex-col">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-        Total Anggaran RKAP
+        Total RKAP
       </p>
       <p className="mt-1 text-2xl font-bold text-slate-900">
         {formatRupiah(total.anggaran)}
@@ -225,7 +225,7 @@ export function BudgetAvailableSummary({ data }: { data: KategoriRkap[] }) {
       <div className="mt-1.5 flex justify-between text-[11px] text-slate-400">
         <span style={overStyle}>Terpakai {formatPercent(percent)}</span>
         {over ? (
-          <OverBadge label="Melebihi anggaran" />
+          <OverBadge label="Melebihi RKAP" />
         ) : (
           <span>Tersedia {formatPercent(100 - percent)}</span>
         )}
@@ -248,7 +248,7 @@ export function BudgetAvailableSummary({ data }: { data: KategoriRkap[] }) {
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-100 ring-1 ring-emerald-300" />
             <span className="text-slate-500">
-              {over ? "Kelebihan Realisasi" : "Sisa Anggaran Tersedia"}
+              {over ? "Kelebihan Realisasi" : "Sisa RKAP Tersedia"}
             </span>
           </div>
           <span className="font-semibold text-emerald-700" style={overStyle}>
@@ -273,7 +273,7 @@ export function BudgetAvailableSummary({ data }: { data: KategoriRkap[] }) {
               </p>
               <dl className="mt-2 space-y-1 text-[11px]">
                 <div className="flex justify-between gap-2">
-                  <dt className="text-slate-400">Anggaran</dt>
+                  <dt className="text-slate-400">RKAP</dt>
                   <dd className="font-medium text-slate-700">
                     {formatRupiah(group.anggaran)}
                   </dd>

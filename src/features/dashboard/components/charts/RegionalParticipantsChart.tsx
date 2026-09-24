@@ -111,7 +111,7 @@ function ParticipantLevelSummary() {
     <ConsolidationPanel
       accent={ACCENT}
       title="Total Konsolidasi per Level"
-      caption={`Seluruh ${data.length} entity (HO & regional)`}
+      caption={`Seluruh ${data.length} entitas (HO & regional)`}
       headline={formatNumber(grandTotal)}
       headlineUnit="Orang"
       rows={perLevel.map(({ level, value }) => ({
@@ -197,7 +197,7 @@ function EntityLevelDetail({
           <p className="mt-0.5 text-[11px] text-slate-400">
             {onReset ? (
               <>
-                Klik bar lain untuk ganti entity, atau{" "}
+                Klik bar lain untuk ganti entitas, atau{" "}
                 <button
                   type="button"
                   onClick={onReset}
@@ -207,7 +207,7 @@ function EntityLevelDetail({
                 </button>
               </>
             ) : (
-              "Klik bar entity untuk melihat rincian per HO/regional"
+              "Klik bar entitas untuk melihat rincian per HO/regional"
             )}
           </p>
         </div>
@@ -216,11 +216,11 @@ function EntityLevelDetail({
             Karyawan {nama}: <b>{formatNumber(totalKaryawan)}</b> orang
           </span>
           <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
-            Terlatih <b>{formatNumber(datum.total)}</b> dari target{" "}
+            Terlatih <b>{formatNumber(datum.total)}</b> dari RKAP{" "}
             <b>{formatNumber(totalTarget)}</b>
             <SerapanBadge
               percent={capaianTotal}
-              overTitle="Melebihi target peserta"
+              overTitle="Melebihi RKAP peserta"
             />
           </span>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
@@ -252,14 +252,14 @@ function EntityLevelDetail({
                 </p>
                 <SerapanBadge
                   percent={capaian}
-                  overTitle="Melebihi target peserta"
+                  overTitle="Melebihi RKAP peserta"
                 />
               </div>
 
               <p className="mt-1 text-lg font-bold text-slate-900">
                 {formatNumber(terlatih)}
                 <span className="ml-1 text-[11px] font-normal text-slate-500">
-                  / {formatNumber(target)} orang target
+                  / {formatNumber(target)} orang RKAP
                 </span>
               </p>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
@@ -272,7 +272,7 @@ function EntityLevelDetail({
                 />
               </div>
               <p className="mt-0.5 text-[10px] text-slate-400">
-                Capaian target peserta {levelLabel(level)}
+                Capaian RKAP peserta {levelLabel(level)}
               </p>
 
               <dl className="mt-2 space-y-1.5 border-t border-slate-100 pt-2 text-[10px] leading-snug text-slate-500">
@@ -403,7 +403,7 @@ export function RegionalParticipantsChart() {
         <EntityLevelDetail
           datum={ptpnDatum}
           nama="PTPN"
-          judul={`Seluruh PTPN (${data.length} entity)`}
+          judul={`Seluruh PTPN (${data.length} entitas)`}
         />
       )}
     </div>

@@ -4,14 +4,22 @@ export interface MiniTableColumn {
   label: string;
   /** Label baris kedua di header, untuk nilai kecil di bawah angka utama */
   sublabel?: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
   /** Kolom ini mengambil sisa lebar dan teksnya dipotong (…) kalau sempit */
   grow?: boolean;
+  /** Judul kolom tidak boleh terlipat */
+  nowrap?: boolean;
 }
 
 export interface MiniTableRow {
   key: string;
   cells: ReactNode[];
+  /** Baris yang bisa diklik, mis. grup PSDM yang dibuka/tutup */
+  onClick?: () => void;
+  /** Status buka/tutup untuk baris grup (aria-expanded) */
+  expanded?: boolean;
+  /** Tebalkan baris (mis. baris total grup) */
+  emphasis?: boolean;
 }
 
 interface MiniTableProps {
@@ -21,10 +29,31 @@ interface MiniTableProps {
   maxRows?: number;
   /** Penjelasan arti tiap kolom, ditampilkan di bawah tabel */
   legend?: { term: string; description: string }[];
+  /** "compact" untuk kartu sempit, "comfortable" untuk kartu lebar */
+  size?: "compact" | "comfortable";
 }
 
-const ROW_HEIGHT = 36;
-const HEADER_HEIGHT = 32;
+const SIZES = {
+  compact: {
+    table: "text-[10px] xl:text-[11px]",
+    cell: "px-1 xl:px-1.5 first:pl-2 last:pr-2",
+    rowHeight: 36,
+    headerHeight: 32,
+  },
+  comfortable: {
+    table: "text-xs",
+    cell: "px-3",
+    rowHeight: 40,
+    headerHeight: 36,
+  },
+} as const;
+
+const alignClass = (align: MiniTableColumn["align"]) =>
+  align === "right"
+    ? "text-right"
+    : align === "center"
+      ? "text-center"
+      : "text-left";
 
 /** Angka utama dengan keterangan kecil di bawahnya, dalam satu sel */
 export function Stacked({ main, sub }: { main: ReactNode; sub: ReactNode }) {
@@ -37,26 +66,34 @@ export function Stacked({ main, sub }: { main: ReactNode; sub: ReactNode }) {
 }
 
 /** Tabel ringkas untuk kartu ringkasan, dengan keterangan kolom */
-export function MiniTable({ columns, rows, maxRows, legend }: MiniTableProps) {
+export function MiniTable({
+  columns,
+  rows,
+  maxRows,
+  legend,
+  size = "compact",
+}: MiniTableProps) {
+  const { table, cell, rowHeight, headerHeight } = SIZES[size];
+
   return (
     <div>
       <div
         className="overflow-auto rounded-lg border border-slate-200"
         style={
           maxRows
-            ? { maxHeight: HEADER_HEIGHT + ROW_HEIGHT * maxRows + 2 }
+            ? { maxHeight: headerHeight + rowHeight * maxRows + 2 }
             : undefined
         }
       >
-        <table className="w-full border-collapse text-[11px]">
+        <table className={`w-full border-collapse ${table}`}>
           <thead className="sticky top-0 z-10 bg-slate-50">
-            <tr style={{ height: HEADER_HEIGHT }}>
+            <tr style={{ height: headerHeight }}>
               {columns.map((column) => (
                 <th
                   key={column.label}
-                  className={`border-b border-slate-200 px-1 font-semibold leading-tight xl:px-1.5 text-slate-500 first:pl-2 last:pr-2 ${
-                    column.align === "right" ? "text-right" : "text-left"
-                  }`}
+                  className={`border-b border-slate-200 font-semibold leading-tight text-slate-500 ${cell} ${alignClass(
+                    column.align,
+                  )} ${column.nowrap ? "whitespace-nowrap" : ""}`}
                 >
                   {column.label}
                   {column.sublabel && (
@@ -72,24 +109,28 @@ export function MiniTable({ columns, rows, maxRows, legend }: MiniTableProps) {
             {rows.map((row) => (
               <tr
                 key={row.key}
-                className="border-b border-slate-100 last:border-b-0"
-                style={{ height: ROW_HEIGHT }}
+                className={`border-b border-slate-100 last:border-b-0 ${
+                  row.onClick ? "cursor-pointer hover:bg-slate-50" : ""
+                } ${row.emphasis ? "font-semibold" : ""}`}
+                style={{ height: rowHeight }}
+                onClick={row.onClick}
+                aria-expanded={row.expanded}
               >
-                {row.cells.map((cell, index) => {
+                {row.cells.map((content, index) => {
                   const column = columns[index];
                   return (
                     <td
                       key={column?.label ?? index}
-                      className={`px-1 tabular-nums xl:px-1.5 text-slate-700 first:pl-2 last:pr-2 ${
-                        column?.align === "right"
-                          ? "whitespace-nowrap text-right"
-                          : "text-left"
-                      } ${column?.grow ? "w-full max-w-0" : ""}`}
+                      className={`tabular-nums text-slate-700 ${cell} ${alignClass(
+                        column?.align,
+                      )} ${column?.align && column.align !== "left" ? "whitespace-nowrap" : ""} ${
+                        column?.grow ? "w-full max-w-0" : ""
+                      }`}
                     >
                       {column?.grow ? (
-                        <div className="truncate">{cell}</div>
+                        <div className="truncate">{content}</div>
                       ) : (
-                        cell
+                        content
                       )}
                     </td>
                   );

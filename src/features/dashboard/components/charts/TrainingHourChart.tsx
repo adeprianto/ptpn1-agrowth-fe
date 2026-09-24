@@ -26,16 +26,16 @@ function TrainingHourSummary() {
     <ConsolidationPanel
       accent={COLORS.realisasi}
       title="Total Konsolidasi Jam"
-      caption={`Seluruh ${data.length} entity (HO & regional)`}
+      caption={`Seluruh ${data.length} entitas (HO & regional)`}
       headline={formatNumber(realisasi)}
       headlineUnit={`/ ${formatHours(target)}`}
       progress={{
         percent: persen,
-        label: `${formatPercent(persen)} target tercapai`,
+        label: `${formatPercent(persen)} RKAP tercapai`,
         over,
       }}
       rows={[
-        { name: "Target", color: COLORS.target, value: formatHours(target) },
+        { name: "RKAP", color: COLORS.target, value: formatHours(target) },
         {
           name: "Realisasi",
           color: COLORS.realisasi,
@@ -43,7 +43,7 @@ function TrainingHourSummary() {
           over,
         },
         {
-          name: gap > 0 ? "Gap ke target" : "Lebih dari target",
+          name: gap > 0 ? "Gap ke RKAP" : "Lebih dari RKAP",
           color: "#cbd5e1",
           value: formatHours(Math.abs(gap)),
         },
@@ -61,7 +61,7 @@ export function TrainingHourChart() {
       formatName={formatEntityName}
       formatValue={formatHours}
       colors={COLORS}
-      subject="target jam"
+      subject="RKAP jam"
       side={<TrainingHourSummary />}
     />
   );

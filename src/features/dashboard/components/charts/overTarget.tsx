@@ -95,7 +95,7 @@ export function CapaianValue({ percent }: { percent: number }) {
     <span
       className={over ? "font-semibold" : undefined}
       style={over ? { color: OVER_COLOR } : undefined}
-      title={over ? "Melebihi target/anggaran" : undefined}
+      title={over ? "Melebihi RKAP" : undefined}
     >
       {over && "▲"}
       {formatPercent(percent)}
@@ -129,7 +129,7 @@ export function capaianTone(percent: number) {
  */
 export function SerapanBadge({
   percent,
-  overTitle = "Melebihi anggaran",
+  overTitle = "Melebihi RKAP",
 }: {
   percent: number;
   overTitle?: string;

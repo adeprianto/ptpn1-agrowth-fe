@@ -25,7 +25,7 @@ const COLUMNS = LEVELS.map((level) => ({
 }));
 
 const labelPilihan = (value: Pilihan) =>
-  value === "ALL" ? "Total PTPN" : formatEntityName(value);
+  value === "ALL" ? "Seluruh PTPN 1" : formatEntityName(value);
 
 /** Matriks jam pembelajaran: baris = bidang, kolom = level BOD, per entity */
 export function CompetencyMatrixTable() {
@@ -47,7 +47,7 @@ export function CompetencyMatrixTable() {
       showRowTotal
       controls={
         <label className="flex items-center gap-2 text-xs text-slate-500">
-          Entity
+          Entitas
           <select
             value={entity}
             onChange={(e) => setEntity(e.target.value as Pilihan)}

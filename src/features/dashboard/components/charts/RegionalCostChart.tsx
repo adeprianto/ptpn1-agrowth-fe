@@ -70,7 +70,7 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
         <p className="text-sm font-semibold text-slate-800">
           {formatEntityName(String(label))}
         </p>
-        {over && <OverBadge label="Melebihi anggaran" />}
+        {over && <OverBadge label="Melebihi RKAP" />}
       </div>
 
       <div className="space-y-1.5">
@@ -102,7 +102,7 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
 
       {datum && (
         <div className="mt-2 flex items-center justify-between gap-6 border-t border-slate-100 pt-2 text-xs font-semibold">
-          <span className="text-slate-600">Serapan anggaran</span>
+          <span className="text-slate-600">Serapan RKAP</span>
           <SerapanBadge percent={capaian(datum.realisasi, datum.target)} />
         </div>
       )}
@@ -138,8 +138,8 @@ export function RegionalCostChart() {
   return (
     <div className="w-full">
       <OverTargetNotice
-        subject="anggaran"
-        hint="Bar oranye = realisasi di atas anggaran."
+        subject="RKAP"
+        hint="Bar oranye = realisasi di atas RKAP."
         items={data.map((item) => ({
           label: formatEntityName(item.regional),
           realisasi: item.realisasi,
@@ -150,7 +150,7 @@ export function RegionalCostChart() {
         items={[
           { color: COLORS.target, label: BIAYA_SERIES.target.name },
           { color: COLORS.realisasi, label: "Realisasi" },
-          { color: OVER_COLOR, label: "Melebihi anggaran" },
+          { color: OVER_COLOR, label: "Melebihi RKAP" },
         ]}
       />
 

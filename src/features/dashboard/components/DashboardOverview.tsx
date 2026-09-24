@@ -32,7 +32,7 @@ export function DashboardOverview() {
         description="Ringkasan eksekutif status pengajuan dan pelaksanaan pelatihan karyawan di seluruh wilayah kerja PTPN 1."
         chips={[
           `Tahun Anggaran ${TAHUN_ANGGARAN}`,
-          `${ENTITIES.length} Entity · HO & Regional`,
+          `${ENTITIES.length} Entitas · HO & Regional`,
           "Biaya · Peserta · Jam Pembelajaran",
         ]}
       />
@@ -105,13 +105,13 @@ export function DashboardOverview() {
       <DashboardSection
         eyebrow="Jam Pembelajaran"
         title="Efektivitas & Realisasi Jam Pembelajaran"
-        description="Komparasi pemenuhan target jam pembelajaran SDM per level BOD di regional."
+        description="Komparasi pemenuhan RKAP jam pembelajaran SDM per level BOD di regional."
       >
         <TrainingHourSummaryTiles />
 
         <DashboardCard
           title="Jam Pembelajaran"
-          subtitle="Target dan realisasi jam pembelajaran antar regional"
+          subtitle="RKAP dan realisasi jam pembelajaran antar regional"
         >
           <TrainingHourChart />
         </DashboardCard>
@@ -129,7 +129,7 @@ export function DashboardOverview() {
 
         <DashboardCard
           title="Jam Pembelajaran per Bidang Kompetensi"
-          subtitle="Target dan realisasi jam pembelajaran di tiap bidang kompetensi"
+          subtitle="RKAP dan realisasi jam pembelajaran di tiap bidang kompetensi"
         >
           <CompetencyHourChart />
         </DashboardCard>

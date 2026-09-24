@@ -85,7 +85,7 @@ function BreakdownRow({
               className="text-[10px] font-medium"
               style={{ color: OVER_COLOR }}
             >
-              {toggle.overCount} sub melebihi anggaran
+              {toggle.overCount} sub melebihi RKAP
             </span>
           )}
         </span>
@@ -160,7 +160,7 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
             {overCount > 0 && (
               <span style={{ color: OVER_COLOR }}>
                 {" "}
-                · {overCount} kategori melebihi anggaran
+                · {overCount} kategori melebihi RKAP
               </span>
             )}
           </p>
@@ -175,8 +175,8 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
       </div>
 
       <OverTargetNotice
-        subject="anggaran"
-        hint="Baris oranye = kategori yang realisasinya di atas anggaran."
+        subject="RKAP"
+        hint="Baris oranye = kategori yang realisasinya di atas RKAP."
         items={items.map((item) => ({
           label: item.kategori,
           realisasi: item.realisasi,
@@ -189,7 +189,7 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
           <thead className="bg-slate-50 text-slate-500">
             <tr>
               <th className="px-3 py-2 text-left font-semibold">Kategori</th>
-              <th className="px-3 py-2 text-right font-semibold">Anggaran</th>
+              <th className="px-3 py-2 text-right font-semibold">RKAP</th>
               <th className="px-3 py-2 text-right font-semibold">Realisasi</th>
               <th className="px-3 py-2 text-center font-semibold">Serapan</th>
               <th className="px-3 py-2 text-right font-semibold">
@@ -266,9 +266,9 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
           Klik baris <span className="font-semibold text-slate-500">PSDM</span>{" "}
           untuk membuka sub-kategorinya.{" "}
           <span className="font-semibold text-slate-500">Serapan</span>:
-          realisasi dibanding anggaran kategori itu sendiri.{" "}
+          realisasi dibanding RKAP kategori itu sendiri.{" "}
           <span className="font-semibold text-slate-500">Sisa / Kelebihan</span>
-          : tanda + oranye berarti realisasi sudah melewati anggaran.
+          : tanda + oranye berarti realisasi sudah melewati RKAP.
         </p>
         <span className="flex items-center gap-1.5">
           0%

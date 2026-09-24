@@ -67,7 +67,7 @@ function CustomTooltip({
   const over = isOverTarget(datum.realisasi, datum.target);
 
   const rows = [
-    { name: "Target", value: datum.target, color: colors.target },
+    { name: "RKAP", value: datum.target, color: colors.target },
     {
       name: "Realisasi",
       value: datum.realisasi,
@@ -81,7 +81,7 @@ function CustomTooltip({
         <p className="text-sm font-semibold text-slate-800">
           {formatName(String(label))}
         </p>
-        {over && <OverBadge label="Melebihi target" />}
+        {over && <OverBadge label="Melebihi RKAP" />}
       </div>
       <div className="space-y-1.5">
         {rows.map((row) => (
@@ -128,7 +128,7 @@ export function TargetRealisasiChart<T extends Datum>({
       <div className="lg:col-span-2">
         <OverTargetNotice
           subject={subject}
-          hint="Bar oranye = realisasi di atas target."
+          hint="Bar oranye = realisasi di atas RKAP."
           items={data.map((row) => ({
             label: formatName(String(row[categoryKey])),
             realisasi: row.realisasi,
@@ -138,9 +138,9 @@ export function TargetRealisasiChart<T extends Datum>({
 
         <ChartLegend
           items={[
-            { color: colors.target, label: "Target" },
+            { color: colors.target, label: "RKAP" },
             { color: colors.realisasi, label: "Realisasi" },
-            { color: OVER_COLOR, label: "Melebihi target" },
+            { color: OVER_COLOR, label: "Melebihi RKAP" },
           ]}
         />
 
@@ -178,7 +178,7 @@ export function TargetRealisasiChart<T extends Datum>({
                 }
                 cursor={{ fill: "#f8fafc" }}
               />
-              <Bar dataKey="target" name="Target" fill={colors.target}>
+              <Bar dataKey="target" name="RKAP" fill={colors.target}>
                 <LabelList
                   dataKey="target"
                   position="top"

@@ -115,7 +115,7 @@ function NeedleGauge({ percent }: { percent: number }) {
         <p className="text-lg font-bold text-slate-800">
           {formatPercent(percent)}
         </p>
-        <p className="text-[11px] text-slate-400">dari anggaran terpakai</p>
+        <p className="text-[11px] text-slate-400">dari RKAP terpakai</p>
       </div>
     </div>
   );
@@ -139,7 +139,7 @@ function BudgetSummaryCard() {
           </p>
         </div>
         <div className="@[16rem]:text-right">
-          <p className="text-[10px] text-slate-500">Anggaran RKAP</p>
+          <p className="text-[10px] text-slate-500">RKAP</p>
           <p className="mt-0.5 text-sm font-bold text-slate-800">
             {formatMiliar(anggaran)}
           </p>
@@ -170,10 +170,18 @@ function BudgetSummaryCard() {
           </span>
         </div>
       </div>
+    </SummaryCard>
+  );
+}
 
-      <div className="mt-4 border-t border-slate-100 pt-3">
-        <BudgetBreakdown />
-      </div>
+/** Tabel rincian biaya per HO/regional & per kategori, di samping kartu RKAP */
+function BudgetBreakdownCard() {
+  return (
+    <SummaryCard
+      eyebrow="Keuangan RKAP"
+      title="Rincian RKAP & Realisasi per HO/Regional dan Kategori"
+    >
+      <BudgetBreakdown />
     </SummaryCard>
   );
 }
@@ -236,30 +244,41 @@ function ParticipantSummaryCard() {
           columns={[
             { label: "Level" },
             { label: "Peserta", sublabel: "% Peserta", align: "right" },
-            { label: "% Target Jam", align: "right" },
+            { label: "RKAP", sublabel: "% Capaian", align: "right" },
           ]}
-          rows={perLevel.map(({ level, value }) => ({
-            key: String(level),
-            cells: [
-              <LevelName key="level" level={level} />,
-              <Stacked
-                key="peserta"
-                main={`${formatNumber(value)} orang`}
-                sub={formatPercent(share(value, total))}
-              />,
-              <CapaianValue
-                key="jam"
-                percent={capaian(jamPerLevel(level), targetJamPerLevel[level])}
-              />,
-            ],
-          }))}
+          rows={perLevel.map(({ level, value }) => {
+            const rkap = sumBy(
+              pesertaPerRegional,
+              (row) => row.targetPeserta[levelKey(level)],
+            );
+            return {
+              key: String(level),
+              cells: [
+                <LevelName key="level" level={level} />,
+                <Stacked
+                  key="peserta"
+                  main={formatNumber(value)}
+                  sub={formatPercent(share(value, total))}
+                />,
+                <Stacked
+                  key="rkap"
+                  main={formatNumber(rkap)}
+                  sub={<CapaianValue percent={capaian(value, rkap)} />}
+                />,
+              ],
+            };
+          })}
           legend={[
-            { term: "% Peserta", description: "porsi dari total peserta" },
             {
-              term: "% Target Jam",
-              description:
-                "realisasi jam pembelajaran level tsb dibanding target jamnya (▲ = melebihi)",
+              term: "RKAP / Peserta",
+              description: "jumlah orang (RKAP peserta vs yang sudah terlatih)",
             },
+            {
+              term: "% Capaian",
+              description:
+                "peserta terlatih dibanding RKAP peserta level tsb (▲ = melebihi)",
+            },
+            { term: "% Peserta", description: "porsi dari total peserta" },
           ]}
         />
       </div>
@@ -316,7 +335,7 @@ function TrainingHourSummaryCard() {
       <div className="mt-1.5 flex justify-between text-[11px] text-slate-400">
         <span>0 Jam</span>
         <span className="font-medium text-slate-600">
-          {formatPercent(share(realisasi, target))} tercapai
+          {formatPercent(share(realisasi, target))} RKAP tercapai
         </span>
         <span>{formatNumber(target)} Jam</span>
       </div>
@@ -342,9 +361,9 @@ function TrainingHourSummaryCard() {
         <MiniTable
           columns={[
             { label: "Level" },
-            { label: "Jam", sublabel: "% Jam", align: "right" },
-            { label: "% RKAP", align: "right" },
             { label: "Rata²", align: "right" },
+            { label: "Jam", sublabel: "% Jam", align: "right" },
+            { label: "RKAP", sublabel: "% RKAP", align: "right" },
           ]}
           rows={LEVELS.map((level) => {
             const jam = jamPerLevel(level);
@@ -356,26 +375,35 @@ function TrainingHourSummaryCard() {
               key: String(level),
               cells: [
                 <LevelName key="level" level={level} />,
+                pesertaLevel > 0 ? formatDecimal(jam / pesertaLevel, 2) : "-",
                 <Stacked
                   key="jam"
                   main={formatNumber(jam)}
                   sub={formatPercent(share(jam, realisasi))}
                 />,
-                <CapaianValue
+                <Stacked
                   key="rkap"
-                  percent={capaian(jam, targetJamPerLevel[level])}
+                  main={formatNumber(targetJamPerLevel[level])}
+                  sub={
+                    <CapaianValue
+                      percent={capaian(jam, targetJamPerLevel[level])}
+                    />
+                  }
                 />,
-                pesertaLevel > 0 ? formatDecimal(jam / pesertaLevel, 2) : "-",
               ],
             };
           })}
           legend={[
-            { term: "% Jam", description: "porsi dari total jam pembelajaran" },
+            {
+              term: "RKAP / Jam",
+              description: "jumlah jam (RKAP jam vs realisasi jam)",
+            },
             {
               term: "% RKAP",
               description:
-                "realisasi jam dibanding target RKAP level tsb (▲ = melebihi)",
+                "realisasi jam dibanding RKAP jam level tsb (▲ = melebihi)",
             },
+            { term: "% Jam", description: "porsi dari total jam pembelajaran" },
             {
               term: "Rata²",
               description: "rata-rata jam per peserta di level tsb",
@@ -397,10 +425,20 @@ function TrainingHourSummaryCard() {
 
 export function ExecutiveSummary() {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      <BudgetSummaryCard />
-      <ParticipantSummaryCard />
-      <TrainingHourSummaryCard />
+    <div className="space-y-4">
+      {/* Baris 1: ringkasan RKAP + tabel rinciannya yang lebih lebar */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <BudgetSummaryCard />
+        <div className="grid lg:col-span-2">
+          <BudgetBreakdownCard />
+        </div>
+      </div>
+
+      {/* Baris 2: kepesertaan & kapabilitas berdampingan */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ParticipantSummaryCard />
+        <TrainingHourSummaryCard />
+      </div>
     </div>
   );
 }

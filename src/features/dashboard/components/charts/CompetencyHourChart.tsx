@@ -35,8 +35,8 @@ function CompetencyHourSummary() {
             jam PTPN
           </span>
           <span className="block">
-            <b>{formatPercent(capaian(row.realisasi, row.target))}</b> dari
-            target bidang ini ({formatHours(row.target)}, PTPN)
+            <b>{formatPercent(capaian(row.realisasi, row.target))}</b> dari RKAP
+            bidang ini ({formatHours(row.target)}, PTPN)
           </span>
         </>
       ),
@@ -49,7 +49,7 @@ function CompetencyHourSummary() {
     <ConsolidationPanel
       accent={COLORS.realisasi}
       title="Bidang Paling Dominan"
-      caption={`${data.length} bidang · realisasi PTPN ${formatHours(total)} dari target ${formatHours(totalTarget)}`}
+      caption={`${data.length} bidang · realisasi PTPN ${formatHours(total)} dari RKAP ${formatHours(totalTarget)}`}
       headline={dominan.bidang}
       headlineUnit={`${formatPercent(share(dominan.realisasi))} dari total realisasi jam PTPN`}
       rows={rows}
@@ -70,7 +70,7 @@ export function CompetencyHourChart() {
       categoryKey="bidang"
       formatValue={formatHours}
       colors={COLORS}
-      subject="target jam"
+      subject="RKAP jam"
       side={<CompetencyHourSummary />}
     />
   );

@@ -82,7 +82,7 @@ function ParticipantTypeSummary() {
     <ConsolidationPanel
       accent={SERIES.karpel.color}
       title="Total Konsolidasi Peserta"
-      caption={`Seluruh ${data.length} entity (HO & regional)`}
+      caption={`Seluruh ${data.length} entitas (HO & regional)`}
       headline={formatNumber(total)}
       headlineUnit="Orang"
       rows={rows}

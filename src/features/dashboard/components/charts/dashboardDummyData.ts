@@ -112,7 +112,7 @@ export const KARPEL_LEVELS: readonly Level[] = [4, 5, 6];
 
 // Warna seri anggaran & realisasi biaya, dipakai chart per-region & tren
 export const BIAYA_SERIES = {
-  target: { name: "Anggaran", color: "#49F150", labelText: "#14532d" },
+  target: { name: "RKAP", color: "#49F150", labelText: "#14532d" },
   realisasi: { name: "Realisasi", color: "#2A5432", labelText: "#ffffff" },
 } as const;
 

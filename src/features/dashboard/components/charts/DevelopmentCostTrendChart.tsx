@@ -152,7 +152,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
       <div className="mb-2 flex items-center gap-2">
         <p className="text-sm font-semibold text-slate-800">{label}</p>
-        {over && <OverBadge label="Melebihi anggaran" />}
+        {over && <OverBadge label="Melebihi RKAP" />}
       </div>
       <div className="space-y-1.5">
         {rows.map((row) => (
@@ -209,13 +209,13 @@ export function DevelopmentCostTrendChart() {
           items={[
             { color: SERIES.target.color, label: SERIES.target.name },
             { color: SERIES.realisasi.color, label: SERIES.realisasi.name },
-            { color: OVER_COLOR, label: "Melebihi anggaran" },
+            { color: OVER_COLOR, label: "Melebihi RKAP" },
           ]}
         />
         <select
           value={entity}
           onChange={(e) => handleEntityChange(e.target.value as EntityValue)}
-          aria-label="Pilih entity"
+          aria-label="Pilih entitas"
           className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         >
           {ENTITY_OPTIONS.map((option) => (
@@ -227,8 +227,8 @@ export function DevelopmentCostTrendChart() {
       </div>
 
       <OverTargetNotice
-        subject="anggaran"
-        hint="Titik oranye = bulan dengan realisasi di atas anggaran."
+        subject="RKAP"
+        hint="Titik oranye = bulan dengan realisasi di atas RKAP."
         items={data.map((item) => ({
           label: item.bulan,
           realisasi: item.realisasi,
