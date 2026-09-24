@@ -10,114 +10,20 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-// Level BOD 1–6, sama dengan enum `level_bod` di backend. Data pakai angka,
-// label "BOD-n" cuma di tampilan.
-const LEVELS = [1, 2, 3, 4, 5, 6] as const;
-type Level = (typeof LEVELS)[number];
-type LevelKey = `level${Level}`;
-
-// Makin gelap = level makin tinggi (BOD-1 paling senior)
-const LEVEL_COLORS: Record<Level, string> = {
-  1: "#562547",
-  2: "#0b2228",
-  3: "#bfa437",
-  4: "#28e2a1",
-  5: "#13f977",
-  6: "#b2728d",
-};
-
-const levelKey = (level: Level): LevelKey => `level${level}`;
-const levelLabel = (level: Level) => `BOD-${level}`;
-
-type ParticipantDatum = { regional: string; total: number } & Record<
-  LevelKey,
-  number
->;
-
-// DUMMY DATA — jumlah peserta per entity per level.
-// Nanti diganti hasil GET /api/v1/dashboard/peserta-per-regional
-const rawData: Omit<ParticipantDatum, "total">[] = [
-  {
-    regional: "HO",
-    level1: 12,
-    level2: 28,
-    level3: 64,
-    level4: 95,
-    level5: 120,
-    level6: 88,
-  },
-  {
-    regional: "1",
-    level1: 2,
-    level2: 6,
-    level3: 18,
-    level4: 42,
-    level5: 85,
-    level6: 130,
-  },
-  {
-    regional: "2",
-    level1: 3,
-    level2: 8,
-    level3: 22,
-    level4: 51,
-    level5: 97,
-    level6: 142,
-  },
-  {
-    regional: "3",
-    level1: 2,
-    level2: 7,
-    level3: 20,
-    level4: 48,
-    level5: 90,
-    level6: 125,
-  },
-
-  {
-    regional: "5",
-    level1: 3,
-    level2: 9,
-    level3: 25,
-    level4: 55,
-    level5: 104,
-    level6: 150,
-  },
-
-  {
-    regional: "7",
-    level1: 3,
-    level2: 8,
-    level3: 21,
-    level4: 47,
-    level5: 92,
-    level6: 136,
-  },
-  {
-    regional: "8",
-    level1: 1,
-    level2: 4,
-    level3: 12,
-    level4: 30,
-    level5: 61,
-    level6: 87,
-  },
-];
-
-// Total per entity dihitung dari jumlah level, supaya tidak mungkin beda
-const data: ParticipantDatum[] = rawData.map((row) => ({
-  ...row,
-  total: LEVELS.reduce((sum, level) => sum + row[levelKey(level)], 0),
-}));
-
-const formatNumber = (value: number) => value.toLocaleString("id-ID");
-
-const formatRegionalLabel = (value: string) =>
-  value.toUpperCase() === "HO" ? "HO" : `R${value}`;
-
-const entityName = (value: string) =>
-  value.toUpperCase() === "HO" ? "Head Office" : `Regional ${value}`;
+import { ConsolidationPanel } from "./ConsolidationPanel";
+import {
+  KARPIM_LEVELS,
+  LEVELS,
+  LEVEL_COLORS,
+  formatEntityName as entityName,
+  formatEntityShort as formatRegionalLabel,
+  formatNumber,
+  formatPercent,
+  levelKey,
+  levelLabel,
+  pesertaPerRegional as data,
+  type PesertaDatum as ParticipantDatum,
+} from "./dashboardDummyData";
 
 interface TooltipPayloadItem {
   dataKey?: string | number;
@@ -173,53 +79,50 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   );
 }
 
+const ACCENT = "#334155";
+
 function ParticipantLevelSummary() {
   const perLevel = LEVELS.map((level) => ({
     level,
     value: data.reduce((sum, row) => sum + row[levelKey(level)], 0),
   }));
   const grandTotal = perLevel.reduce((sum, item) => sum + item.value, 0);
+  const share = (value: number) =>
+    grandTotal > 0 ? (value / grandTotal) * 100 : 0;
+
+  // Dua level dengan peserta terbanyak, ditampilkan urut level
+  const dominan = [...perLevel]
+    .sort((x, y) => y.value - x.value)
+    .slice(0, 2)
+    .sort((x, y) => x.level - y.level);
+  const dominanShare = share(
+    dominan.reduce((sum, item) => sum + item.value, 0),
+  );
 
   return (
-    <div className="w-full">
-      <div className="mb-3 flex items-center justify-between border-b border-slate-200 pb-3">
-        <span className="text-sm font-medium text-slate-600">
-          Total Peserta ({data.length} entity)
-        </span>
-        <span className="text-sm font-semibold text-slate-900">
-          {formatNumber(grandTotal)}
-        </span>
-      </div>
-
-      <div className="divide-y divide-slate-100">
-        {perLevel.map(({ level, value }) => (
-          <div
-            key={level}
-            className="flex items-center justify-between gap-2 py-2"
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: LEVEL_COLORS[level] }}
-              />
-              <span className="text-xs text-slate-600">
-                {levelLabel(level)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-800">
-                {formatNumber(value)}
-              </span>
-              <span className="w-10 text-right text-xs font-medium text-slate-400">
-                {grandTotal > 0
-                  ? `${((value / grandTotal) * 100).toFixed(1)}%`
-                  : "0%"}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <ConsolidationPanel
+      accent={ACCENT}
+      title="Total Konsolidasi per Level"
+      caption={`Seluruh ${data.length} entity (HO & regional)`}
+      headline={formatNumber(grandTotal)}
+      headlineUnit="Orang"
+      rows={perLevel.map(({ level, value }) => ({
+        name: levelLabel(level),
+        color: LEVEL_COLORS[level],
+        value: formatNumber(value),
+        note: `${formatPercent(share(value))} dari total · ${KARPIM_LEVELS.includes(level) ? "Karpim" : "Karpel"}`,
+        bar: share(value),
+      }))}
+      footer={
+        <p className="rounded-lg bg-white px-3 py-2 text-[11px] text-slate-500">
+          Dominasi segmen:{" "}
+          <span className="font-semibold text-slate-800">
+            {dominan.map((item) => levelLabel(item.level)).join(" & ")} (
+            {formatPercent(dominanShare)})
+          </span>
+        </p>
+      }
+    />
   );
 }
 
@@ -278,7 +181,7 @@ export function RegionalParticipantsChart() {
         </ResponsiveContainer>
       </div>
 
-      <div className="lg:border-l lg:border-slate-100 lg:pl-6">
+      <div>
         <ParticipantLevelSummary />
       </div>
     </div>

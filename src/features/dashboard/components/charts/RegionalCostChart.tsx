@@ -5,176 +5,33 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Legend,
+  LabelList,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import type { ChartTooltipProps } from "./chartTooltip";
+import {
+  biayaPerRegional as data,
+  formatCompact,
+  formatEntityName,
+  formatPercent,
+} from "./dashboardDummyData";
+import {
+  ChartLegend,
+  OVER_COLOR,
+  OverBadge,
+  OverTargetNotice,
+  capaian,
+  isOverTarget,
+} from "./overTarget";
+import { overTargetBarShape } from "./overTargetBarShape";
 
-// Rincian item yang menyusun angka realisasi suatu regional
-type BreakdownItem = {
-  kategori: string;
-  nilai: number;
-};
-
-type RegionalData = {
-  regional: string;
-  target: number;
-  realisasi: number;
-  detail: BreakdownItem[];
-};
-
-const data: RegionalData[] = [
-  {
-    regional: "HO",
-    target: 37405411840,
-    realisasi: 32741820663,
-    detail: [
-      { kategori: "PDSM - Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "PDSM - Agro Walet", nilai: 5567910620 },
-      { kategori: "PDSM - IHT & Public Training", nilai: 2980442462 },
-      { kategori: "PDSM - Kursus Jabatan", nilai: 3197500000 },
-      { kategori: "PDSM - Sertifikasi Jabatan", nilai: 2739000000 },
-      { kategori: "PDSM - Program Study Banding", nilai: 295500000 },
-      { kategori: "PDSM - Program Pendidikan Lanjut", nilai: 150000000 },
-      { kategori: "PDSM - Biaya Perjalanan Dinas", nilai: 1738125000 },
-      { kategori: "Assessment", nilai: 1666681250 },
-      { kategori: "Rekrutmen", nilai: 3881438023 },
-      { kategori: "Onboarding", nilai: 6355500000 },
-      { kategori: "Program Budaya Perusahaan", nilai: 996000000 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 1107549308 },
-      { kategori: "Inovasi & Riset", nilai: 859672000 },
-    ],
-  },
-  {
-    regional: "1",
-    target: 1500000000,
-    realisasi: 627917647,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-  {
-    regional: "2",
-    target: 2106943750,
-    realisasi: 1866943741,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-  {
-    regional: "3",
-    target: 2260410000,
-    realisasi: 1755910000,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-  {
-    regional: "5",
-    target: 3332941750,
-    realisasi: 1791510338,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-  {
-    regional: "7",
-    target: 2181410960,
-    realisasi: 2151421750,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-  {
-    regional: "8",
-    target: 1033560000,
-    realisasi: 651675000,
-    detail: [
-      { kategori: "Pengembangan BOD & BOC", nilai: 1206502000 },
-      { kategori: "Agro Walet", nilai: 45 },
-      { kategori: "IHT & Public Training", nilai: 45 },
-      { kategori: "Kursus Jabatan", nilai: 45 },
-      { kategori: "Sertifikasi Jabatan", nilai: 45 },
-      { kategori: "Program Study Banding", nilai: 45 },
-      { kategori: "Program Pendidikan Lanjut", nilai: 45 },
-      { kategori: "Biaya Perjalanan Dinas", nilai: 45 },
-      { kategori: "Assessment", nilai: 45 },
-      { kategori: "Rekrutmen", nilai: 45 },
-      { kategori: "Onboarding", nilai: 45 },
-      { kategori: "Program Budaya Perusahaan", nilai: 45 },
-      { kategori: "Konsultasi Pengembangan SDM", nilai: 45 },
-      { kategori: "Inovasi & Riset", nilai: 45 },
-    ],
-  },
-];
+const COLORS = { target: "#49F150", realisasi: "#2A5432" };
+const overShape = overTargetBarShape((d) =>
+  isOverTarget(d.realisasi, d.target),
+);
 
 const formatValue = (value: number) => {
   return `Rp ${value.toLocaleString("id-ID")}`;
@@ -199,11 +56,17 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
     return null;
   }
 
+  const datum = data.find((item) => item.regional === label);
+  const over = datum ? isOverTarget(datum.realisasi, datum.target) : false;
+
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
-      <p className="mb-2 text-sm font-semibold text-slate-800">
-        {label === "HO" ? "Head Office" : `Regional ${label}`}
-      </p>
+      <div className="mb-2 flex items-center gap-2">
+        <p className="text-sm font-semibold text-slate-800">
+          {formatEntityName(String(label))}
+        </p>
+        {over && <OverBadge label="Melebihi anggaran" />}
+      </div>
 
       <div className="space-y-1.5">
         {payload.map((item) => (
@@ -215,7 +78,10 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
               <span
                 className="h-2.5 w-2.5 rounded-full"
                 style={{
-                  backgroundColor: item.color,
+                  backgroundColor:
+                    over && item.dataKey === "realisasi"
+                      ? OVER_COLOR
+                      : item.color,
                 }}
               />
 
@@ -228,6 +94,15 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
           </div>
         ))}
       </div>
+
+      {datum && (
+        <div className="mt-2 flex items-center justify-between gap-6 border-t border-slate-100 pt-2 text-xs font-semibold">
+          <span className="text-slate-600">Serapan anggaran</span>
+          <span style={{ color: over ? OVER_COLOR : undefined }}>
+            {formatPercent(capaian(datum.realisasi, datum.target))}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -239,13 +114,30 @@ export function RegionalCostChart() {
 
   return (
     <div className="w-full">
+      <OverTargetNotice
+        subject="anggaran"
+        hint="Bar oranye = realisasi di atas anggaran."
+        items={data.map((item) => ({
+          label: formatEntityName(item.regional),
+          realisasi: item.realisasi,
+          target: item.target,
+        }))}
+      />
+      <ChartLegend
+        items={[
+          { color: COLORS.target, label: "Target" },
+          { color: COLORS.realisasi, label: "Realisasi" },
+          { color: OVER_COLOR, label: "Melebihi anggaran" },
+        ]}
+      />
+
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}
             barCategoryGap="25%"
             margin={{
-              top: 10,
+              top: 20,
               right: 10,
               left: -20,
               bottom: 0,
@@ -295,31 +187,38 @@ export function RegionalCostChart() {
               }}
             />
 
-            <Legend
-              verticalAlign="top"
-              align="right"
-              height={36}
-              iconType="circle"
-              wrapperStyle={{
-                fontSize: "12px",
-              }}
-            />
-
             <Bar
               dataKey="target"
               name="Target"
-              fill="#49F150"
+              fill={COLORS.target}
               radius={[0, 0, 0, 0]}
               cursor="pointer"
-            />
+            >
+              <LabelList
+                dataKey="target"
+                position="top"
+                fontSize={10}
+                fill="#334155"
+                formatter={(value) => formatCompact(Number(value))}
+              />
+            </Bar>
 
             <Bar
               dataKey="realisasi"
               name="Realisasi"
-              fill="#2A5432"
+              fill={COLORS.realisasi}
               radius={[0, 0, 0, 0]}
               cursor="pointer"
-            />
+              shape={overShape}
+            >
+              <LabelList
+                dataKey="realisasi"
+                position="top"
+                fontSize={10}
+                fill="#334155"
+                formatter={(value) => formatCompact(Number(value))}
+              />
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </div>

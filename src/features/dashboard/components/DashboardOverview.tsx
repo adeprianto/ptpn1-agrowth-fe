@@ -1,139 +1,138 @@
-import { Users, ClipboardList, Gauge } from "lucide-react";
 import { DashboardHeading } from "./DashboardHeading";
-import { StatCard } from "./StatCard";
+import { DashboardSection } from "./DashboardSection";
 import { DashboardCard } from "./DashboardCard";
-import { ChartPlaceholder } from "./ChartPlaceholder";
+import { ExecutiveSummary } from "./ExecutiveSummary";
+import {
+  CostSummaryTiles,
+  ParticipantSummaryTiles,
+  TrainingHourSummaryTiles,
+} from "./SectionSummaryTiles";
+import { BudgetCategoryPanel } from "./BudgetCategoryPanel";
 import { RegionalCostChart } from "./charts/RegionalCostChart";
 import { DevelopmentCostTrendChart } from "./charts/DevelopmentCostTrendChart";
+import { ParticipantTypeChart } from "./charts/ParticipantTypeChart";
 import { RegionalParticipantsChart } from "./charts/RegionalParticipantsChart";
-import { ParticipantKartimChart } from "./charts/ParticipantKartimChart";
-import { ParticipantPelaksanaChart } from "./charts/ParticipantPelaksanaChart";
 import { TrainingHourChart } from "./charts/TrainingHourChart";
-import { BudgetConsolidationCard } from "./charts/BudgetConsolidationChart";
+import { CompetencyHourChart } from "./charts/CompetencyHourChart";
+import { LevelMatrixTable } from "./charts/LevelMatrixTable";
+import {
+  ENTITIES,
+  TAHUN_ANGGARAN,
+  jamPerRegional,
+  pesertaPerRegional,
+} from "./charts/dashboardDummyData";
 
 export function DashboardOverview() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-10">
       <DashboardHeading
+        eyebrow="PTPN 1 · Dashboard Eksekutif"
         systemName="Sistem Pengembangan SDM"
         description="Ringkasan eksekutif status pengajuan dan pelaksanaan pelatihan karyawan di seluruh wilayah kerja PTPN 1."
+        chips={[
+          `Tahun Anggaran ${TAHUN_ANGGARAN}`,
+          `${ENTITIES.length} Entity · HO & Regional`,
+          "Biaya · Peserta · Jam Pembelajaran",
+        ]}
       />
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Total Karyawan"
-          value="4,532"
-          icon={Users}
-          trend="2.4%"
-        />
-        <StatCard
-          label="Pengajuan Aktif"
-          value="223"
-          icon={ClipboardList}
-          trend="2.4%"
-        />
-        <StatCard
-          label="Pelatihan Berjalan"
-          value="40"
-          icon={Gauge}
-          trend="2.4%"
-          variant="featured"
-        />
-      </div>
+      {/* 1. Ringkasan eksekutif */}
+      <DashboardSection
+        eyebrow="Overview"
+        title="Ringkasan Eksekutif"
+        description="Konsolidasi biaya, kepesertaan, dan jam pembelajaran seluruh HO dan regional."
+      >
+        <ExecutiveSummary />
+      </DashboardSection>
 
-      <div className="grid grid-cols-1">
-        <DashboardCard
-          title="Total Konsolidasi PTPN1"
-          subtitle="Menampilkan Total pengembangan SDM"
-        >
-          <BudgetConsolidationCard />
-        </DashboardCard>
-      </div>
+      {/* 2. Realisasi biaya */}
+      <DashboardSection
+        eyebrow="Program Pengembangan"
+        title="Realisasi Biaya Pengembangan SDM"
+        description="Rincian realisasi biaya pengembangan SDM berdasarkan regional, tren bulanan, dan kategori RKAP."
+      >
+        <CostSummaryTiles />
 
-      {/* Biaya per region + Jenis pengembangan */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DashboardCard
           title="Biaya Pengembangan SDM Per-Region"
           subtitle="Menampilkan perbandingan total biaya yang dialokasikan"
-          className="lg:col-span-2"
         >
           <RegionalCostChart />
         </DashboardCard>
-      </div>
 
-      {/* Tren biaya - full width */}
-      <DashboardCard
-        title="Tren Biaya Pengembangan SDM"
-        subtitle="Melihat kenaikan/penurunan biaya per bulan/tahun"
+        <DashboardCard
+          title="Tren Biaya Pengembangan SDM"
+          subtitle="Melihat kenaikan/penurunan biaya per bulan/tahun"
+        >
+          <DevelopmentCostTrendChart />
+        </DashboardCard>
+
+        <BudgetCategoryPanel />
+      </DashboardSection>
+
+      {/* 3. Kepesertaan */}
+      <DashboardSection
+        eyebrow="SDM"
+        title="Cakupan & Demografi Peserta"
+        description="Pemetaan sebaran peserta berdasarkan level jabatan BOD per regional serta perbandingan klasifikasi Karpim dan Karpel."
       >
-        <DevelopmentCostTrendChart />
-      </DashboardCard>
+        <ParticipantSummaryTiles />
 
-      {/* Status pengembangan + peserta per regional */}
-      <div className="grid grid-cols-1">
         <DashboardCard
           title="Peserta Per-Regional"
-          subtitle="Membandingkan coverage pengembangan antar regional"
-          className="lg:col-span-2"
+          subtitle="Perbandingan peserta Karpim dan Karpel di tiap regional"
+        >
+          <ParticipantTypeChart />
+        </DashboardCard>
+
+        <DashboardCard
+          title="Distribusi Peserta Berdasarkan Level BOD"
+          subtitle="Komposisi jenjang struktural kepemimpinan dan teknis di masing-masing regional"
         >
           <RegionalParticipantsChart />
         </DashboardCard>
-      </div>
-
-      {/* Peserta kartim + pelaksana */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <DashboardCard
-          title="Peserta Karpim"
-          subtitle="Membandingkan coverage pengembangan antar regional"
-        >
-          <ParticipantKartimChart />
-        </DashboardCard>
 
         <DashboardCard
-          title="Peserta Karpel"
-          subtitle="Membandingkan coverage pengembangan antar regional"
+          title="Matrix Capaian per Level BOD & Regional"
+          subtitle="Jumlah peserta per level BOD di tiap regional"
         >
-          <ParticipantPelaksanaChart />
+          <LevelMatrixTable data={pesertaPerRegional} unit="orang" />
         </DashboardCard>
-      </div>
+      </DashboardSection>
 
-      {/* Jam pembelajaran - full width */}
-      <div className="grid grid-cols-1">
+      {/* 4. Jam pembelajaran */}
+      <DashboardSection
+        eyebrow="Jam Pembelajaran"
+        title="Efektivitas & Realisasi Jam Pembelajaran"
+        description="Komparasi pemenuhan target jam pembelajaran SDM per level BOD di regional."
+      >
+        <TrainingHourSummaryTiles />
+
         <DashboardCard
           title="Jam Pembelajaran"
-          subtitle="Membandingkan coverage pengembangan antar regional"
-          className="lg:col-span-2"
+          subtitle="Target dan realisasi jam pembelajaran antar regional"
         >
           <TrainingHourChart />
         </DashboardCard>
-      </div>
 
-      {/* Riwayat pendaftaran + recent activity */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <DashboardCard
-          title="Riwayat Pendaftaran"
-          subtitle="Daftar pengajuan pelatihan terbaru"
-          className="lg:col-span-2"
+          title="Jam Pembelajaran per Bidang Kompetensi"
+          subtitle="Target dan realisasi jam pembelajaran di tiap bidang kompetensi"
         >
-          <ChartPlaceholder label="RiwayatPendaftaranTable" />
+          <CompetencyHourChart />
         </DashboardCard>
 
         <DashboardCard
-          title="Recent Activity"
-          subtitle="Aktivitas approval terbaru"
+          title="Matrix Jam Pembelajaran per Level BOD & Regional"
+          subtitle="Realisasi jam pembelajaran per level BOD di tiap regional"
         >
-          <ChartPlaceholder label="RecentActivityList" />
+          <LevelMatrixTable
+            data={jamPerRegional}
+            unit="jam"
+            heatRgb="59, 130, 246"
+          />
         </DashboardCard>
-      </div>
-
-      {/* Peta sebaran regional - full width */}
-      <DashboardCard
-        title="Peta Sebaran Regional"
-        subtitle="Sebaran lokasi kegiatan pengembangan SDM per regional"
-      >
-        <ChartPlaceholder label="PetaSebaranRegional" />
-      </DashboardCard>
+      </DashboardSection>
     </div>
   );
 }

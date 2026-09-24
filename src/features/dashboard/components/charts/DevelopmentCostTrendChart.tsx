@@ -5,18 +5,39 @@ import {
   CartesianGrid,
   Legend,
   Line,
+  LabelList,
   LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type DotItemDotProps,
 } from "recharts";
 import {
   ENTITY_OPTIONS,
   developmentCostByEntity,
   type EntityValue,
 } from "./developmentCostDummyData";
+import { OVER_COLOR, OverTargetNotice, isOverTarget } from "./overTarget";
+
+// Titik oranye hanya di bulan yang realisasinya melebihi target
+function OverTargetDot({ cx, cy, payload, index }: DotItemDotProps) {
+  if (!payload || !isOverTarget(payload.realisasi, payload.target)) {
+    return <g key={index} />;
+  }
+  return (
+    <circle
+      key={index}
+      cx={cx}
+      cy={cy}
+      r={5}
+      fill={OVER_COLOR}
+      stroke="#fff"
+      strokeWidth={1.5}
+    />
+  );
+}
 
 const formatValue = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
@@ -101,11 +122,21 @@ export function DevelopmentCostTrendChart() {
         </select>
       </div>
 
+      <OverTargetNotice
+        subject="target"
+        hint="Titik oranye = bulan dengan realisasi di atas target."
+        items={data.map((item) => ({
+          label: item.bulan,
+          realisasi: item.realisasi,
+          target: item.target,
+        }))}
+      />
+
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+            margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
             style={{ cursor: "pointer" }}
             onClick={(state) => {
               if (state && typeof state.activeLabel === "string") {
@@ -164,9 +195,18 @@ export function DevelopmentCostTrendChart() {
               name="Realisasi"
               stroke="#4f46e5"
               strokeWidth={2.5}
-              dot={false}
+              dot={OverTargetDot}
               activeDot={{ r: 5 }}
-            />
+            >
+              <LabelList
+                dataKey="realisasi"
+                position="top"
+                fontSize={10}
+                fill="#334155"
+                offset={8}
+                formatter={(value) => formatAxisTick(Number(value))}
+              />
+            </Line>
           </LineChart>
         </ResponsiveContainer>
       </div>

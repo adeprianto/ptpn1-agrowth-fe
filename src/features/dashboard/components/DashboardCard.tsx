@@ -16,6 +16,8 @@ interface DashboardCardProps {
   className?: string;
   /** Placeholder aksi menu titik-tiga. Ganti per card kalau perlu aksi nyata. */
   menuItems?: DashboardCardMenuItem[];
+  /** Kontrol tambahan di kanan judul, mis. dropdown filter */
+  headerAction?: ReactNode;
 }
 
 const defaultMenuItems: DashboardCardMenuItem[] = [
@@ -29,6 +31,7 @@ export function DashboardCard({
   children,
   className = "",
   menuItems = defaultMenuItems,
+  headerAction,
 }: DashboardCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -44,7 +47,8 @@ export function DashboardCard({
           )}
         </div>
 
-        <div className="relative shrink-0">
+        <div className="relative flex shrink-0 items-center gap-2">
+          {headerAction}
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
@@ -60,7 +64,7 @@ export function DashboardCard({
                 className="fixed inset-0 z-10"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 z-20 mt-1 w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+              <div className="absolute right-0 top-full z-20 mt-1 w-40 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
                 {menuItems.map((item) => (
                   <button
                     key={item.label}
