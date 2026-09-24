@@ -31,80 +31,100 @@ import {
   capaian,
   isOverTarget,
 } from "./overTarget";
+import { highlightTick } from "./overTargetBarShape";
 
 const SERIES = BIAYA_SERIES;
 
-// Titik oranye hanya di bulan yang realisasinya melebihi anggaran
-function OverTargetDot({ cx, cy, payload, index }: DotItemDotProps) {
-  if (!payload || !isOverTarget(payload.realisasi, payload.target)) {
-    return <g key={index} />;
+/**
+ * Titik garis. Bulan terpilih diperbesar dengan cincin; realisasi yang
+ * melebihi anggaran berwarna oranye. Saat ada bulan terpilih, titik lain
+ * dipudarkan.
+ */
+function renderDot(
+  { cx, cy, payload, index }: DotItemDotProps,
+  color: string,
+  selected: string | null,
+  markOver: boolean,
+) {
+  const datum = payload as MonthlyCost | undefined;
+  const active = selected !== null && datum?.bulan === selected;
+  const dimmed = selected !== null && !active;
+  const over =
+    markOver &&
+    datum !== undefined &&
+    isOverTarget(datum.realisasi, datum.target);
+  const fill = over ? OVER_COLOR : color;
+
+  if (active) {
+    return (
+      <g key={index}>
+        <circle cx={cx} cy={cy} r={9} fill={fill} fillOpacity={0.2} />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={5.5}
+          fill={fill}
+          stroke="#fff"
+          strokeWidth={2}
+        />
+      </g>
+    );
   }
   return (
     <circle
       key={index}
       cx={cx}
       cy={cy}
-      r={5}
-      fill={OVER_COLOR}
-      stroke="#fff"
-      strokeWidth={1.5}
+      r={over ? 5 : 3}
+      fill={fill}
+      fillOpacity={dimmed ? 0.35 : 1}
+      stroke={over ? "#fff" : undefined}
+      strokeWidth={over ? 1.5 : undefined}
     />
   );
 }
 
 /**
  * Label nilai berbentuk pil berwarna seri, supaya label anggaran & realisasi
- * tidak tertukar. Anggaran di atas titik, realisasi di bawah titik.
+ * tidak tertukar. Anggaran di atas titik, realisasi di bawah titik. Label
+ * bulan yang tidak dipilih dipudarkan.
  */
-function pillLabel(
-  background: string,
-  text: string,
+function renderPill(
+  { x, y, value, index }: LabelProps,
+  series: { color: string; labelText: string },
   placement: "above" | "below",
+  dimmed: (index: number | undefined) => boolean,
 ) {
-  function PillLabel({ x, y, value }: LabelProps) {
-    if (x === undefined || y === undefined || value === undefined) return null;
-    const label = formatCompact(Number(value));
-    const width = label.length * 5.6 + 10;
-    const height = 15;
-    const cx = Number(x);
-    const top = placement === "above" ? Number(y) - height - 6 : Number(y) + 6;
-    return (
-      <g>
-        <rect
-          x={cx - width / 2}
-          y={top}
-          width={width}
-          height={height}
-          rx={7.5}
-          fill={background}
-        />
-        <text
-          x={cx}
-          y={top + height / 2}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fontSize={9.5}
-          fontWeight={600}
-          fill={text}
-        >
-          {label}
-        </text>
-      </g>
-    );
-  }
-  return PillLabel;
+  if (x === undefined || y === undefined || value === undefined) return null;
+  const label = formatCompact(Number(value));
+  const width = label.length * 5.6 + 10;
+  const height = 15;
+  const cx = Number(x);
+  const top = placement === "above" ? Number(y) - height - 6 : Number(y) + 6;
+  return (
+    <g opacity={dimmed(index) ? 0.35 : 1}>
+      <rect
+        x={cx - width / 2}
+        y={top}
+        width={width}
+        height={height}
+        rx={7.5}
+        fill={series.color}
+      />
+      <text
+        x={cx}
+        y={top + height / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={9.5}
+        fontWeight={600}
+        fill={series.labelText}
+      >
+        {label}
+      </text>
+    </g>
+  );
 }
-
-const TargetLabel = pillLabel(
-  SERIES.target.color,
-  SERIES.target.labelText,
-  "above",
-);
-const RealisasiLabel = pillLabel(
-  SERIES.realisasi.color,
-  SERIES.realisasi.labelText,
-  "below",
-);
 
 const formatRupiah = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
@@ -172,6 +192,10 @@ export function DevelopmentCostTrendChart() {
   const entityLabel =
     ENTITY_OPTIONS.find((option) => option.value === entity)?.label ?? entity;
   const selectedData = data.find((item) => item.bulan === selectedBulan);
+  const isDimmed = (index: number | undefined) =>
+    selectedBulan !== null &&
+    index !== undefined &&
+    data[index]?.bulan !== selectedBulan;
 
   function handleEntityChange(value: EntityValue) {
     setEntity(value);
@@ -234,8 +258,8 @@ export function DevelopmentCostTrendChart() {
               dataKey="bulan"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: "#64748b" }}
               padding={{ left: 20, right: 20 }}
+              tick={highlightTick(selectedBulan)}
             />
             <YAxis
               axisLine={false}
@@ -249,8 +273,9 @@ export function DevelopmentCostTrendChart() {
             {selectedBulan && (
               <ReferenceLine
                 x={selectedBulan}
-                stroke="#10b981"
-                strokeDasharray="4 4"
+                stroke="#0f172a"
+                strokeOpacity={0.35}
+                strokeWidth={2}
               />
             )}
 
@@ -260,10 +285,17 @@ export function DevelopmentCostTrendChart() {
               name={SERIES.target.name}
               stroke={SERIES.target.color}
               strokeWidth={2.5}
-              dot={{ r: 3, fill: SERIES.target.color }}
+              dot={(props) =>
+                renderDot(props, SERIES.target.color, selectedBulan, false)
+              }
               activeDot={{ r: 5 }}
             >
-              <LabelList dataKey="target" content={TargetLabel} />
+              <LabelList
+                dataKey="target"
+                content={(props) =>
+                  renderPill(props, SERIES.target, "above", isDimmed)
+                }
+              />
             </Line>
             <Line
               type="monotone"
@@ -271,10 +303,17 @@ export function DevelopmentCostTrendChart() {
               name={SERIES.realisasi.name}
               stroke={SERIES.realisasi.color}
               strokeWidth={2.5}
-              dot={OverTargetDot}
+              dot={(props) =>
+                renderDot(props, SERIES.realisasi.color, selectedBulan, true)
+              }
               activeDot={{ r: 5 }}
             >
-              <LabelList dataKey="realisasi" content={RealisasiLabel} />
+              <LabelList
+                dataKey="realisasi"
+                content={(props) =>
+                  renderPill(props, SERIES.realisasi, "below", isDimmed)
+                }
+              />
             </Line>
           </LineChart>
         </ResponsiveContainer>

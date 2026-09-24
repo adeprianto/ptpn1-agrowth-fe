@@ -544,7 +544,11 @@ export const kategoriLabel = (item: KategoriRkap) =>
 
 // ── Biaya per regional ───────────────────────────────────────────────────
 export type BreakdownItem = {
+  /** Label lengkap, mis. "PSDM - Agro Walet" */
   kategori: string;
+  /** Nama tanpa prefiks grup, mis. "Agro Walet" */
+  name: string;
+  group: KategoriRkap["group"];
   anggaran: number;
   realisasi: number;
 };
@@ -567,6 +571,8 @@ export const biayaPerRegional: BiayaRegionalDatum[] = ENTITIES.map(
       realisasi: kategori.reduce((sum, k) => sum + k.realisasi, 0),
       detail: kategori.map((k) => ({
         kategori: kategoriLabel(k),
+        name: k.name,
+        group: k.group,
         anggaran: k.anggaran,
         realisasi: k.realisasi,
       })),

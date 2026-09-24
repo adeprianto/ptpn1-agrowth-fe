@@ -7,9 +7,11 @@ import {
   CartesianGrid,
   LabelList,
   ResponsiveContainer,
+  Rectangle,
   Tooltip,
   XAxis,
   YAxis,
+  type BarShapeProps,
 } from "recharts";
 import type { ChartTooltipProps } from "./chartTooltip";
 import {
@@ -17,6 +19,7 @@ import {
   biayaPerRegional as data,
   formatCompact,
   formatEntityName,
+  type BiayaRegionalDatum,
 } from "./dashboardDummyData";
 import {
   ChartLegend,
@@ -27,16 +30,13 @@ import {
   capaian,
   isOverTarget,
 } from "./overTarget";
-import { overTargetBarShape } from "./overTargetBarShape";
+import { DIMMED_OPACITY, highlightTick } from "./overTargetBarShape";
 import { BreakdownPanel } from "./BreakdownPanel";
 
 const COLORS = {
   target: BIAYA_SERIES.target.color,
   realisasi: BIAYA_SERIES.realisasi.color,
 };
-const overShape = overTargetBarShape((d) =>
-  isOverTarget(d.realisasi, d.target),
-);
 
 const formatValue = (value: number) => {
   return `Rp ${value.toLocaleString("id-ID")}`;
@@ -115,6 +115,26 @@ export function RegionalCostChart() {
 
   const selectedData = data.find((item) => item.regional === selectedRegional);
 
+  // Bar entity yang dipilih tetap terang, lainnya dipudarkan. Realisasi yang
+  // melebihi anggaran tetap oranye.
+  const barShape = (kind: "target" | "realisasi") =>
+    function BiayaBar(props: BarShapeProps) {
+      const datum = props.payload as BiayaRegionalDatum | undefined;
+      const over =
+        kind === "realisasi" &&
+        datum !== undefined &&
+        isOverTarget(datum.realisasi, datum.target);
+      const dimmed =
+        selectedRegional !== null && datum?.regional !== selectedRegional;
+      return (
+        <Rectangle
+          {...props}
+          fill={over ? OVER_COLOR : props.fill}
+          fillOpacity={dimmed ? DIMMED_OPACITY : 1}
+        />
+      );
+    };
+
   return (
     <div className="w-full">
       <OverTargetNotice
@@ -166,11 +186,7 @@ export function RegionalCostChart() {
               dataKey="regional"
               axisLine={false}
               tickLine={false}
-              tick={{
-                fontSize: 12,
-                fill: "slate-600",
-              }}
-              tickFormatter={formatRegionalLabel}
+              tick={highlightTick(selectedRegional, formatRegionalLabel)}
             />
 
             <YAxis
@@ -196,6 +212,7 @@ export function RegionalCostChart() {
               fill={COLORS.target}
               radius={[0, 0, 0, 0]}
               cursor="pointer"
+              shape={barShape("target")}
             >
               <LabelList
                 dataKey="target"
@@ -212,7 +229,7 @@ export function RegionalCostChart() {
               fill={COLORS.realisasi}
               radius={[0, 0, 0, 0]}
               cursor="pointer"
-              shape={overShape}
+              shape={barShape("realisasi")}
             >
               <LabelList
                 dataKey="realisasi"

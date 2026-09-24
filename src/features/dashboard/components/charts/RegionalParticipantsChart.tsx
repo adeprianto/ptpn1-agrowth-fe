@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { ConsolidationPanel } from "./ConsolidationPanel";
 import { SerapanBadge, capaianTone } from "./overTarget";
+import { DIMMED_OPACITY, highlightTick } from "./overTargetBarShape";
 import {
   KARPEL_LEVELS,
   KARPIM_LEVELS,
@@ -137,7 +138,44 @@ function ParticipantLevelSummary() {
  * Rincian satu entity per level BOD: terlatih vs target peserta, serta
  * porsinya terhadap seluruh karyawan entity & seluruh karyawan level itu.
  */
-function EntityLevelDetail({ datum }: { datum: ParticipantDatum }) {
+type DetailDatum = Omit<ParticipantDatum, "regional">;
+
+// Gabungan seluruh entity, dipakai sebagai rincian bawaan (Seluruh PTPN)
+const sumLevelValues = (
+  pick: (row: ParticipantDatum) => Record<LevelKey, number>,
+) =>
+  Object.fromEntries(
+    LEVELS.map((level) => [
+      levelKey(level),
+      data.reduce((sum, row) => sum + pick(row)[levelKey(level)], 0),
+    ]),
+  ) as Record<LevelKey, number>;
+
+const ptpnDatum: DetailDatum = {
+  ...sumLevelValues((row) => row),
+  total: data.reduce((sum, row) => sum + row.total, 0),
+  karpim: data.reduce((sum, row) => sum + row.karpim, 0),
+  karpel: data.reduce((sum, row) => sum + row.karpel, 0),
+  karyawan: sumLevelValues((row) => row.karyawan),
+  targetPeserta: sumLevelValues((row) => row.targetPeserta),
+};
+
+interface EntityLevelDetailProps {
+  datum: DetailDatum;
+  /** Nama di kalimat keterangan, mis. "Regional 1" atau "PTPN" */
+  nama: string;
+  /** Judul panel, mis. "Regional 1" atau "Seluruh PTPN (7 entity)" */
+  judul: string;
+  /** Kalau diisi, tampil tombol kembali ke rincian seluruh PTPN */
+  onReset?: () => void;
+}
+
+function EntityLevelDetail({
+  datum,
+  nama,
+  judul,
+  onReset,
+}: EntityLevelDetailProps) {
   const share = (value: number, total: number) =>
     total > 0 ? (value / total) * 100 : 0;
   const sumOf = (values: Record<LevelKey, number>) =>
@@ -145,7 +183,6 @@ function EntityLevelDetail({ datum }: { datum: ParticipantDatum }) {
   const range = (levels: readonly (typeof LEVELS)[number][]) =>
     `${levelLabel(levels[0])}–${levelLabel(levels[levels.length - 1])}`;
 
-  const nama = entityName(datum.regional);
   const totalKaryawan = sumOf(datum.karyawan);
   const totalTarget = sumOf(datum.targetPeserta);
   const capaianTotal = share(datum.total, totalTarget);
@@ -155,10 +192,23 @@ function EntityLevelDetail({ datum }: { datum: ParticipantDatum }) {
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h4 className="text-sm font-semibold text-slate-800">
-            Rincian Peserta — {nama}
+            Rincian Peserta — {judul}
           </h4>
           <p className="mt-0.5 text-[11px] text-slate-400">
-            Klik bar entity lain untuk melihat rinciannya
+            {onReset ? (
+              <>
+                Klik bar lain untuk ganti entity, atau{" "}
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="font-medium text-emerald-700 hover:underline"
+                >
+                  tampilkan seluruh PTPN
+                </button>
+              </>
+            ) : (
+              "Klik bar entity untuk melihat rincian per HO/regional"
+            )}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -255,15 +305,19 @@ function EntityLevelDetail({ datum }: { datum: ParticipantDatum }) {
 }
 
 export function RegionalParticipantsChart() {
-  // Default langsung menampilkan rincian Head Office
-  const [selected, setSelected] = useState<Entity>("HO");
+  // null = seluruh PTPN (bawaan); klik bar untuk memilih satu entity
+  const [selected, setSelected] = useState<Entity | null>(null);
   const selectedDatum = data.find((row) => row.regional === selected);
 
-  // Bar entity yang tidak dipilih dibuat pudar supaya pilihan terlihat
+  // Saat ada entity dipilih, bar entity lain dipudarkan
   const renderSegment = (props: BarShapeProps) => (
     <Rectangle
       {...props}
-      fillOpacity={props.payload?.regional === selected ? 1 : 0.35}
+      fillOpacity={
+        selected === null || props.payload?.regional === selected
+          ? 1
+          : DIMMED_OPACITY
+      }
     />
   );
 
@@ -279,7 +333,9 @@ export function RegionalParticipantsChart() {
               style={{ cursor: "pointer" }}
               onClick={(state) => {
                 if (state && typeof state.activeLabel === "string") {
-                  setSelected(state.activeLabel as Entity);
+                  const label = state.activeLabel as Entity;
+                  // Klik bar yang sama lagi = kembali ke seluruh PTPN
+                  setSelected((prev) => (prev === label ? null : label));
                 }
               }}
             >
@@ -292,8 +348,7 @@ export function RegionalParticipantsChart() {
                 dataKey="regional"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fontSize: 12, fill: "#475569" }}
-                tickFormatter={formatRegionalLabel}
+                tick={highlightTick(selected, formatRegionalLabel)}
               />
               <YAxis
                 axisLine={false}
@@ -337,7 +392,20 @@ export function RegionalParticipantsChart() {
         </div>
       </div>
 
-      {selectedDatum && <EntityLevelDetail datum={selectedDatum} />}
+      {selectedDatum ? (
+        <EntityLevelDetail
+          datum={selectedDatum}
+          nama={entityName(selectedDatum.regional)}
+          judul={entityName(selectedDatum.regional)}
+          onReset={() => setSelected(null)}
+        />
+      ) : (
+        <EntityLevelDetail
+          datum={ptpnDatum}
+          nama="PTPN"
+          judul={`Seluruh PTPN (${data.length} entity)`}
+        />
+      )}
     </div>
   );
 }

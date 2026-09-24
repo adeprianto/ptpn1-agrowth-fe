@@ -7,7 +7,11 @@ import {
 export type { BreakdownItem };
 
 // 14 kategori RKAP — diambil dari sumber yang sama dengan kartu kategori
-export const KATEGORI_RKAP = kategoriPerEntity.HO.map(kategoriLabel);
+export const KATEGORI_RKAP = kategoriPerEntity.HO.map((k) => ({
+  kategori: kategoriLabel(k),
+  name: k.name,
+  group: k.group,
+}));
 
 export const ENTITY_OPTIONS = [
   { value: "HO", label: "Head Office" },
@@ -74,11 +78,11 @@ function buildEntityData(entity: EntityValue, seed: number): MonthlyCost[] {
 
   return BULAN.map((bulan, monthIndex) => {
     const trend = 0.8 + monthIndex * 0.04; // naik pelan sepanjang tahun
-    const detail: BreakdownItem[] = KATEGORI_RKAP.map((kategori) => {
+    const detail: BreakdownItem[] = KATEGORI_RKAP.map((info) => {
       const realisasi = Math.round(scale * trend * (0.4 + rand() * 1.2));
       // Faktor < 1 berarti kategori itu melebihi anggaran bulan tsb
       const anggaran = Math.round(realisasi * (0.95 + rand() * 0.9));
-      return { kategori, anggaran, realisasi };
+      return { ...info, anggaran, realisasi };
     });
     // Total bulan = jumlah rincian, jadi total & rincian tidak mungkin beda
     const realisasi = detail.reduce((sum, d) => sum + d.realisasi, 0);

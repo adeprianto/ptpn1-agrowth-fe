@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { BreakdownItem } from "./dashboardDummyData";
 import {
   OVER_COLOR,
@@ -10,13 +14,14 @@ import {
 
 const formatRupiah = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
-function SisaValue({
-  anggaran,
-  realisasi,
-}: {
-  anggaran: number;
-  realisasi: number;
-}) {
+type Amounts = { anggaran: number; realisasi: number };
+
+const sumAmounts = (items: Amounts[]): Amounts => ({
+  anggaran: items.reduce((sum, item) => sum + item.anggaran, 0),
+  realisasi: items.reduce((sum, item) => sum + item.realisasi, 0),
+});
+
+function SisaValue({ anggaran, realisasi }: Amounts) {
   const over = isOverTarget(realisasi, anggaran);
   return (
     <span style={over ? { color: OVER_COLOR } : undefined}>
@@ -24,6 +29,81 @@ function SisaValue({
         ? `+${formatRupiah(realisasi - anggaran)}`
         : formatRupiah(anggaran - realisasi)}
     </span>
+  );
+}
+
+interface RowProps extends Amounts {
+  label: string;
+  /** Baris sub-kategori, digeser ke kanan */
+  indent?: boolean;
+  /** Baris grup yang bisa dibuka/tutup */
+  toggle?: {
+    open: boolean;
+    count: number;
+    overCount: number;
+    onToggle: () => void;
+  };
+}
+
+function BreakdownRow({
+  label,
+  anggaran,
+  realisasi,
+  indent,
+  toggle,
+}: RowProps) {
+  const over = isOverTarget(realisasi, anggaran);
+
+  return (
+    <tr
+      className={`border-t border-slate-100 tabular-nums text-slate-700 ${
+        toggle ? "cursor-pointer font-semibold hover:bg-slate-50" : ""
+      }`}
+      style={over ? { backgroundColor: `${OVER_COLOR}0f` } : undefined}
+      onClick={toggle?.onToggle}
+      aria-expanded={toggle?.open}
+    >
+      <td className={`py-2 pr-3 ${indent ? "pl-9" : "pl-3"}`}>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          {toggle && (
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${
+                toggle.open ? "" : "-rotate-90"
+              }`}
+            />
+          )}
+          {label}
+          {toggle && (
+            <span className="font-normal text-slate-400">
+              ({toggle.count} sub-kategori)
+            </span>
+          )}
+          {over && <OverBadge />}
+          {/* Saat grup tertutup, beri tahu kalau ada sub yang melebihi */}
+          {toggle && !toggle.open && toggle.overCount > 0 && (
+            <span
+              className="text-[10px] font-medium"
+              style={{ color: OVER_COLOR }}
+            >
+              {toggle.overCount} sub melebihi anggaran
+            </span>
+          )}
+        </span>
+      </td>
+      <td className="px-3 py-2 text-right">{formatRupiah(anggaran)}</td>
+      <td
+        className="px-3 py-2 text-right font-medium"
+        style={over ? { color: OVER_COLOR } : undefined}
+      >
+        {formatRupiah(realisasi)}
+      </td>
+      <td className="px-3 py-2 text-center">
+        <SerapanBadge percent={capaian(realisasi, anggaran)} />
+      </td>
+      <td className="px-3 py-2 text-right">
+        <SisaValue anggaran={anggaran} realisasi={realisasi} />
+      </td>
+    </tr>
   );
 }
 
@@ -35,17 +115,38 @@ interface BreakdownPanelProps {
 }
 
 /**
- * Rincian per kategori RKAP: anggaran vs realisasi. Serapan diwarnai
- * merah (0%) → hijau (100%), dan oranye kalau melebihi anggaran.
+ * Rincian per kategori RKAP: anggaran vs realisasi. Kategori yang punya grup
+ * (PSDM) tampil sebagai satu baris total yang bisa dibuka untuk melihat
+ * sub-kategorinya. Serapan diwarnai merah (0%) → hijau (100%), oranye kalau
+ * melebihi anggaran.
  */
 export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
-  const total = {
-    anggaran: items.reduce((sum, item) => sum + item.anggaran, 0),
-    realisasi: items.reduce((sum, item) => sum + item.realisasi, 0),
-  };
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const total = sumAmounts(items);
   const overCount = items.filter((item) =>
     isOverTarget(item.realisasi, item.anggaran),
   ).length;
+
+  // Urutan tampil: grup muncul di posisi anggota pertamanya
+  const groups = new Map<string, BreakdownItem[]>();
+  const order: (
+    { type: "group"; name: string } | { type: "item"; item: BreakdownItem }
+  )[] = [];
+  for (const item of items) {
+    if (!item.group) {
+      order.push({ type: "item", item });
+      continue;
+    }
+    if (!groups.has(item.group)) {
+      groups.set(item.group, []);
+      order.push({ type: "group", name: item.group });
+    }
+    groups.get(item.group)!.push(item);
+  }
+
+  const toggleGroup = (name: string) =>
+    setOpenGroups((prev) => ({ ...prev, [name]: !prev[name] }));
 
   return (
     <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -97,41 +198,45 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => {
-              const over = isOverTarget(item.realisasi, item.anggaran);
-              return (
-                <tr
-                  key={item.kategori}
-                  className="border-t border-slate-100 tabular-nums text-slate-700"
-                  style={
-                    over ? { backgroundColor: `${OVER_COLOR}0f` } : undefined
-                  }
-                >
-                  <td className="px-3 py-2">
-                    <span className="flex items-center gap-2">
-                      {item.kategori}
-                      {over && <OverBadge />}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    {formatRupiah(item.anggaran)}
-                  </td>
-                  <td
-                    className="px-3 py-2 text-right font-medium"
-                    style={over ? { color: OVER_COLOR } : undefined}
-                  >
-                    {formatRupiah(item.realisasi)}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <SerapanBadge
-                      percent={capaian(item.realisasi, item.anggaran)}
-                    />
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <SisaValue {...item} />
-                  </td>
-                </tr>
-              );
+            {order.map((entry) => {
+              if (entry.type === "item") {
+                return (
+                  <BreakdownRow
+                    key={entry.item.kategori}
+                    label={entry.item.name}
+                    anggaran={entry.item.anggaran}
+                    realisasi={entry.item.realisasi}
+                  />
+                );
+              }
+              const members = groups.get(entry.name) ?? [];
+              const open = Boolean(openGroups[entry.name]);
+              return [
+                <BreakdownRow
+                  key={entry.name}
+                  label={entry.name}
+                  {...sumAmounts(members)}
+                  toggle={{
+                    open,
+                    count: members.length,
+                    overCount: members.filter((m) =>
+                      isOverTarget(m.realisasi, m.anggaran),
+                    ).length,
+                    onToggle: () => toggleGroup(entry.name),
+                  }}
+                />,
+                ...(open
+                  ? members.map((member) => (
+                      <BreakdownRow
+                        key={member.kategori}
+                        label={member.name}
+                        anggaran={member.anggaran}
+                        realisasi={member.realisasi}
+                        indent
+                      />
+                    ))
+                  : []),
+              ];
             })}
           </tbody>
           <tfoot className="bg-slate-50 font-semibold text-slate-800">
@@ -158,6 +263,8 @@ export function BreakdownPanel({ title, items, onClose }: BreakdownPanelProps) {
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-400">
         <p>
+          Klik baris <span className="font-semibold text-slate-500">PSDM</span>{" "}
+          untuk membuka sub-kategorinya.{" "}
           <span className="font-semibold text-slate-500">Serapan</span>:
           realisasi dibanding anggaran kategori itu sendiri.{" "}
           <span className="font-semibold text-slate-500">Sisa / Kelebihan</span>
