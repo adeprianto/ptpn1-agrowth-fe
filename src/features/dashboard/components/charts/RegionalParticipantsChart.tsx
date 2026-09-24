@@ -1,17 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   LabelList,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type BarShapeProps,
 } from "recharts";
 import { ConsolidationPanel } from "./ConsolidationPanel";
+import { SerapanBadge, capaianTone } from "./overTarget";
 import {
+  KARPEL_LEVELS,
   KARPIM_LEVELS,
   LEVELS,
   LEVEL_COLORS,
@@ -22,6 +27,8 @@ import {
   levelKey,
   levelLabel,
   pesertaPerRegional as data,
+  type Entity,
+  type LevelKey,
   type PesertaDatum as ParticipantDatum,
 } from "./dashboardDummyData";
 
@@ -126,64 +133,211 @@ function ParticipantLevelSummary() {
   );
 }
 
-export function RegionalParticipantsChart() {
+/**
+ * Rincian satu entity per level BOD: terlatih vs target peserta, serta
+ * porsinya terhadap seluruh karyawan entity & seluruh karyawan level itu.
+ */
+function EntityLevelDetail({ datum }: { datum: ParticipantDatum }) {
+  const share = (value: number, total: number) =>
+    total > 0 ? (value / total) * 100 : 0;
+  const sumOf = (values: Record<LevelKey, number>) =>
+    LEVELS.reduce((sum, level) => sum + values[levelKey(level)], 0);
+  const range = (levels: readonly (typeof LEVELS)[number][]) =>
+    `${levelLabel(levels[0])}–${levelLabel(levels[levels.length - 1])}`;
+
+  const nama = entityName(datum.regional);
+  const totalKaryawan = sumOf(datum.karyawan);
+  const totalTarget = sumOf(datum.targetPeserta);
+  const capaianTotal = share(datum.total, totalTarget);
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="h-80 w-full lg:col-span-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            barCategoryGap="25%"
-            margin={{ top: 20, right: 10, left: -10, bottom: 0 }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="#e2e8f0"
+    <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-800">
+            Rincian Peserta — {nama}
+          </h4>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            Klik bar entity lain untuk melihat rinciannya
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+            Karyawan {nama}: <b>{formatNumber(totalKaryawan)}</b> orang
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+            Terlatih <b>{formatNumber(datum.total)}</b> dari target{" "}
+            <b>{formatNumber(totalTarget)}</b>
+            <SerapanBadge
+              percent={capaianTotal}
+              overTitle="Melebihi target peserta"
             />
-            <XAxis
-              dataKey="regional"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: "#475569" }}
-              tickFormatter={formatRegionalLabel}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 11, fill: "#94a3b8" }}
-              tickFormatter={formatNumber}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f8fafc" }} />
-
-            {/* stackId sama = ditumpuk. Bar pertama ada di paling bawah. */}
-            {LEVELS.map((level, index) => (
-              <Bar
-                key={level}
-                dataKey={levelKey(level)}
-                name={levelLabel(level)}
-                stackId="peserta"
-                fill={LEVEL_COLORS[level]}
-              >
-                {/* Total per entity ditaruh di atas segmen paling atas */}
-                {index === LEVELS.length - 1 && (
-                  <LabelList
-                    dataKey="total"
-                    position="top"
-                    fontSize={11}
-                    fill="#334155"
-                    formatter={(value) => formatNumber(Number(value))}
-                  />
-                )}
-              </Bar>
-            ))}
-          </BarChart>
-        </ResponsiveContainer>
+          </span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+            Karpim ({range(KARPIM_LEVELS)}): <b>{formatNumber(datum.karpim)}</b>
+          </span>
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-slate-600">
+            Karpel ({range(KARPEL_LEVELS)}): <b>{formatNumber(datum.karpel)}</b>
+          </span>
+        </div>
       </div>
 
-      <div>
-        <ParticipantLevelSummary />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+        {LEVELS.map((level) => {
+          const key = levelKey(level);
+          const terlatih = datum[key];
+          const target = datum.targetPeserta[key];
+          const karyawanLevel = datum.karyawan[key];
+          const capaian = share(terlatih, target);
+          const tone = capaianTone(capaian);
+          return (
+            <div
+              key={level}
+              className="rounded-lg border border-slate-200 p-3"
+              style={{ borderTopColor: LEVEL_COLORS[level], borderTopWidth: 3 }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold text-slate-500">
+                  {levelLabel(level)}
+                </p>
+                <SerapanBadge
+                  percent={capaian}
+                  overTitle="Melebihi target peserta"
+                />
+              </div>
+
+              <p className="mt-1 text-lg font-bold text-slate-900">
+                {formatNumber(terlatih)}
+                <span className="ml-1 text-[11px] font-normal text-slate-500">
+                  / {formatNumber(target)} orang target
+                </span>
+              </p>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: `${Math.min(capaian, 100)}%`,
+                    backgroundColor: tone.bar,
+                  }}
+                />
+              </div>
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                Capaian target peserta {levelLabel(level)}
+              </p>
+
+              <dl className="mt-2 space-y-1.5 border-t border-slate-100 pt-2 text-[10px] leading-snug text-slate-500">
+                <div>
+                  <dt className="inline font-bold text-slate-800">
+                    {formatPercent(share(terlatih, totalKaryawan))}
+                  </dt>{" "}
+                  <dd className="inline">
+                    karyawan {levelLabel(level)} yang terlatih dari seluruh
+                    karyawan {nama} ({formatNumber(totalKaryawan)} orang)
+                  </dd>
+                </div>
+                <div>
+                  <dt className="inline font-bold text-slate-800">
+                    {formatPercent(share(terlatih, karyawanLevel))}
+                  </dt>{" "}
+                  <dd className="inline">
+                    karyawan {levelLabel(level)} yang terlatih dari seluruh
+                    karyawan {levelLabel(level)} di {nama} (
+                    {formatNumber(karyawanLevel)} orang)
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+export function RegionalParticipantsChart() {
+  // Default langsung menampilkan rincian Head Office
+  const [selected, setSelected] = useState<Entity>("HO");
+  const selectedDatum = data.find((row) => row.regional === selected);
+
+  // Bar entity yang tidak dipilih dibuat pudar supaya pilihan terlihat
+  const renderSegment = (props: BarShapeProps) => (
+    <Rectangle
+      {...props}
+      fillOpacity={props.payload?.regional === selected ? 1 : 0.35}
+    />
+  );
+
+  return (
+    <div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="h-80 w-full lg:col-span-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              barCategoryGap="25%"
+              margin={{ top: 20, right: 10, left: -10, bottom: 0 }}
+              style={{ cursor: "pointer" }}
+              onClick={(state) => {
+                if (state && typeof state.activeLabel === "string") {
+                  setSelected(state.activeLabel as Entity);
+                }
+              }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                vertical={false}
+                stroke="#e2e8f0"
+              />
+              <XAxis
+                dataKey="regional"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: "#475569" }}
+                tickFormatter={formatRegionalLabel}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 11, fill: "#94a3b8" }}
+                tickFormatter={formatNumber}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: "#f8fafc" }}
+              />
+
+              {/* stackId sama = ditumpuk. Bar pertama ada di paling bawah. */}
+              {LEVELS.map((level, index) => (
+                <Bar
+                  key={level}
+                  dataKey={levelKey(level)}
+                  name={levelLabel(level)}
+                  stackId="peserta"
+                  fill={LEVEL_COLORS[level]}
+                  shape={renderSegment}
+                >
+                  {/* Total per entity ditaruh di atas segmen paling atas */}
+                  {index === LEVELS.length - 1 && (
+                    <LabelList
+                      dataKey="total"
+                      position="top"
+                      fontSize={11}
+                      fill="#334155"
+                      formatter={(value) => formatNumber(Number(value))}
+                    />
+                  )}
+                </Bar>
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div>
+          <ParticipantLevelSummary />
+        </div>
+      </div>
+
+      {selectedDatum && <EntityLevelDetail datum={selectedDatum} />}
     </div>
   );
 }

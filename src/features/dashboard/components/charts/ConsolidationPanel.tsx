@@ -6,7 +6,7 @@ export interface ConsolidationRow {
   color: string;
   value: string;
   /** Keterangan kecil di bawah nama, mis. persentase */
-  note?: string;
+  note?: ReactNode;
   /** 0–100, digambar sebagai bar tipis di bawah baris */
   bar?: number;
   over?: boolean;

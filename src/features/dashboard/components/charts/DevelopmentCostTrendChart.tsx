@@ -3,9 +3,8 @@
 import { useState } from "react";
 import {
   CartesianGrid,
-  Legend,
-  Line,
   LabelList,
+  Line,
   LineChart,
   ReferenceLine,
   ResponsiveContainer,
@@ -13,15 +12,29 @@ import {
   XAxis,
   YAxis,
   type DotItemDotProps,
+  type LabelProps,
 } from "recharts";
+import { BreakdownPanel } from "./BreakdownPanel";
+import { BIAYA_SERIES, formatCompact } from "./dashboardDummyData";
 import {
   ENTITY_OPTIONS,
   developmentCostByEntity,
   type EntityValue,
+  type MonthlyCost,
 } from "./developmentCostDummyData";
-import { OVER_COLOR, OverTargetNotice, isOverTarget } from "./overTarget";
+import {
+  ChartLegend,
+  OVER_COLOR,
+  OverBadge,
+  OverTargetNotice,
+  SerapanBadge,
+  capaian,
+  isOverTarget,
+} from "./overTarget";
 
-// Titik oranye hanya di bulan yang realisasinya melebihi target
+const SERIES = BIAYA_SERIES;
+
+// Titik oranye hanya di bulan yang realisasinya melebihi anggaran
 function OverTargetDot({ cx, cy, payload, index }: DotItemDotProps) {
   if (!payload || !isOverTarget(payload.realisasi, payload.target)) {
     return <g key={index} />;
@@ -39,51 +52,110 @@ function OverTargetDot({ cx, cy, payload, index }: DotItemDotProps) {
   );
 }
 
-const formatValue = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
-
-const formatAxisTick = (value: number) =>
-  new Intl.NumberFormat("id-ID", {
-    notation: "compact",
-    compactDisplay: "short",
-  }).format(value);
-
-interface TooltipPayloadItem {
-  dataKey?: string | number;
-  name?: string;
-  value?: number | string;
-  color?: string;
+/**
+ * Label nilai berbentuk pil berwarna seri, supaya label anggaran & realisasi
+ * tidak tertukar. Anggaran di atas titik, realisasi di bawah titik.
+ */
+function pillLabel(
+  background: string,
+  text: string,
+  placement: "above" | "below",
+) {
+  function PillLabel({ x, y, value }: LabelProps) {
+    if (x === undefined || y === undefined || value === undefined) return null;
+    const label = formatCompact(Number(value));
+    const width = label.length * 5.6 + 10;
+    const height = 15;
+    const cx = Number(x);
+    const top = placement === "above" ? Number(y) - height - 6 : Number(y) + 6;
+    return (
+      <g>
+        <rect
+          x={cx - width / 2}
+          y={top}
+          width={width}
+          height={height}
+          rx={7.5}
+          fill={background}
+        />
+        <text
+          x={cx}
+          y={top + height / 2}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={9.5}
+          fontWeight={600}
+          fill={text}
+        >
+          {label}
+        </text>
+      </g>
+    );
+  }
+  return PillLabel;
 }
+
+const TargetLabel = pillLabel(
+  SERIES.target.color,
+  SERIES.target.labelText,
+  "above",
+);
+const RealisasiLabel = pillLabel(
+  SERIES.realisasi.color,
+  SERIES.realisasi.labelText,
+  "below",
+);
+
+const formatRupiah = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: TooltipPayloadItem[];
+  payload?: { payload?: MonthlyCost }[];
   label?: string | number;
 }
 
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
-  if (!active || !payload?.length) return null;
+  const datum = payload?.[0]?.payload;
+  if (!active || !datum) return null;
+  const over = isOverTarget(datum.realisasi, datum.target);
+
+  const rows = [
+    { ...SERIES.target, value: datum.target },
+    {
+      ...SERIES.realisasi,
+      color: over ? OVER_COLOR : SERIES.realisasi.color,
+      value: datum.realisasi,
+    },
+  ];
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-lg">
-      <p className="mb-2 text-sm font-semibold text-slate-800">{label}</p>
+      <div className="mb-2 flex items-center gap-2">
+        <p className="text-sm font-semibold text-slate-800">{label}</p>
+        {over && <OverBadge label="Melebihi anggaran" />}
+      </div>
       <div className="space-y-1.5">
-        {payload.map((item) => (
+        {rows.map((row) => (
           <div
-            key={String(item.dataKey)}
+            key={row.name}
             className="flex items-center justify-between gap-6 text-xs"
           >
             <div className="flex items-center gap-2">
               <span
                 className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: item.color }}
+                style={{ backgroundColor: row.color }}
               />
-              <span className="text-slate-500">{item.name}</span>
+              <span className="text-slate-500">{row.name}</span>
             </div>
             <span className="font-medium text-slate-800">
-              {formatValue(Number(item.value))}
+              {formatRupiah(row.value)}
             </span>
           </div>
         ))}
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-6 border-t border-slate-100 pt-2 text-xs font-semibold">
+        <span className="text-slate-600">Serapan</span>
+        <SerapanBadge percent={capaian(datum.realisasi, datum.target)} />
       </div>
       <p className="mt-2 text-[11px] text-slate-400">
         Klik untuk lihat rincian
@@ -108,10 +180,18 @@ export function DevelopmentCostTrendChart() {
 
   return (
     <div className="w-full">
-      <div className="mb-2 flex justify-end">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <ChartLegend
+          items={[
+            { color: SERIES.target.color, label: SERIES.target.name },
+            { color: SERIES.realisasi.color, label: SERIES.realisasi.name },
+            { color: OVER_COLOR, label: "Melebihi anggaran" },
+          ]}
+        />
         <select
           value={entity}
           onChange={(e) => handleEntityChange(e.target.value as EntityValue)}
+          aria-label="Pilih entity"
           className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
         >
           {ENTITY_OPTIONS.map((option) => (
@@ -123,8 +203,8 @@ export function DevelopmentCostTrendChart() {
       </div>
 
       <OverTargetNotice
-        subject="target"
-        hint="Titik oranye = bulan dengan realisasi di atas target."
+        subject="anggaran"
+        hint="Titik oranye = bulan dengan realisasi di atas anggaran."
         items={data.map((item) => ({
           label: item.bulan,
           realisasi: item.realisasi,
@@ -132,11 +212,11 @@ export function DevelopmentCostTrendChart() {
         }))}
       />
 
-      <div className="h-72 w-full">
+      <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
-            margin={{ top: 20, right: 20, left: 0, bottom: 0 }}
+            margin={{ top: 28, right: 24, left: 0, bottom: 10 }}
             style={{ cursor: "pointer" }}
             onClick={(state) => {
               if (state && typeof state.activeLabel === "string") {
@@ -148,28 +228,22 @@ export function DevelopmentCostTrendChart() {
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="#8C8C8C"
+              stroke="#e2e8f0"
             />
             <XAxis
               dataKey="bulan"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: "#64748b" }}
+              padding={{ left: 20, right: 20 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: "#94a3b8" }}
-              tickFormatter={formatAxisTick}
+              tickFormatter={formatCompact}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="top"
-              align="right"
-              height={36}
-              iconType="circle"
-              wrapperStyle={{ fontSize: "12px" }}
-            />
 
             {/* Penanda bulan yang sedang dilihat rinciannya */}
             {selectedBulan && (
@@ -183,29 +257,24 @@ export function DevelopmentCostTrendChart() {
             <Line
               type="monotone"
               dataKey="target"
-              name="Target"
-              stroke="#cbd5e1"
-              strokeWidth={2}
-              dot={false}
+              name={SERIES.target.name}
+              stroke={SERIES.target.color}
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: SERIES.target.color }}
               activeDot={{ r: 5 }}
-            />
+            >
+              <LabelList dataKey="target" content={TargetLabel} />
+            </Line>
             <Line
               type="monotone"
               dataKey="realisasi"
-              name="Realisasi"
-              stroke="#4f46e5"
+              name={SERIES.realisasi.name}
+              stroke={SERIES.realisasi.color}
               strokeWidth={2.5}
               dot={OverTargetDot}
               activeDot={{ r: 5 }}
             >
-              <LabelList
-                dataKey="realisasi"
-                position="top"
-                fontSize={10}
-                fill="#334155"
-                offset={8}
-                formatter={(value) => formatAxisTick(Number(value))}
-              />
+              <LabelList dataKey="realisasi" content={RealisasiLabel} />
             </Line>
           </LineChart>
         </ResponsiveContainer>
@@ -213,41 +282,11 @@ export function DevelopmentCostTrendChart() {
 
       {/* Panel rincian 14 kategori RKAP, muncul kalau ada bulan yang diklik */}
       {selectedData && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-slate-800">
-              Rincian Realisasi — {entityLabel}, {selectedData.bulan}
-            </h4>
-            <button
-              type="button"
-              onClick={() => setSelectedBulan(null)}
-              className="text-xs text-slate-400 hover:text-slate-600"
-            >
-              Tutup
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {selectedData.detail.map((item) => (
-              <div
-                key={item.kategori}
-                className="flex items-center justify-between text-xs"
-              >
-                <span className="text-slate-500">{item.kategori}</span>
-                <span className="font-medium text-slate-800">
-                  {formatValue(item.nilai)}
-                </span>
-              </div>
-            ))}
-
-            <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 text-xs font-semibold">
-              <span className="text-slate-600">Total Realisasi</span>
-              <span className="text-slate-800">
-                {formatValue(selectedData.realisasi)}
-              </span>
-            </div>
-          </div>
-        </div>
+        <BreakdownPanel
+          title={`${entityLabel}, ${selectedData.bulan}`}
+          items={selectedData.detail}
+          onClose={() => setSelectedBulan(null)}
+        />
       )}
     </div>
   );

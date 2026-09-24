@@ -16,6 +16,7 @@ const formatHours = (value: number) => `${formatNumber(value)} Jam`;
 
 function CompetencyHourSummary() {
   const total = data.reduce((sum, row) => sum + row.realisasi, 0);
+  const totalTarget = data.reduce((sum, row) => sum + row.target, 0);
   const share = (value: number) => (total > 0 ? (value / total) * 100 : 0);
   const [dominan, ...rest] = [...data].sort(
     (a, b) => b.realisasi - a.realisasi,
@@ -27,7 +28,18 @@ function CompetencyHourSummary() {
       name: `${index + 1}. ${row.bidang}`,
       color: COLORS.realisasi,
       value: formatHours(row.realisasi),
-      note: `${formatPercent(share(row.realisasi))} dari total · capaian ${formatPercent(capaian(row.realisasi, row.target))}`,
+      note: (
+        <>
+          <span className="block">
+            <b>{formatPercent(share(row.realisasi))}</b> dari total realisasi
+            jam PTPN
+          </span>
+          <span className="block">
+            <b>{formatPercent(capaian(row.realisasi, row.target))}</b> dari
+            target bidang ini ({formatHours(row.target)}, PTPN)
+          </span>
+        </>
+      ),
       bar: share(row.realisasi),
       over,
     };
@@ -37,9 +49,9 @@ function CompetencyHourSummary() {
     <ConsolidationPanel
       accent={COLORS.realisasi}
       title="Bidang Paling Dominan"
-      caption={`Dari ${data.length} bidang, total ${formatHours(total)}`}
+      caption={`${data.length} bidang · realisasi PTPN ${formatHours(total)} dari target ${formatHours(totalTarget)}`}
       headline={dominan.bidang}
-      headlineUnit={`${formatPercent(share(dominan.realisasi))} dari total jam`}
+      headlineUnit={`${formatPercent(share(dominan.realisasi))} dari total realisasi jam PTPN`}
       rows={rows}
       footer={
         <p className="rounded-lg bg-white px-3 py-2 text-[11px] text-slate-500">

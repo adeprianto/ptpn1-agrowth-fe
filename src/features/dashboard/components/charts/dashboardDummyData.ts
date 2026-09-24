@@ -110,6 +110,12 @@ const pesertaRaw: ({ regional: Entity } & LevelValues)[] = [
 export const KARPIM_LEVELS: readonly Level[] = [1, 2, 3];
 export const KARPEL_LEVELS: readonly Level[] = [4, 5, 6];
 
+// Warna seri anggaran & realisasi biaya, dipakai chart per-region & tren
+export const BIAYA_SERIES = {
+  target: { name: "Anggaran", color: "#49F150", labelText: "#14532d" },
+  realisasi: { name: "Realisasi", color: "#2A5432", labelText: "#ffffff" },
+} as const;
+
 // Warna sama dengan chart Karpim/Karpel yang lama
 export const PESERTA_SERIES = {
   karpim: { name: "Karpim", color: "#7D0B35" },
@@ -121,17 +127,44 @@ export type PesertaDatum = {
   total: number;
   karpim: number;
   karpel: number;
+  /** Jumlah seluruh karyawan per level BOD di entity ini (terlatih atau belum) */
+  karyawan: LevelValues;
+  /** Target jumlah karyawan yang harus ikut pelatihan per level BOD */
+  targetPeserta: LevelValues;
 } & LevelValues;
 
 const sumLevels = (row: LevelValues, levels: readonly Level[] = LEVELS) =>
   levels.reduce((sum, level) => sum + row[levelKey(level)], 0);
 
-export const pesertaPerRegional: PesertaDatum[] = pesertaRaw.map((row) => ({
-  ...row,
-  total: sumLevels(row),
-  karpim: sumLevels(row, KARPIM_LEVELS),
-  karpel: sumLevels(row, KARPEL_LEVELS),
-}));
+// DUMMY — target peserta & jumlah karyawan per level belum ada di backend.
+// Target dibuat di sekitar jumlah terlatih (sebagian kecil sudah terlampaui),
+// jumlah karyawan selalu lebih besar dari target.
+// GET /api/v1/dashboard/peserta-per-regional (field target & headcount)
+function buildTargetKaryawan(row: LevelValues, seed: number) {
+  const rand = seededRandom(seed);
+  const targetPeserta = {} as LevelValues;
+  const karyawan = {} as LevelValues;
+  for (const level of LEVELS) {
+    const key = levelKey(level);
+    const terlatih = row[key];
+    targetPeserta[key] = Math.max(
+      Math.round(Math.max(terlatih, 1) * (0.9 + rand() * 1.6)),
+      1,
+    );
+    karyawan[key] = Math.round(targetPeserta[key] * (1.3 + rand() * 1.2)) + 1;
+  }
+  return { targetPeserta, karyawan };
+}
+
+export const pesertaPerRegional: PesertaDatum[] = pesertaRaw.map(
+  (row, index) => ({
+    ...row,
+    total: sumLevels(row),
+    karpim: sumLevels(row, KARPIM_LEVELS),
+    karpel: sumLevels(row, KARPEL_LEVELS),
+    ...buildTargetKaryawan(row, index * 17 + 3),
+  }),
+);
 
 // ── Jam pembelajaran ─────────────────────────────────────────────────────
 // Realisasi jam per entity per level BOD; realisasi per entity = jumlah level.
@@ -233,23 +266,107 @@ export const targetJamPerLevel: Record<Level, number> = {
 
 // ── Jam per bidang kompetensi ────────────────────────────────────────────
 // Bidang sama dengan pilihan "Bidang Pelatihan" di form program pelatihan.
-// Total realisasi & target sama dengan konsolidasi jam per entity.
 // GET /api/v1/dashboard/jam-per-bidang
+export const BIDANG = [
+  "Tanaman",
+  "Pengolahan",
+  "Teknik",
+  "Keuangan",
+  "SDM",
+  "IT",
+  "Umum",
+] as const;
+export type Bidang = (typeof BIDANG)[number];
+
+// Target jam per bidang (konsolidasi PTPN); totalnya = total target jam
+const targetJamPerBidang: Record<Bidang, number> = {
+  Tanaman: 250,
+  Pengolahan: 220,
+  Teknik: 200,
+  Keuangan: 120,
+  SDM: 115,
+  IT: 100,
+  Umum: 120,
+};
+
+// Porsi dasar tiap bidang, lalu divariasikan per entity supaya tidak seragam
+const bobotBidang: Record<Bidang, number> = {
+  Tanaman: 180,
+  Pengolahan: 150,
+  Teknik: 120,
+  Keuangan: 70,
+  SDM: 130,
+  IT: 50,
+  Umum: 60,
+};
+
+// Random ber-seed (hasil selalu sama) supaya tidak hydration mismatch
+function seededRandom(seed: number) {
+  let value = seed;
+  return () => {
+    value = (value * 9301 + 49297) % 233280;
+    return value / 233280;
+  };
+}
+
+export type JamBidangLevel = Record<Bidang, Record<LevelKey, number>>;
+
+/**
+ * Realisasi jam per entity → bidang → level BOD. Jam tiap sel entity×level
+ * (jamPerRegional) dibagi ke 7 bidang, jadi totalnya selalu cocok.
+ */
+export const jamBidangPerEntity = Object.fromEntries(
+  jamRaw.map((row, entityIndex) => {
+    const rand = seededRandom(entityIndex * 31 + 7);
+    const cube = Object.fromEntries(
+      BIDANG.map((bidang) => [bidang, {} as Record<LevelKey, number>]),
+    ) as JamBidangLevel;
+
+    for (const level of LEVELS) {
+      const key = levelKey(level);
+      const parts = allocate(
+        row[key],
+        BIDANG.map((bidang) => bobotBidang[bidang] * (0.6 + rand() * 0.8)),
+      );
+      BIDANG.forEach((bidang, i) => {
+        cube[bidang][key] = parts[i];
+      });
+    }
+    return [row.regional, cube];
+  }),
+) as Record<Entity, JamBidangLevel>;
+
+/** Konsolidasi seluruh entity (Total PTPN) */
+export const jamBidangKonsolidasi = Object.fromEntries(
+  BIDANG.map((bidang) => [
+    bidang,
+    Object.fromEntries(
+      LEVELS.map((level) => [
+        levelKey(level),
+        ENTITIES.reduce(
+          (sum, entity) =>
+            sum + jamBidangPerEntity[entity][bidang][levelKey(level)],
+          0,
+        ),
+      ]),
+    ),
+  ]),
+) as JamBidangLevel;
+
 export type JamBidangDatum = {
-  bidang: string;
+  bidang: Bidang;
   target: number;
   realisasi: number;
 };
 
-export const jamPerBidang: JamBidangDatum[] = [
-  { bidang: "Tanaman", target: 250, realisasi: 180 },
-  { bidang: "Pengolahan", target: 220, realisasi: 150 },
-  { bidang: "Teknik", target: 200, realisasi: 120 },
-  { bidang: "Keuangan", target: 120, realisasi: 70 },
-  { bidang: "SDM", target: 115, realisasi: 130 },
-  { bidang: "IT", target: 100, realisasi: 50 },
-  { bidang: "Umum", target: 120, realisasi: 60 },
-];
+export const jamPerBidang: JamBidangDatum[] = BIDANG.map((bidang) => ({
+  bidang,
+  target: targetJamPerBidang[bidang],
+  realisasi: LEVELS.reduce(
+    (sum, level) => sum + jamBidangKonsolidasi[bidang][levelKey(level)],
+    0,
+  ),
+}));
 
 // ── Kategori biaya RKAP ──────────────────────────────────────────────────
 // 8 kategori pertama masuk grup PSDM, sisanya kategori biasa.
@@ -363,11 +480,23 @@ const totalRegional: Record<
   "8": { anggaran: 1_114_970_960, realisasi: 651_675_000 },
 };
 
-/** Bagi `total` sesuai bobot; sisa pembulatan ditaruh di bagian terakhir */
+/**
+ * Bagi `total` (bilangan bulat) sesuai bobot. Sisa pembulatan diberikan ke
+ * bagian dengan pecahan terbesar, supaya tidak menumpuk di satu bagian.
+ */
 function allocate(total: number, weights: number[]) {
   const sumWeights = weights.reduce((sum, w) => sum + w, 0);
-  const parts = weights.map((w) => Math.floor((total * w) / sumWeights));
-  parts[parts.length - 1] += total - parts.reduce((sum, p) => sum + p, 0);
+  const exact = weights.map((w) => (total * w) / sumWeights);
+  const parts = exact.map(Math.floor);
+  let remainder = total - parts.reduce((sum, p) => sum + p, 0);
+  const byFraction = exact
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction);
+  for (const { index } of byFraction) {
+    if (remainder <= 0) break;
+    parts[index] += 1;
+    remainder -= 1;
+  }
   return parts;
 }
 

@@ -14,6 +14,7 @@ import { ParticipantTypeChart } from "./charts/ParticipantTypeChart";
 import { RegionalParticipantsChart } from "./charts/RegionalParticipantsChart";
 import { TrainingHourChart } from "./charts/TrainingHourChart";
 import { CompetencyHourChart } from "./charts/CompetencyHourChart";
+import { CompetencyMatrixTable } from "./charts/CompetencyMatrixTable";
 import { LevelMatrixTable } from "./charts/LevelMatrixTable";
 import {
   ENTITIES,
@@ -116,13 +117,6 @@ export function DashboardOverview() {
         </DashboardCard>
 
         <DashboardCard
-          title="Jam Pembelajaran per Bidang Kompetensi"
-          subtitle="Target dan realisasi jam pembelajaran di tiap bidang kompetensi"
-        >
-          <CompetencyHourChart />
-        </DashboardCard>
-
-        <DashboardCard
           title="Matrix Jam Pembelajaran per Level BOD & Regional"
           subtitle="Realisasi jam pembelajaran per level BOD di tiap regional"
         >
@@ -131,6 +125,20 @@ export function DashboardOverview() {
             unit="jam"
             heatRgb="59, 130, 246"
           />
+        </DashboardCard>
+
+        <DashboardCard
+          title="Jam Pembelajaran per Bidang Kompetensi"
+          subtitle="Target dan realisasi jam pembelajaran di tiap bidang kompetensi"
+        >
+          <CompetencyHourChart />
+        </DashboardCard>
+
+        <DashboardCard
+          title="Matrix Jam Pembelajaran per Bidang & Level BOD"
+          subtitle="Realisasi jam pembelajaran tiap bidang kompetensi per level BOD"
+        >
+          <CompetencyMatrixTable />
         </DashboardCard>
       </DashboardSection>
     </div>

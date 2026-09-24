@@ -1,21 +1,13 @@
-// 14 kategori RKAP biaya pengembangan SDM — nama sama dengan card
-// Total Konsolidasi. Sebaiknya RegionalCostChart juga import dari sini.
-export const KATEGORI_RKAP = [
-  "PDSM - Pengembangan BOD & BOC",
-  "PDSM - Agro Walet",
-  "PDSM - IHT & Public Training",
-  "PDSM - Kursus Jabatan",
-  "PDSM - Sertifikasi Jabatan",
-  "PDSM - Program Study Banding",
-  "PDSM - Program Pendidikan Lanjut",
-  "PDSM - Biaya Perjalanan Dinas",
-  "Assessment",
-  "Rekrutmen",
-  "Onboarding",
-  "Program Budaya Perusahaan",
-  "Konsultasi Pengembangan SDM",
-  "Inovasi & Riset",
-] as const;
+import {
+  kategoriLabel,
+  kategoriPerEntity,
+  type BreakdownItem,
+} from "./dashboardDummyData";
+
+export type { BreakdownItem };
+
+// 14 kategori RKAP — diambil dari sumber yang sama dengan kartu kategori
+export const KATEGORI_RKAP = kategoriPerEntity.HO.map(kategoriLabel);
 
 export const ENTITY_OPTIONS = [
   { value: "HO", label: "Head Office" },
@@ -30,11 +22,6 @@ export const ENTITY_OPTIONS = [
 ] as const;
 
 export type EntityValue = (typeof ENTITY_OPTIONS)[number]["value"];
-
-export interface BreakdownItem {
-  kategori: string;
-  nilai: number;
-}
 
 export interface MonthlyCost {
   bulan: string;
@@ -87,13 +74,15 @@ function buildEntityData(entity: EntityValue, seed: number): MonthlyCost[] {
 
   return BULAN.map((bulan, monthIndex) => {
     const trend = 0.8 + monthIndex * 0.04; // naik pelan sepanjang tahun
-    const detail = KATEGORI_RKAP.map((kategori) => ({
-      kategori,
-      nilai: Math.round(scale * trend * (0.4 + rand() * 1.2)),
-    }));
-    // Realisasi = jumlah rincian, jadi total & rincian tidak mungkin beda
-    const realisasi = detail.reduce((sum, d) => sum + d.nilai, 0);
-    const target = Math.round(realisasi * (1.02 + rand() * 0.25));
+    const detail: BreakdownItem[] = KATEGORI_RKAP.map((kategori) => {
+      const realisasi = Math.round(scale * trend * (0.4 + rand() * 1.2));
+      // Faktor < 1 berarti kategori itu melebihi anggaran bulan tsb
+      const anggaran = Math.round(realisasi * (0.95 + rand() * 0.9));
+      return { kategori, anggaran, realisasi };
+    });
+    // Total bulan = jumlah rincian, jadi total & rincian tidak mungkin beda
+    const realisasi = detail.reduce((sum, d) => sum + d.realisasi, 0);
+    const target = detail.reduce((sum, d) => sum + d.anggaran, 0);
     return { bulan, target, realisasi, detail };
   });
 }

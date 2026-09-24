@@ -34,3 +34,12 @@ select,
 textarea {
   scroll-margin-top: 4rem;
 }
+
+/*
+ * Recharts memberi fokus ke area chart saat diklik, sehingga browser
+ * menggambar outline di sekeliling plot. Sembunyikan hanya untuk klik mouse;
+ * navigasi keyboard (:focus-visible) tetap menampilkan outline.
+ */
+.recharts-wrapper :focus:not(:focus-visible) {
+  outline: none;
+}

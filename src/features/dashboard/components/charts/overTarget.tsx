@@ -102,3 +102,49 @@ export function CapaianValue({ percent }: { percent: number }) {
     </span>
   );
 }
+
+/**
+ * Warna capaian: 0% merah → 100% hijau, di atas 100% oranye.
+ * `bar` untuk isi progress bar, `background`/`text` untuk badge.
+ */
+export function capaianTone(percent: number) {
+  if (percent > 100) {
+    return {
+      bar: OVER_COLOR,
+      background: `${OVER_COLOR}1f`,
+      text: OVER_COLOR,
+    };
+  }
+  const hue = (Math.max(percent, 0) / 100) * 120;
+  return {
+    bar: `hsl(${hue} 70% 45%)`,
+    background: `hsl(${hue} 80% 90%)`,
+    text: `hsl(${hue} 70% 28%)`,
+  };
+}
+
+/**
+ * Badge persentase capaian berwarna (lihat capaianTone). Dipakai untuk
+ * serapan anggaran dan capaian target peserta.
+ */
+export function SerapanBadge({
+  percent,
+  overTitle = "Melebihi anggaran",
+}: {
+  percent: number;
+  overTitle?: string;
+}) {
+  const over = percent > 100;
+  const tone = capaianTone(percent);
+
+  return (
+    <span
+      className="inline-block min-w-[4.5rem] rounded-full px-2 py-0.5 text-center text-[11px] font-semibold tabular-nums"
+      style={{ backgroundColor: tone.background, color: tone.text }}
+      title={over ? overTitle : undefined}
+    >
+      {over && "▲"}
+      {formatPercent(percent)}
+    </span>
+  );
+}

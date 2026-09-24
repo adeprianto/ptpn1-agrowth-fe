@@ -1,13 +1,18 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import {
+  formatCompact,
   formatPercent,
   formatRupiah,
   type KategoriRkap,
 } from "./dashboardDummyData";
 import { OVER_COLOR, OverBadge, OverTargetNotice } from "./overTarget";
 
-// Tinggi baris dikunci supaya area scroll pas menampilkan VISIBLE_ITEMS kategori
+// Tinggi baris dikunci supaya area scroll pas menampilkan VISIBLE_ITEMS baris.
+// Saat PSDM tertutup: 1 baris PSDM + 6 kategori lain = 7 baris, tanpa scroll.
 const ITEM_HEIGHT = 56;
-const GROUP_HEADER_HEIGHT = 32;
 const VISIBLE_ITEMS = 7;
 
 const BAR_COLOR = "#3b82f6";
@@ -15,21 +20,46 @@ const BAR_COLOR = "#3b82f6";
 const usage = (item: Pick<KategoriRkap, "anggaran" | "realisasi">) =>
   item.anggaran > 0 ? (item.realisasi / item.anggaran) * 100 : 0;
 
-function CategoryRow({ item, number }: { item: KategoriRkap; number: number }) {
-  const percent = usage(item);
+/** Rupiah penuh kalau baris cukup lebar, ringkas (mis. Rp 22,7 M) kalau sempit */
+function Amount({ value }: { value: number }) {
+  return (
+    <>
+      <span className="@[22rem]:hidden">Rp {formatCompact(value)}</span>
+      <span className="hidden @[22rem]:inline">{formatRupiah(value)}</span>
+    </>
+  );
+}
+
+interface CategoryRowProps {
+  label: string;
+  anggaran: number;
+  realisasi: number;
+  /** Kalau diisi, baris jadi tombol buka/tutup sub-kategori */
+  toggle?: { open: boolean; count: number; onToggle: () => void };
+}
+
+function CategoryRow({ label, anggaran, realisasi, toggle }: CategoryRowProps) {
+  const percent = usage({ anggaran, realisasi });
   const overBudget = percent > 100;
 
-  return (
-    <div
-      className="flex flex-col justify-center gap-1"
-      style={{ height: ITEM_HEIGHT }}
-    >
+  const content = (
+    <>
       <div className="flex items-center justify-between gap-3 text-xs">
         <span
-          className="min-w-0 truncate font-medium text-slate-700"
-          title={item.name}
+          className={`flex min-w-0 items-center gap-1 text-slate-700 ${toggle ? "font-bold" : "font-medium"}`}
+          title={label}
         >
-          {number}. {item.name}
+          {toggle && (
+            <ChevronDown
+              className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform ${toggle.open ? "" : "-rotate-90"}`}
+            />
+          )}
+          <span className="truncate">{label}</span>
+          {toggle && (
+            <span className="shrink-0 font-normal text-slate-400">
+              ({toggle.count} sub-kategori)
+            </span>
+          )}
         </span>
         <span
           className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-700"
@@ -48,18 +78,51 @@ function CategoryRow({ item, number }: { item: KategoriRkap; number: number }) {
           }}
         />
       </div>
-      <p className="truncate text-[11px] text-slate-400">
-        <span className="font-medium text-slate-600">
-          {formatRupiah(item.realisasi)}
-        </span>{" "}
-        / {formatRupiah(item.anggaran)}
+      <p className="flex gap-x-3 overflow-hidden whitespace-nowrap text-left text-[11px] text-slate-400">
+        <span className="whitespace-nowrap">
+          Realisasi{" "}
+          <span
+            className="font-semibold text-slate-700"
+            style={overBudget ? { color: OVER_COLOR } : undefined}
+          >
+            <Amount value={realisasi} />
+          </span>
+        </span>
+        <span className="whitespace-nowrap">
+          Anggaran{" "}
+          <span className="font-medium text-slate-600">
+            <Amount value={anggaran} />
+          </span>
+        </span>
       </p>
+    </>
+  );
+
+  // @container: label nilai menyesuaikan lebar baris (lihat Amount)
+  const className = "@container flex w-full flex-col justify-center gap-1";
+  return toggle ? (
+    <button
+      type="button"
+      onClick={toggle.onToggle}
+      aria-expanded={toggle.open}
+      className={`${className} sticky top-0 z-10 bg-white hover:bg-slate-50`}
+      style={{ height: ITEM_HEIGHT }}
+    >
+      {content}
+    </button>
+  ) : (
+    <div className={className} style={{ height: ITEM_HEIGHT }}>
+      {content}
     </div>
   );
 }
 
-/** Realisasi tiap kategori RKAP terhadap anggarannya; PSDM dikelompokkan */
+/**
+ * Realisasi tiap kategori RKAP terhadap anggarannya. PSDM tampil sebagai satu
+ * baris total; diklik untuk membuka 8 sub-kategorinya.
+ */
 export function BudgetCategoryList({ data }: { data: KategoriRkap[] }) {
+  const [psdmOpen, setPsdmOpen] = useState(false);
   const psdm = data.filter((item) => item.group === "PSDM");
   const lainnya = data.filter((item) => item.group !== "PSDM");
 
@@ -73,38 +136,45 @@ export function BudgetCategoryList({ data }: { data: KategoriRkap[] }) {
       <OverTargetNotice
         subject="anggaran"
         items={data.map((item) => ({
-          label: item.name,
+          label: item.group ? `${item.group} - ${item.name}` : item.name,
           realisasi: item.realisasi,
           target: item.anggaran,
         }))}
       />
       <div
         className="overflow-y-auto pr-2"
-        style={{ maxHeight: GROUP_HEADER_HEIGHT + ITEM_HEIGHT * VISIBLE_ITEMS }}
+        style={{ maxHeight: ITEM_HEIGHT * VISIBLE_ITEMS }}
       >
         <div>
-          {/* Header grup ikut "menempel" selama sub-kategori PSDM di-scroll */}
-          <div
-            className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white text-xs"
-            style={{ height: GROUP_HEADER_HEIGHT }}
-          >
-            <span className="font-bold tracking-wide text-slate-800">PSDM</span>
-            <span className="text-[11px] text-slate-400">
-              {psdm.length} sub-kategori · {formatPercent(usage(psdmTotal))}
-            </span>
-          </div>
-          <div className="ml-1 border-l-2 border-slate-100 pl-3">
-            {psdm.map((item, index) => (
-              <CategoryRow key={item.name} item={item} number={index + 1} />
-            ))}
-          </div>
+          <CategoryRow
+            label="1. PSDM"
+            {...psdmTotal}
+            toggle={{
+              open: psdmOpen,
+              count: psdm.length,
+              onToggle: () => setPsdmOpen((open) => !open),
+            }}
+          />
+          {psdmOpen && (
+            <div className="ml-1 border-l-2 border-slate-100 pl-3">
+              {psdm.map((item, index) => (
+                <CategoryRow
+                  key={item.name}
+                  label={`1.${index + 1} ${item.name}`}
+                  anggaran={item.anggaran}
+                  realisasi={item.realisasi}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {lainnya.map((item, index) => (
           <CategoryRow
             key={item.name}
-            item={item}
-            number={psdm.length + index + 1}
+            label={`${index + 2}. ${item.name}`}
+            anggaran={item.anggaran}
+            realisasi={item.realisasi}
           />
         ))}
       </div>
