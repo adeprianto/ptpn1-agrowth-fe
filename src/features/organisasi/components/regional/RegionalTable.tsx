@@ -68,7 +68,7 @@ export function createRegionalTableConfig({
           {
             label: "Lihat Detail",
             icon: Eye,
-            href: `/organisasi/regional/${row.id}`,
+            href: `/dashboard/organisasi/regional/${row.id}`,
           },
           ...(onEdit
             ? [{ label: "Edit", icon: Pencil, onClick: () => onEdit(row) }]

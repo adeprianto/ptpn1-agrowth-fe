@@ -8,10 +8,11 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { TreeExplorer, TreeToolbar } from "@/components/shared/TreeExplorer";
 import { Alert, ButtonLink } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
 import { useTreeExpansion } from "@/hooks/useTreeExpansion";
 import { DepartemenTreeRow } from "./DepartemenTreeRow";
 import { EntityPicker } from "../shared/EntityPicker";
-import { deleteDepartemen, getDepartemenTree } from "../../api/departemen";
+import { deleteDepartment, getDepartmentTree } from "../../api/departemen";
 import { getEntityOptions } from "../../api/entityOptions";
 import {
   collectExpandableIds,
@@ -20,8 +21,6 @@ import {
 
 export function ListStrukturDepartemen() {
   const [pilihanEntity, setPilihanEntity] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<DepartemenNode | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const expansion = useTreeExpansion();
   const { data: entityOptions } = useAsyncData(getEntityOptions);
@@ -34,33 +33,26 @@ export function ListStrukturDepartemen() {
     loading,
     error,
     refresh,
-  } = useAsyncData((signal) => getDepartemenTree(entityId, signal), {
+  } = useAsyncData((signal) => getDepartmentTree(entityId, signal), {
     deps: [entityId],
     enabled: Boolean(entityId),
   });
 
   const roots = nodes ?? [];
 
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-
-    try {
-      await deleteDepartemen(deleteTarget.id);
-      setDeleteTarget(null);
-      refresh();
-    } catch (caught) {
-      // mis. 409 karena masih punya sub-departemen
-      setDeleteError((caught as Error).message);
-      setDeleteTarget(null);
-    }
-  }
+  // Gagal menghapus (mis. 409 karena masih punya sub-departemen) tidak
+  // memuat ulang pohonnya — pesannya muncul di Alert di bawah.
+  const hapus = useDeleteConfirm<DepartemenNode>({
+    onDelete: (node) => deleteDepartment(node.id),
+    onSuccess: refresh,
+  });
 
   return (
     <div className="space-y-5">
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Struktur Departemen" },
         ]}
       />
@@ -70,7 +62,7 @@ export function ListStrukturDepartemen() {
         description="Susunan direktorat, divisi, bagian dan seterusnya di dalam tiap entity"
         action={
           <ButtonLink
-            href={`/organisasi/departemen/create${entityId ? `?entity=${entityId}` : ""}`}
+            href={`/dashboard/organisasi/departemen/create${entityId ? `?entity=${entityId}` : ""}`}
             size="lg"
             icon={Plus}
           >
@@ -94,9 +86,9 @@ export function ListStrukturDepartemen() {
         />
       </TreeToolbar>
 
-      {deleteError && (
-        <Alert tone="error" onDismiss={() => setDeleteError(null)}>
-          {deleteError}
+      {hapus.error && (
+        <Alert tone="error" onDismiss={hapus.dismissError}>
+          {hapus.error}
         </Alert>
       )}
 
@@ -114,22 +106,20 @@ export function ListStrukturDepartemen() {
             node={node}
             depth={0}
             expansion={expansion}
-            onDelete={(target) => {
-              setDeleteError(null);
-              setDeleteTarget(target);
-            }}
+            onDelete={hapus.ask}
           />
         ))}
       </TreeExplorer>
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        open={hapus.target !== null}
+        title={`Hapus ${hapus.target?.nama}?`}
         description="Departemen yang masih punya sub-departemen tidak bisa dihapus — hapus atau pindahkan anaknya dulu."
         confirmLabel="Hapus"
         variant="danger"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        loading={hapus.deleting}
+        onConfirm={hapus.confirm}
+        onCancel={hapus.cancel}
       />
     </div>
   );

@@ -15,7 +15,8 @@ import {
 import { Badge, type BadgeTone } from "@/components/ui";
 import type { MasterItem } from "../../model/masterData";
 import type { Unit } from "../../model/unit";
-import { getJenisDisplay, getKomoditasTone } from "./jenisUnit";
+import { getUnitTypeDisplay, getCommodityTone } from "./jenisUnit";
+import { cn } from "cn";
 
 const col = createDataTableColumnHelper<Unit>();
 
@@ -78,15 +79,21 @@ export function createUnitTableConfig({
         meta: { search: { placeholder: "Cari nama atau kode unit..." } },
         cell: ({ row }) => {
           // Ikon unit mengikuti kategori operasional pertamanya
-          const primary = getJenisDisplay(row.original.jenis[0]);
+          const primary = getUnitTypeDisplay(row.original.jenis[0]);
           const PrimaryIcon = primary.icon;
 
           return (
             <div className="flex items-center gap-3">
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${primary.iconBg}`}
+                className={cn(
+                  // tata letak
+                  "flex h-9 w-9 shrink-0 items-center justify-center",
+                  // tampilan — warnanya mengikuti jenis unit
+                  "rounded-xl",
+                  primary.iconBg,
+                )}
               >
-                <PrimaryIcon className={`h-4 w-4 ${primary.iconColor}`} />
+                <PrimaryIcon className={cn("h-4 w-4", primary.iconColor)} />
               </span>
               <div>
                 <p className="font-medium text-slate-800">{row.original.nama}</p>
@@ -118,7 +125,7 @@ export function createUnitTableConfig({
           <BadgeList
             items={row.original.jenis}
             render={(item) => {
-              const display = getJenisDisplay(item);
+              const display = getUnitTypeDisplay(item);
               return { label: display.label, tone: display.tone };
             }}
           />
@@ -131,7 +138,7 @@ export function createUnitTableConfig({
         cell: ({ row }) => (
           <BadgeList
             items={row.original.komoditas}
-            render={(item) => ({ label: item.nama, tone: getKomoditasTone(item) })}
+            render={(item) => ({ label: item.nama, tone: getCommodityTone(item) })}
           />
         ),
       }),
@@ -143,8 +150,8 @@ export function createUnitTableConfig({
       actionsColumn<Unit>({
         ariaLabel: (row) => `Aksi untuk ${row.nama}`,
         actions: (row) => [
-          { label: "Lihat Detail", icon: Eye, href: `/organisasi/unit/${row.id}` },
-          { label: "Edit", icon: Pencil, href: `/organisasi/unit/${row.id}/edit` },
+          { label: "Lihat Detail", icon: Eye, href: `/dashboard/organisasi/unit/${row.id}` },
+          { label: "Edit", icon: Pencil, href: `/dashboard/organisasi/unit/${row.id}/edit` },
           ...(onDelete
             ? [
                 {

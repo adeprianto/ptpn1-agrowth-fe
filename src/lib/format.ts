@@ -33,7 +33,7 @@ export function formatRupiah(value: number | null | undefined): string {
  * "2026-07-18" -> "18 Juli 2026" (long) / "18 Jul 2026" (short).
  * Diparse manual supaya tanggalnya tidak bergeser karena timezone.
  */
-export function formatTanggal(
+export function formatDate(
   iso: string | null | undefined,
   variant: "long" | "short" = "long",
 ): string {
@@ -47,16 +47,16 @@ export function formatTanggal(
 }
 
 /** "2025-03-01" + "2025-03-05" -> "1 Mar 2025 - 5 Mar 2025" */
-export function formatRentangTanggal(
+export function formatDateRange(
   mulai: string | null | undefined,
   selesai: string | null | undefined,
 ): string {
   if (!mulai && !selesai) return "-";
-  return `${formatTanggal(mulai, "short")} - ${formatTanggal(selesai, "short")}`;
+  return `${formatDate(mulai, "short")} - ${formatDate(selesai, "short")}`;
 }
 
 /** Selisih dari tanggal ISO sampai hari ini, mis. "29 Thn 8 Bln" */
-export function formatMasaKerja(iso: string | null | undefined): string {
+export function formatWorkingPeriod(iso: string | null | undefined): string {
   if (!iso) return "-";
 
   const [year, month, day] = iso.split("-").map(Number);

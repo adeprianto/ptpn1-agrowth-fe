@@ -14,6 +14,7 @@ import {
   competencyLevelValue,
   type CompetencyRow,
 } from "./pegawaiDetailDummyData";
+import { cn } from "cn";
 
 interface ProfilKompetensiCardProps {
   standarJabatan: string;
@@ -77,7 +78,7 @@ function CompetencyTooltip({
             {data.levelDibutuhkan}
           </span>
         </p>
-        <p className={`font-semibold ${selisihColor}`}>
+        <p className={cn("font-semibold", selisihColor)}>
           Selisih: {selisihLabel}
         </p>
       </div>

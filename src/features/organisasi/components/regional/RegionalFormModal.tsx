@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Alert, Button, Field, Input, Modal, ModalActions } from "@/components/ui";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { requireText } from "@/lib/validation";
 import type { RegionalInput } from "../../model/regional";
 
 export type RegionalFormValues = RegionalInput;
@@ -35,8 +36,8 @@ export function RegionalFormModal({
   const { submit, saving, errors, formError } = useFormSubmit<RegionalFormValues>({
     fieldMap: FIELD_MAP,
     validate: (form) => ({
-      nama: form.nama.trim() ? undefined : "Nama Regional wajib diisi",
-      kode: form.kode.trim() ? undefined : "Kode Regional wajib diisi",
+      nama: requireText(form.nama, "Nama Regional"),
+      kode: requireText(form.kode, "Kode Regional"),
     }),
     onSubmit,
   });

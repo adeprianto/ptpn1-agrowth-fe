@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { MoreVertical, type LucideIcon } from "lucide-react";
+import { cn } from "cn";
 
 export interface RowAction {
   label: string;
@@ -86,8 +87,12 @@ export function RowActionMenu({ actions, label = "Aksi" }: RowActionMenuProps) {
           : rect.bottom + 4;
 
       setPosition({
-        top,
-        left: Math.max(8, rect.right - MENU_WIDTH),
+        // dijaga tetap di dalam layar; di ponsel tombolnya sering rapat ke tepi
+        top: Math.max(8, top),
+        left: Math.min(
+          Math.max(8, rect.right - MENU_WIDTH),
+          window.innerWidth - MENU_WIDTH - 8,
+        ),
       });
     }
 
@@ -95,11 +100,19 @@ export function RowActionMenu({ actions, label = "Aksi" }: RowActionMenuProps) {
   }
 
   const itemClass = (action: RowAction) =>
-    `flex w-full items-center gap-2 px-3 py-2 text-left text-sm ${
+    cn(
+      // tata letak
+      "flex w-full items-center gap-2",
+      // tampilan
+      "px-3 py-2",
+      // teks
+      "text-left text-sm",
+      // keadaan
       action.variant === "danger"
         ? "text-rose-600 hover:bg-rose-50"
-        : "text-slate-600 hover:bg-slate-50"
-    } ${action.disabled ? "cursor-not-allowed opacity-50" : ""}`;
+        : "text-slate-600 hover:bg-slate-50",
+      action.disabled && "cursor-not-allowed opacity-50",
+    );
 
   return (
     <>
@@ -110,9 +123,16 @@ export function RowActionMenu({ actions, label = "Aksi" }: RowActionMenuProps) {
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={label}
-        className={`flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 ${
-          open ? "bg-slate-100 text-slate-600" : ""
-        }`}
+        className={cn(
+          // tata letak
+          "flex h-9 w-9 items-center justify-center",
+          // tampilan
+          "rounded-lg text-slate-400",
+          // interaksi
+          "hover:bg-slate-100 hover:text-slate-600",
+          // keadaan
+          open && "bg-slate-100 text-slate-600",
+        )}
       >
         <MoreVertical className="h-4 w-4" />
       </button>

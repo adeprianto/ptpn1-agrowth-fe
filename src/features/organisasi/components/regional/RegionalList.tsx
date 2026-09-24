@@ -8,6 +8,7 @@ import { SummaryStatCard } from "@/components/shared/SummaryStatCard";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { filterText, useServerDataTable } from "@/components/shared/data-table";
 import { Alert, Button } from "@/components/ui";
+import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useAuth } from "@/hooks/useAuth";
 import { formatNumber } from "@/lib/format";
@@ -31,8 +32,6 @@ export function RegionalList() {
   const [formOpen, setFormOpen] = useState(false);
   // dipakai sebagai `key` modal supaya isian form fresh tiap dibuka
   const [formKey, setFormKey] = useState(0);
-  const [deleteTarget, setDeleteTarget] = useState<Regional | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   // dinaikkan tiap selesai simpan/hapus supaya ringkasan ikut diambil ulang
   const [dataVersion, setDataVersion] = useState(0);
 
@@ -64,11 +63,6 @@ export function RegionalList() {
     setFormKey((key) => key + 1);
   }, []);
 
-  const askDelete = useCallback((row: Regional) => {
-    setDeleteError(null);
-    setDeleteTarget(row);
-  }, []);
-
   // Error dibiarkan naik ke modal supaya pesan validasi tampil di field-nya
   async function handleFormSubmit(values: RegionalFormValues) {
     if (editing) {
@@ -81,26 +75,19 @@ export function RegionalList() {
     reloadAll();
   }
 
-  async function handleConfirmDelete() {
-    if (!deleteTarget) return;
-
-    try {
-      await deleteRegional(deleteTarget.id);
-      setDeleteTarget(null);
-      reloadAll();
-    } catch (caught) {
-      // mis. 409 karena masih punya unit atau pegawai
-      setDeleteError((caught as Error).message);
-      setDeleteTarget(null);
-    }
-  }
+  // Gagal menghapus (mis. 409 karena masih punya unit atau pegawai) tidak
+  // menyegarkan tabel maupun ringkasan — pesannya muncul di Alert di bawah.
+  const hapus = useDeleteConfirm<Regional>({
+    onDelete: (row) => deleteRegional(row.id),
+    onSuccess: reloadAll,
+  });
 
   return (
     <div className="space-y-4">
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Regional" },
         ]}
       />
@@ -137,9 +124,9 @@ export function RegionalList() {
 
       {error && <Alert tone="error">Gagal memuat data regional: {error}</Alert>}
 
-      {deleteError && (
-        <Alert tone="error" onDismiss={() => setDeleteError(null)}>
-          {deleteError}
+      {hapus.error && (
+        <Alert tone="error" onDismiss={hapus.dismissError}>
+          {hapus.error}
         </Alert>
       )}
 
@@ -150,7 +137,7 @@ export function RegionalList() {
         loading={loading}
         startIndex={startIndex}
         onEdit={canManage ? openForm : undefined}
-        onDelete={canManage ? askDelete : undefined}
+        onDelete={canManage ? hapus.ask : undefined}
       />
 
       <RegionalFormModal
@@ -165,13 +152,14 @@ export function RegionalList() {
       />
 
       <ConfirmDialog
-        open={deleteTarget !== null}
-        title={`Hapus ${deleteTarget?.nama}?`}
+        open={hapus.target !== null}
+        title={`Hapus ${hapus.target?.nama}?`}
         description="Regional hanya bisa dihapus kalau sudah tidak punya unit, pegawai, maupun user."
         confirmLabel="Hapus"
         variant="danger"
-        onConfirm={handleConfirmDelete}
-        onCancel={() => setDeleteTarget(null)}
+        loading={hapus.deleting}
+        onConfirm={hapus.confirm}
+        onCancel={hapus.cancel}
       />
     </div>
   );

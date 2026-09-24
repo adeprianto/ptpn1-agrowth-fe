@@ -14,6 +14,7 @@ import {
   type FilterFn,
   type RowData,
 } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import type { FilterOption } from "./ColumnHeader";
 
 /** Perataan isi kolom. Dipakai header dan sel sekaligus supaya selalu sejajar. */
@@ -72,6 +73,11 @@ export interface DataTableColumnMeta {
   nowrap?: boolean;
   headerClassName?: string;
   cellClassName?: string;
+  /**
+   * Isi judul kolom selain teks, mis. checkbox "pilih semua" milik
+   * `selectColumn`. Kalau diisi, judul kolom tidak bisa di-sort/difilter.
+   */
+  headerContent?: ReactNode;
 }
 
 /**

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormPageLayout } from "@/components/shared/FormPageLayout";
 import { Field, Input, Select } from "@/components/ui";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { requireText, requireSelection } from "@/lib/validation";
 import {
   jobFamilies,
   strukturDepartemen,
@@ -62,39 +64,52 @@ export function MasterJabatanForm({
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function handleSubmit() {
-    // DUMMY — master jabatan belum punya endpoint.
-    // TODO: POST/PUT /api/v1/master/jabatan
-    router.push("/organisasi/jabatan");
-  }
+  const { submit, saving, errors, formError } = useFormSubmit<JabatanFormValues>({
+    validate: (form) => ({
+      code: requireText(form.code, "Code"),
+      level: requireSelection(form.level, "Level"),
+      namaJabatanLengkap: requireText(form.namaJabatanLengkap, "Nama Jabatan Lengkap"),
+      jobFamilyCode: requireSelection(form.jobFamilyCode, "Job Family"),
+      organisasiCode: requireSelection(form.organisasiCode, "Organisasi"),
+    }),
+    onSubmit: async () => {
+      // DUMMY — master jabatan belum punya endpoint.
+      // TODO: POST/PUT /api/v1/master/jabatan
+      router.push("/dashboard/organisasi/jabatan");
+    },
+  });
 
   return (
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Master Jabatan", href: "/organisasi/jabatan" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Master Jabatan", href: "/dashboard/organisasi/jabatan" },
         { label: mode === "create" ? "Tambah Jabatan" : "Edit Jabatan" },
       ]}
       title={mode === "create" ? "Tambah Jabatan Baru" : "Edit Jabatan"}
       description="Lengkapi kode, level, Job Family, dan posisi di struktur organisasi"
-      backHref="/organisasi/jabatan"
+      backHref="/dashboard/organisasi/jabatan"
+      error={formError}
+      saving={saving}
       submitLabel={mode === "create" ? "Simpan Jabatan" : "Simpan Perubahan"}
-      onSubmit={handleSubmit}
+      onSubmit={() => submit(values)}
     >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-        <Field label="Code" required>
+        <Field label="Code" required error={errors.code}>
           <Input
-            required
+            invalid={Boolean(errors.code)}
+            disabled={saving}
             value={values.code}
             placeholder="Cth. JAB-007"
             onChange={(event) => handleChange("code", event.target.value)}
           />
         </Field>
 
-        <Field label="Level" required>
+        <Field label="Level" required error={errors.level}>
           <Select
-            required
+            invalid={Boolean(errors.level)}
+            disabled={saving}
             value={values.level}
             placeholder="Pilih..."
             options={LEVEL_OPTIONS}
@@ -103,9 +118,10 @@ export function MasterJabatanForm({
         </Field>
       </div>
 
-      <Field label="Nama Jabatan Lengkap" required>
+      <Field label="Nama Jabatan Lengkap" required error={errors.namaJabatanLengkap}>
         <Input
-          required
+          invalid={Boolean(errors.namaJabatanLengkap)}
+          disabled={saving}
           value={values.namaJabatanLengkap}
           placeholder="Cth. Kepala Divisi Pengembangan SDM"
           onChange={(event) =>
@@ -114,9 +130,10 @@ export function MasterJabatanForm({
         />
       </Field>
 
-      <Field label="Job Family" required>
+      <Field label="Job Family" required error={errors.jobFamilyCode}>
         <Select
-          required
+          invalid={Boolean(errors.jobFamilyCode)}
+          disabled={saving}
           value={values.jobFamilyCode}
           placeholder="Pilih..."
           options={jobFamilies.map((family) => ({
@@ -130,10 +147,12 @@ export function MasterJabatanForm({
       <Field
         label="Organisasi"
         required
+        error={errors.organisasiCode}
         hint="Job Function otomatis ikut dari sini — jabatan ditempatkan di salah satu departemen di struktur organisasi."
       >
         <Select
-          required
+          invalid={Boolean(errors.organisasiCode)}
+          disabled={saving}
           value={values.organisasiCode}
           placeholder="Pilih..."
           onChange={(event) => handleChange("organisasiCode", event.target.value)}
@@ -162,7 +181,7 @@ export function MasterJabatanForm({
   );
 }
 
-export function jabatanRowToFormValues(row: JabatanMasterRow): JabatanFormValues {
+export function positionRowToFormValues(row: JabatanMasterRow): JabatanFormValues {
   return {
     code: row.code,
     namaJabatanLengkap: row.namaJabatanLengkap,

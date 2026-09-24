@@ -13,7 +13,7 @@ import { capaian, isOverTarget } from "./overTarget";
 
 const COLORS = { target: "#FCB6B0", realisasi: "#5D1E2E" };
 
-const formatJam = (value: number) => `${formatNumber(value)} Jam`;
+const formatHours = (value: number) => `${formatNumber(value)} Jam`;
 
 function TrainingHourSummary() {
   const target = data.reduce((sum, row) => sum + row.target, 0);
@@ -28,24 +28,24 @@ function TrainingHourSummary() {
       title="Total Konsolidasi Jam"
       caption={`Seluruh ${data.length} entity (HO & regional)`}
       headline={formatNumber(realisasi)}
-      headlineUnit={`/ ${formatJam(target)}`}
+      headlineUnit={`/ ${formatHours(target)}`}
       progress={{
         percent: persen,
         label: `${formatPercent(persen)} target tercapai`,
         over,
       }}
       rows={[
-        { name: "Target", color: COLORS.target, value: formatJam(target) },
+        { name: "Target", color: COLORS.target, value: formatHours(target) },
         {
           name: "Realisasi",
           color: COLORS.realisasi,
-          value: formatJam(realisasi),
+          value: formatHours(realisasi),
           over,
         },
         {
           name: gap > 0 ? "Gap ke target" : "Lebih dari target",
           color: "#cbd5e1",
-          value: formatJam(Math.abs(gap)),
+          value: formatHours(Math.abs(gap)),
         },
       ]}
     />
@@ -59,7 +59,7 @@ export function TrainingHourChart() {
       categoryKey="regional"
       formatTick={formatEntityShort}
       formatName={formatEntityName}
-      formatValue={formatJam}
+      formatValue={formatHours}
       colors={COLORS}
       subject="target jam"
       side={<TrainingHourSummary />}

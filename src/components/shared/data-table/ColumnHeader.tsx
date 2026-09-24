@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ArrowUpDown, Filter } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export type SortDirection = "asc" | "desc";
 
@@ -89,7 +89,13 @@ export function ColumnHeader<K extends string>({
             onClick={cycleSort}
             aria-label={`Urutkan berdasarkan ${label}`}
             className={cn(
-              "group flex items-center gap-1 whitespace-nowrap uppercase tracking-wide hover:text-slate-600",
+              // tata letak
+              "group flex items-center gap-1",
+              // teks
+              "whitespace-nowrap uppercase tracking-wide",
+              // interaksi
+              "hover:text-slate-600",
+              // keadaan
               activeDirection && "text-slate-700",
             )}
           >
@@ -114,7 +120,11 @@ export function ColumnHeader<K extends string>({
             aria-label={`Filter ${label}`}
             aria-haspopup="dialog"
             className={cn(
-              "flex h-5 w-5 shrink-0 items-center justify-center rounded",
+              // tata letak
+              "flex h-5 w-5 shrink-0 items-center justify-center",
+              // tampilan
+              "rounded",
+              // keadaan
               filterActive
                 ? "bg-emerald-100 text-emerald-700"
                 : "text-slate-300 hover:bg-slate-100 hover:text-slate-500",

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 interface EmptyStateProps {
   icon?: LucideIcon;
@@ -25,7 +25,12 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-2 px-6 py-12 text-center",
+        // tata letak
+        "flex flex-col items-center justify-center gap-2",
+        // jarak
+        "px-6 py-12",
+        // teks
+        "text-center",
         className,
       )}
     >

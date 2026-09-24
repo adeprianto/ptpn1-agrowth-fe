@@ -92,7 +92,7 @@ export function toUnitPayload(input: UnitInput): UnitPayload {
 }
 
 /** Daftar nama komoditas unit sebagai satu baris teks. */
-export function komoditasLabel(unit: Unit): string {
+export function commodityLabel(unit: Unit): string {
   return unit.komoditas.length > 0
     ? unit.komoditas.map((item) => item.nama).join(", ")
     : "-";

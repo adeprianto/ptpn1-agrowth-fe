@@ -55,6 +55,76 @@ export function rowNumberColumn<TRow extends RowData>(
   });
 }
 
+interface SelectColumnOptions<TRow> {
+  /** Apakah baris ini sedang dicentang */
+  isSelected: (row: TRow) => boolean;
+  /** Dipanggil saat centang satu baris diubah */
+  onToggle: (row: TRow, checked: boolean) => void;
+  /** Centang di judul kolom menyala kalau semua baris di halaman ini terpilih */
+  allSelected: boolean;
+  /** Dipanggil saat centang di judul kolom diubah: pilih/lepas semua baris di halaman ini */
+  onToggleAll: (checked: boolean) => void;
+  /** Dibacakan pembaca layar, mis. `(row) => "Pilih " + row.nama` */
+  ariaLabel?: (row: TRow) => string;
+  disabled?: boolean;
+}
+
+const checkboxClass = "h-4 w-4 cursor-pointer rounded accent-emerald-600 disabled:cursor-not-allowed";
+
+/**
+ * Kolom checkbox di ujung kiri tabel untuk memilih baris (check/uncheck).
+ *
+ * Kolom ini tidak menyimpan pilihan sendiri — daftar yang terpilih dipegang
+ * komponen pemakainya, jadi pilihan tetap utuh saat pindah halaman tabel.
+ *
+ * @example
+ * selectColumn<Pegawai>({
+ *   isSelected: (row) => terpilih.has(row.id),
+ *   onToggle: (row, checked) => ubahPilihan(row, checked),
+ *   allSelected: rows.every((row) => terpilih.has(row.id)),
+ *   onToggleAll: (checked) => ubahPilihanHalamanIni(checked),
+ * })
+ */
+export function selectColumn<TRow extends RowData>({
+  isSelected,
+  onToggle,
+  allSelected,
+  onToggleAll,
+  ariaLabel,
+  disabled = false,
+}: SelectColumnOptions<TRow>): DataTableColumnDef<TRow> {
+  const col = createDataTableColumnHelper<TRow>();
+
+  return col.display({
+    id: "__select",
+    header: "Pilih",
+    enableSorting: false,
+    meta: {
+      width: "w-12",
+      headerContent: (
+        <input
+          type="checkbox"
+          aria-label="Pilih semua baris di halaman ini"
+          className={checkboxClass}
+          checked={allSelected}
+          disabled={disabled}
+          onChange={(event) => onToggleAll(event.target.checked)}
+        />
+      ),
+    },
+    cell: ({ row }) => (
+      <input
+        type="checkbox"
+        aria-label={ariaLabel?.(row.original) ?? "Pilih baris"}
+        className={checkboxClass}
+        checked={isSelected(row.original)}
+        disabled={disabled}
+        onChange={(event) => onToggle(row.original, event.target.checked)}
+      />
+    ),
+  });
+}
+
 interface ActionsColumnOptions<TRow> {
   /** Aksi per baris; kembalikan array kosong untuk menyembunyikan menu */
   actions: (row: TRow) => RowAction[];
@@ -70,7 +140,7 @@ interface ActionsColumnOptions<TRow> {
  * actionsColumn<Unit>({
  *   ariaLabel: (unit) => `Aksi untuk ${unit.nama}`,
  *   actions: (unit) => [
- *     { label: "Lihat Detail", icon: Eye, href: `/organisasi/unit/${unit.id}` },
+ *     { label: "Lihat Detail", icon: Eye, href: `/dashboard/organisasi/unit/${unit.id}` },
  *     { label: "Hapus", icon: Trash2, variant: "danger", onClick: () => onDelete(unit) },
  *   ],
  * })
@@ -100,6 +170,9 @@ export function actionsColumn<TRow extends RowData>({
   });
 }
 
+/** Warna & bentuk angka di kolom angka/uang; pakai juga untuk kolom angka buatan sendiri. */
+export const NUMBER_CELL_CLASS = "text-slate-600 tabular-nums";
+
 interface NumberColumnOptions<TRow> {
   id: string;
   header: string;
@@ -123,7 +196,9 @@ export function numberColumn<TRow extends RowData>({
     id,
     header,
     sortFn: "basic",
-    meta: { align: "right", nowrap: true, ...meta },
+    // angka sedikit lebih lembut dari teks utama dan lebar digitnya seragam
+    // (tabular-nums) supaya mudah dibandingkan antar baris
+    meta: { align: "right", nowrap: true, cellClassName: NUMBER_CELL_CLASS, ...meta },
     cell: ({ getValue }) => {
       const text = formatNumber(getValue() as number);
       return suffix ? `${text} ${suffix}` : text;

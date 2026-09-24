@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "cn";
 import { DEFAULT_PAGE_SIZE_OPTIONS } from "./useDataTableState";
 
 /**
@@ -67,7 +68,13 @@ export function DataTablePagination({
 
   return (
     <div
-      className={`flex flex-col items-center justify-between gap-3 sm:flex-row ${className}`}
+      className={cn(
+        // ponsel — ditumpuk
+        "flex flex-col items-center justify-between gap-3",
+        // sm ke atas — berjajar
+        "sm:flex-row",
+        className,
+      )}
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
         <label className="flex items-center gap-2">
@@ -120,11 +127,20 @@ export function DataTablePagination({
                 type="button"
                 onClick={() => onPageIndexChange(page - 1)}
                 aria-current={page === currentPage ? "page" : undefined}
-                className={`flex h-9 min-w-9 items-center justify-center rounded-lg border border-slate-300 px-2 text-sm font-medium transition-colors ${
+                className={cn(
+                  // tata letak
+                  "flex h-9 min-w-9 items-center justify-center",
+                  // tampilan
+                  "rounded-lg border border-slate-300 px-2",
+                  // teks
+                  "text-sm font-medium",
+                  // gerak
+                  "transition-colors",
+                  // keadaan
                   page === currentPage
                     ? "bg-emerald-600 text-white"
-                    : "text-slate-500 hover:bg-slate-100"
-                }`}
+                    : "text-slate-500 hover:bg-slate-100",
+                )}
               >
                 {page.toLocaleString("id-ID")}
               </button>

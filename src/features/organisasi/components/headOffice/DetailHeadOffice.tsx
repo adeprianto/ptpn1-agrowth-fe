@@ -20,7 +20,7 @@ export function DetailHeadOffice() {
       <DetailPageState
         query={query}
         resource="Head Office"
-        backHref="/organisasi"
+        backHref="/dashboard/organisasi"
         backLabel="Kembali ke Organisasi"
       />
     );
@@ -31,7 +31,7 @@ export function DetailHeadOffice() {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Organisasi", href: "/organisasi" },
+          { label: "Organisasi", href: "/dashboard/organisasi" },
           { label: "Head Office" },
         ]}
       />

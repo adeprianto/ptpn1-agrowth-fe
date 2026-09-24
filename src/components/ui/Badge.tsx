@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export type BadgeTone = "slate" | "emerald" | "amber" | "blue" | "rose" | "violet";
 
@@ -55,7 +55,13 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium",
+        // tata letak
+        "inline-flex shrink-0 items-center",
+        // tampilan
+        "rounded-full px-3 py-1",
+        // teks
+        "whitespace-nowrap text-xs font-medium",
+        // warna mengikuti tone + variant
         toneClass[variant][tone],
         className,
       )}

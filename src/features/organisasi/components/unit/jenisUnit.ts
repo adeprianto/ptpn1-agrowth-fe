@@ -37,7 +37,7 @@ const DEFAULT_CONFIG: JenisConfig = {
 };
 
 /** Ikon, warna, dan label tampilan untuk satu kategori operasional. */
-export function getJenisDisplay(jenis?: MasterItem | null) {
+export function getUnitTypeDisplay(jenis?: MasterItem | null) {
   const config = (jenis && JENIS_CONFIG[jenis.kode]) || DEFAULT_CONFIG;
   return { ...config, label: config.label ?? jenis?.nama ?? "-" };
 }
@@ -55,6 +55,6 @@ const KOMODITAS_TONE: Record<string, BadgeTone> = {
 };
 
 /** Warna badge untuk satu komoditas. */
-export function getKomoditasTone(komoditas: MasterItem): BadgeTone {
+export function getCommodityTone(komoditas: MasterItem): BadgeTone {
   return KOMODITAS_TONE[komoditas.kode] ?? "slate";
 }

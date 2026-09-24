@@ -1,4 +1,4 @@
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 const sizeClass = {
   sm: "h-4 w-4 border-2",
@@ -20,7 +20,13 @@ export function Spinner({ size = "md", className, label = "Memuat" }: SpinnerPro
       role="status"
       aria-label={label}
       className={cn(
-        "inline-block animate-spin rounded-full border-current border-t-transparent text-emerald-600",
+        // tata letak
+        "inline-block",
+        // tampilan
+        "rounded-full border-current border-t-transparent text-emerald-600",
+        // gerak
+        "animate-spin",
+        // tebal garis + diameter, lihat sizeClass
         sizeClass[size],
         className,
       )}

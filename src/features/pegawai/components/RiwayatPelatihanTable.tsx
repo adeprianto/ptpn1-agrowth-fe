@@ -8,7 +8,7 @@ import {
   type TableConfig,
 } from "@/components/shared/data-table";
 import { Badge, Card, type BadgeTone } from "@/components/ui";
-import { formatTanggal, orDash } from "@/lib/format";
+import { formatDate, orDash } from "@/lib/format";
 import type { RiwayatPelatihan } from "../model/pegawai";
 
 const col = createDataTableColumnHelper<RiwayatPelatihan>();
@@ -18,7 +18,7 @@ const STATUS_TONE: Record<RiwayatPelatihan["status"], BadgeTone> = {
   Selesai: "emerald",
 };
 
-export function createRiwayatPelatihanTableConfig(): TableConfig<RiwayatPelatihan> {
+export function createTrainingHistoryTableConfig(): TableConfig<RiwayatPelatihan> {
   return defineTableConfig<RiwayatPelatihan>({
     getRowId: (row) => row.id,
     density: "compact",
@@ -39,7 +39,7 @@ export function createRiwayatPelatihanTableConfig(): TableConfig<RiwayatPelatiha
       col.accessor("tanggalMulai", {
         header: "Tanggal",
         meta: { nowrap: true, cellClassName: "text-slate-500" },
-        cell: ({ getValue }) => formatTanggal(getValue(), "short"),
+        cell: ({ getValue }) => formatDate(getValue(), "short"),
       }),
       col.accessor("jam", {
         header: "Durasi",
@@ -63,7 +63,7 @@ interface RiwayatPelatihanTableProps {
 }
 
 export function RiwayatPelatihanTable({ rows }: RiwayatPelatihanTableProps) {
-  const config = useMemo(() => createRiwayatPelatihanTableConfig(), []);
+  const config = useMemo(() => createTrainingHistoryTableConfig(), []);
 
   return (
     <Card>

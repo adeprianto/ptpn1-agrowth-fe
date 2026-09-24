@@ -13,6 +13,8 @@ import {
   Textarea,
   type SelectOption,
 } from "@/components/ui";
+import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { mustBeNumeric, notBefore, requireText, requireSelection } from "@/lib/validation";
 import {
   PenempatanJabatanSection,
   type PenempatanJabatanValue,
@@ -50,20 +52,80 @@ const GOLONGAN_PHDP_OPTIONS = toOptions([
   "III/A",
 ]);
 
+/** Isian form tambah pegawai; penempatan & jabatan ikut di dalamnya. */
+interface PegawaiFormValues extends PenempatanJabatanValue {
+  nama: string;
+  nik: string;
+  jenisKelamin: string;
+  tempatLahir: string;
+  tanggalLahir: string;
+  pendidikan: string;
+  telepon: string;
+  alamat: string;
+  tanggalMasuk: string;
+  statusKepegawaian: string;
+  employeeGroup: string;
+  employeeSubgroup: string;
+  statusKso: string;
+  personGrade: string;
+  golonganPhdp: string;
+}
+
+const emptyForm: PegawaiFormValues = {
+  nama: "",
+  nik: "",
+  jenisKelamin: "",
+  tempatLahir: "",
+  tanggalLahir: "",
+  pendidikan: "",
+  telepon: "",
+  alamat: "",
+  levelPenempatan: "HO",
+  regionalId: "",
+  unitId: "",
+  jabatanId: "",
+  tanggalMasuk: "",
+  statusKepegawaian: "",
+  employeeGroup: "",
+  employeeSubgroup: "",
+  statusKso: "",
+  personGrade: "",
+  golonganPhdp: "",
+};
+
 export function TambahPegawaiForm() {
   const router = useRouter();
+  const [values, setValues] = useState<PegawaiFormValues>(emptyForm);
 
-  const [penempatan, setPenempatan] = useState<PenempatanJabatanValue>({
-    levelPenempatan: "HO",
-    regionalId: "",
-    unitId: "",
-    jabatanId: "",
+  const { submit, saving, errors, formError } = useFormSubmit<PegawaiFormValues>({
+    validate: (form) => ({
+      nama: requireText(form.nama, "Nama Lengkap"),
+      nik: requireText(form.nik, "NIK") ?? mustBeNumeric(form.nik, "NIK"),
+      jenisKelamin: requireSelection(form.jenisKelamin, "Jenis Kelamin"),
+      tanggalLahir: requireText(form.tanggalLahir, "Tanggal Lahir"),
+      pendidikan: requireSelection(form.pendidikan, "Pendidikan Terakhir"),
+      // regional & unit hanya ditanyakan untuk level penempatan yang memakainya
+      regionalId:
+        form.levelPenempatan !== "HO" ? requireSelection(form.regionalId, "Regional") : undefined,
+      unitId: form.levelPenempatan === "Unit" ? requireSelection(form.unitId, "Unit") : undefined,
+      jabatanId: requireSelection(form.jabatanId, "Posisi Jabatan"),
+      tanggalMasuk:
+        requireText(form.tanggalMasuk, "Tanggal Masuk") ??
+        notBefore(form.tanggalMasuk, "Tanggal Masuk", form.tanggalLahir, "Tanggal Lahir"),
+      statusKepegawaian: requireSelection(form.statusKepegawaian, "Status Kepegawaian"),
+      employeeGroup: requireSelection(form.employeeGroup, "Employee Group"),
+      employeeSubgroup: requireSelection(form.employeeSubgroup, "Employee Sub Group"),
+      statusKso: requireSelection(form.statusKso, "Status KSO"),
+    }),
+    onSubmit: async () => {
+      // DUMMY — endpoint tambah pegawai belum tersedia.
+      // TODO: POST /api/v1/employees
+      router.push("/dashboard/pegawai");
+    },
   });
 
-  function handleSubmit() {
-    // DUMMY — endpoint tambah pegawai belum tersedia.
-    // TODO: POST /api/v1/employees
-    router.push("/pegawai");
+  function setField<K extends keyof PegawaiFormValues>(key: K, value: PegawaiFormValues[K]) {
+    setValues((prev) => ({ ...prev, [key]: value }));
   }
 
   return (
@@ -71,131 +133,181 @@ export function TambahPegawaiForm() {
       variant="plain"
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Data Pegawai", href: "/pegawai" },
+        { label: "Data Pegawai", href: "/dashboard/pegawai" },
         { label: "Tambah Pegawai" },
       ]}
       title="Tambah Pegawai Baru"
       description="Lengkapi Identitas dan Kepegawaian"
-      backHref="/pegawai"
+      backHref="/dashboard/pegawai"
+      error={formError}
+      saving={saving}
       submitLabel="Simpan Pegawai"
-      onSubmit={handleSubmit}
+      onSubmit={() => submit(values)}
     >
-      <Card className="p-6">
+      <Card padding="roomy">
         <CardHeader title="Informasi Pribadi" />
 
         <div className="mt-5 space-y-5">
-          <Field label="Nama Lengkap" required>
-            <Input required placeholder="Cth. Slamet Riyadi" />
+          <Field label="Nama Lengkap" required error={errors.nama}>
+            <Input
+              value={values.nama}
+              invalid={Boolean(errors.nama)}
+              placeholder="Cth. Slamet Riyadi"
+              onChange={(event) => setField("nama", event.target.value)}
+            />
           </Field>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <Field label="NIK" required>
-              <Input required placeholder="Cth. 1000234" />
+            <Field label="NIK" required error={errors.nik}>
+              <Input
+                value={values.nik}
+                invalid={Boolean(errors.nik)}
+                inputMode="numeric"
+                placeholder="Cth. 1000234"
+                onChange={(event) => setField("nik", event.target.value)}
+              />
             </Field>
 
-            <Field label="Jenis Kelamin" required>
+            <Field label="Jenis Kelamin" required error={errors.jenisKelamin}>
               <Select
-                required
-                defaultValue=""
+                value={values.jenisKelamin}
+                invalid={Boolean(errors.jenisKelamin)}
                 placeholder="Pilih..."
                 options={JENIS_KELAMIN_OPTIONS}
+                onChange={(event) => setField("jenisKelamin", event.target.value)}
               />
             </Field>
 
             <Field label="Tempat Lahir">
-              <Input placeholder="Cth. Sumedang" />
+              <Input
+                value={values.tempatLahir}
+                placeholder="Cth. Sumedang"
+                onChange={(event) => setField("tempatLahir", event.target.value)}
+              />
             </Field>
 
-            <Field label="Tanggal Lahir" required>
-              <Input type="date" required />
+            <Field label="Tanggal Lahir" required error={errors.tanggalLahir}>
+              <Input
+                type="date"
+                value={values.tanggalLahir}
+                invalid={Boolean(errors.tanggalLahir)}
+                onChange={(event) => setField("tanggalLahir", event.target.value)}
+              />
             </Field>
 
-            <Field label="Pendidikan Terakhir" required>
+            <Field label="Pendidikan Terakhir" required error={errors.pendidikan}>
               <Select
-                required
-                defaultValue=""
+                value={values.pendidikan}
+                invalid={Boolean(errors.pendidikan)}
                 placeholder="Pilih..."
                 options={PENDIDIKAN_OPTIONS}
+                onChange={(event) => setField("pendidikan", event.target.value)}
               />
             </Field>
 
             <Field label="Nomor Telpon">
-              <Input placeholder="0812-xxxx-xxxx" />
+              <Input
+                value={values.telepon}
+                placeholder="0812-xxxx-xxxx"
+                onChange={(event) => setField("telepon", event.target.value)}
+              />
             </Field>
           </div>
 
           <Field label="Alamat">
-            <Textarea placeholder="Alamat lengkap sesuai KTP" />
-          </Field>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <CardHeader title="Penempatan & Jabatan" />
-
-        <div className="mt-5">
-          <PenempatanJabatanSection value={penempatan} onChange={setPenempatan} />
-        </div>
-
-        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Tanggal Masuk" required>
-            <Input type="date" required />
-          </Field>
-
-          <Field label="Status Kepegawaian" required>
-            <Select
-              required
-              defaultValue=""
-              placeholder="Pilih..."
-              options={STATUS_KEPEGAWAIAN_OPTIONS}
+            <Textarea
+              value={values.alamat}
+              placeholder="Alamat lengkap sesuai KTP"
+              onChange={(event) => setField("alamat", event.target.value)}
             />
           </Field>
         </div>
       </Card>
 
-      <Card className="p-6">
+      <Card padding="roomy">
+        <CardHeader title="Penempatan & Jabatan" />
+
+        <div className="mt-5">
+          <PenempatanJabatanSection
+            value={values}
+            errors={errors}
+            onChange={(penempatan) => setValues((prev) => ({ ...prev, ...penempatan }))}
+          />
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <Field label="Tanggal Masuk" required error={errors.tanggalMasuk}>
+            <Input
+              type="date"
+              value={values.tanggalMasuk}
+              invalid={Boolean(errors.tanggalMasuk)}
+              onChange={(event) => setField("tanggalMasuk", event.target.value)}
+            />
+          </Field>
+
+          <Field label="Status Kepegawaian" required error={errors.statusKepegawaian}>
+            <Select
+              value={values.statusKepegawaian}
+              invalid={Boolean(errors.statusKepegawaian)}
+              placeholder="Pilih..."
+              options={STATUS_KEPEGAWAIAN_OPTIONS}
+              onChange={(event) => setField("statusKepegawaian", event.target.value)}
+            />
+          </Field>
+        </div>
+      </Card>
+
+      <Card padding="roomy">
         <CardHeader
           title="Data Kepegawaian"
           description="Mengikuti struktur administrasi personalia yang berjalan"
         />
 
         <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <Field label="Employee Group" required>
+          <Field label="Employee Group" required error={errors.employeeGroup}>
             <Select
-              required
-              defaultValue=""
+              value={values.employeeGroup}
+              invalid={Boolean(errors.employeeGroup)}
               placeholder="Pilih..."
               options={EMPLOYEE_GROUP_OPTIONS}
+              onChange={(event) => setField("employeeGroup", event.target.value)}
             />
           </Field>
 
-          <Field label="Employee Sub Group" required>
+          <Field label="Employee Sub Group" required error={errors.employeeSubgroup}>
             <Select
-              required
-              defaultValue=""
+              value={values.employeeSubgroup}
+              invalid={Boolean(errors.employeeSubgroup)}
               placeholder="Pilih..."
               options={EMPLOYEE_SUBGROUP_OPTIONS}
+              onChange={(event) => setField("employeeSubgroup", event.target.value)}
             />
           </Field>
 
-          <Field label="Status KSO" required>
+          <Field label="Status KSO" required error={errors.statusKso}>
             <Select
-              required
-              defaultValue=""
+              value={values.statusKso}
+              invalid={Boolean(errors.statusKso)}
               placeholder="Pilih..."
               options={STATUS_KSO_OPTIONS}
+              onChange={(event) => setField("statusKso", event.target.value)}
             />
           </Field>
 
           <Field label="Person Grade">
-            <Input placeholder="Cth. Grade 7" />
+            <Input
+              value={values.personGrade}
+              placeholder="Cth. Grade 7"
+              onChange={(event) => setField("personGrade", event.target.value)}
+            />
           </Field>
 
           <Field label="Golongan PHDP">
             <Select
-              defaultValue=""
+              value={values.golonganPhdp}
               placeholder="Pilih..."
               options={GOLONGAN_PHDP_OPTIONS}
+              onChange={(event) => setField("golonganPhdp", event.target.value)}
             />
           </Field>
         </div>

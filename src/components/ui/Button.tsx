@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "cn";
 
 export type ButtonVariant =
   | "primary"
@@ -27,10 +27,16 @@ const sizeClass: Record<ButtonSize, string> = {
   lg: "gap-2 rounded-xl px-4 py-2.5 text-sm",
 };
 
-const baseClass =
-  "inline-flex items-center justify-center font-medium transition-colors " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 " +
-  "disabled:cursor-not-allowed disabled:opacity-50";
+const baseClass = cn(
+  // tata letak
+  "inline-flex items-center justify-center",
+  // teks
+  "font-medium",
+  // interaksi
+  "transition-colors",
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+);
 
 interface ButtonBaseProps {
   variant?: ButtonVariant;
@@ -109,7 +115,7 @@ export type ButtonLinkProps = Omit<ButtonBaseProps, "loading"> &
  * `<Link>` sehingga navigasinya tetap client-side.
  *
  * @example
- * <ButtonLink href="/pegawai/create" icon={Plus}>Tambah Pegawai</ButtonLink>
+ * <ButtonLink href="/dashboard/pegawai/create" icon={Plus}>Tambah Pegawai</ButtonLink>
  */
 export function ButtonLink({
   variant = "primary",

@@ -19,6 +19,11 @@ interface FormPageLayoutProps {
   error?: string | null;
   saving?: boolean;
   submitLabel: string;
+  /**
+   * Isi untuk mematikan tombol Simpan; teksnya tampil di samping tombol
+   * sebagai alasan, mis. "Pilih minimal satu karyawan peserta".
+   */
+  submitDisabledReason?: string | null;
   cancelLabel?: string;
   /**
    * "card" (bawaan) membungkus isi form dalam satu kartu putih.
@@ -39,7 +44,7 @@ interface FormPageLayoutProps {
  * <FormPageLayout
  *   breadcrumb={[{ label: "Dashboard", href: "/dashboard" }, { label: "Unit" }]}
  *   title="Tambah Unit"
- *   backHref="/organisasi/unit"
+ *   backHref="/dashboard/organisasi/unit"
  *   error={formError}
  *   saving={saving}
  *   submitLabel="Simpan Unit"
@@ -60,6 +65,7 @@ export function FormPageLayout({
   error,
   saving = false,
   submitLabel,
+  submitDisabledReason,
   cancelLabel = "Batal",
   variant = "card",
   onSubmit,
@@ -74,7 +80,7 @@ export function FormPageLayout({
     <div className="space-y-5">
       <Breadcrumb items={breadcrumb} />
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Link
           href={backHref}
           aria-label="Kembali"
@@ -82,8 +88,8 @@ export function FormPageLayout({
         >
           <ChevronLeft className="h-4 w-4" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
           {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
         </div>
       </div>
@@ -91,24 +97,45 @@ export function FormPageLayout({
       {error && <Alert tone="error">{error}</Alert>}
 
       {loading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-400 sm:p-10">
           {loadingLabel}
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-5">
+        // noValidate: validasi bawaan browser dimatikan, semua pengecekan lewat
+        // `validate` di useFormSubmit supaya pesan errornya seragam
+        <form noValidate onSubmit={handleSubmit} className="space-y-5">
           {variant === "card" ? (
-            <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6">
+            <div className="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
               {children}
             </div>
           ) : (
             children
           )}
 
-          <div className="flex justify-end gap-2">
-            <ButtonLink href={backHref} variant="secondary" size="lg">
+          {/* Di ponsel tombolnya ditumpuk selebar layar — sepasang tombol
+              kecil di pojok kanan sulit dijangkau ibu jari. Simpan ditaruh
+              paling atas karena itu aksi utamanya. */}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+            {submitDisabledReason && (
+              <p className="text-center text-sm text-slate-500 sm:mr-2 sm:text-right">
+                {submitDisabledReason}
+              </p>
+            )}
+            <ButtonLink
+              href={backHref}
+              variant="secondary"
+              size="lg"
+              className="w-full justify-center sm:w-auto"
+            >
               {cancelLabel}
             </ButtonLink>
-            <Button type="submit" size="lg" loading={saving}>
+            <Button
+              type="submit"
+              size="lg"
+              loading={saving}
+              disabled={Boolean(submitDisabledReason)}
+              className="w-full justify-center sm:w-auto"
+            >
               {submitLabel}
             </Button>
           </div>

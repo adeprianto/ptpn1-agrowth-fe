@@ -7,13 +7,14 @@ import { FormPageLayout } from "@/components/shared/FormPageLayout";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { requireText, requireSelection } from "@/lib/validation";
 import { useFormValues } from "@/hooks/useFormValues";
 import { createUnit, getUnit, updateUnit } from "../../api/unit";
 import { getRegionals } from "../../api/regional";
 import { getBusinessTypes, getOperationalCategories } from "../../api/masterData";
 import { withDistinctLabels, type MasterItem } from "../../model/masterData";
 import type { Unit, UnitInput } from "../../model/unit";
-import { getJenisDisplay } from "./jenisUnit";
+import { getUnitTypeDisplay } from "./jenisUnit";
 
 /** Satu baris pasangan jenis + komoditas; nilai select selalu string. */
 interface OperasionalRow {
@@ -59,7 +60,7 @@ async function getUnitFormOptions(signal: AbortSignal): Promise<UnitFormOptions>
       kode: row.kode,
       nama: row.nama,
     })),
-    jenis: jenis.map((item) => ({ ...item, nama: getJenisDisplay(item).label })),
+    jenis: jenis.map((item) => ({ ...item, nama: getUnitTypeDisplay(item).label })),
     komoditas: withDistinctLabels(komoditas),
   };
 }
@@ -110,9 +111,9 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
     validate: (form) => ({
-      kode: form.kode.trim() ? undefined : "Kode Unit wajib diisi",
-      nama: form.nama.trim() ? undefined : "Nama Unit wajib diisi",
-      regionalId: form.regionalId ? undefined : "Regional wajib dipilih",
+      kode: requireText(form.kode, "Kode Unit"),
+      nama: requireText(form.nama, "Nama Unit"),
+      regionalId: requireSelection(form.regionalId, "Regional"),
     }),
     onSubmit: async (form) => {
       const input: UnitInput = {
@@ -134,7 +135,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
         await createUnit(input);
       }
 
-      router.push("/organisasi/unit");
+      router.push("/dashboard/organisasi/unit");
     },
   });
 
@@ -142,7 +143,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  function setOperasional(index: number, row: Partial<OperasionalRow>) {
+  function setOperationalRow(index: number, row: Partial<OperasionalRow>) {
     setValues((prev) => ({
       ...prev,
       operasional: prev.operasional.map((current, i) =>
@@ -155,13 +156,13 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Unit", href: "/organisasi/unit" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Unit", href: "/dashboard/organisasi/unit" },
         { label: isEdit ? "Edit Unit" : "Tambah Unit" },
       ]}
       title={isEdit ? "Edit Unit" : "Tambah Unit"}
       description="Satu unit bisa punya lebih dari satu pasangan jenis dan komoditas."
-      backHref="/organisasi/unit"
+      backHref="/dashboard/organisasi/unit"
       loading={detail.loading}
       loadingLabel="Memuat data unit..."
       error={formError ?? detail.error ?? optionsError}
@@ -230,7 +231,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
                 placeholder="Pilih Jenis"
                 options={jenisOptions}
                 onChange={(event) =>
-                  setOperasional(index, { jenisId: event.target.value })
+                  setOperationalRow(index, { jenisId: event.target.value })
                 }
               />
 
@@ -240,7 +241,7 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
                 placeholder="Tanpa Komoditas"
                 options={komoditasOptions}
                 onChange={(event) =>
-                  setOperasional(index, { komoditasId: event.target.value })
+                  setOperationalRow(index, { komoditasId: event.target.value })
                 }
               />
 

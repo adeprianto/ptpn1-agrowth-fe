@@ -9,6 +9,7 @@ import {
 } from "@/components/shared/data-table";
 import { Card, CardHeader } from "@/components/ui";
 import type { UnitPositionRow } from "./unitDetailDummyData";
+import { cn } from "cn";
 
 const col = createDataTableColumnHelper<UnitPositionRow>();
 
@@ -48,10 +49,11 @@ export function createUnitPositionTableConfig(): TableConfig<UnitPositionRow> {
             </span>
             <div className="h-1.5 w-24 overflow-hidden rounded-full bg-slate-100">
               <div
-                className={`h-full rounded-full ${barColorClass(
-                  row.original.terisi,
-                  row.original.kuota,
-                )}`}
+                className={cn(
+                  // tampilan — warnanya mengikuti rasio terisi/kuota
+                  "h-full rounded-full",
+                  barColorClass(row.original.terisi, row.original.kuota),
+                )}
                 style={{ width: `${Math.min(getValue() as number, 1) * 100}%` }}
               />
             </div>

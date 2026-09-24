@@ -131,7 +131,7 @@ export function DataTableResetButton() {
  *
  * @example Tambahkan kontrol sendiri di sisi kiri
  * <DataTableToolbar>
- *   <ButtonLink href="/pegawai/create">Tambah</ButtonLink>
+ *   <ButtonLink href="/dashboard/pegawai/create">Tambah</ButtonLink>
  * </DataTableToolbar>
  */
 export function DataTableToolbar({ children }: { children?: ReactNode }) {

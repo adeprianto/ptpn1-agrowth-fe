@@ -20,12 +20,12 @@ import { DetailPageState } from "@/components/shared/DetailPageState";
 import { MetricCard } from "@/components/shared/MetricCard";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import {
-  formatMasaKerja,
+  formatWorkingPeriod,
   formatNumber,
-  formatTanggal,
+  formatDate,
   joinOrDash,
 } from "@/lib/format";
-import { getPegawaiDetail } from "../api/pegawai";
+import { getEmployeeDetail } from "../api/pegawai";
 import { levelBodLabel, type PegawaiDetail as Pegawai } from "../model/pegawai";
 import { kompetensiDummy } from "./pegawaiDetailDummyData";
 import { PegawaiProfileHeader } from "./PegawaiProfileHeader";
@@ -37,13 +37,13 @@ interface DetailPegawaiProps {
   id: string;
 }
 
-function buildInformasiPribadiItems(pegawai: Pegawai): InfoItem[] {
+function buildPersonalInfoItems(pegawai: Pegawai): InfoItem[] {
   return [
     {
       icon: Cake,
       label: "Tempat, Tanggal Lahir",
       value: joinOrDash(
-        [pegawai.tempatLahir, pegawai.tanggalLahir && formatTanggal(pegawai.tanggalLahir)],
+        [pegawai.tempatLahir, pegawai.tanggalLahir && formatDate(pegawai.tanggalLahir)],
         ", ",
       ),
     },
@@ -63,7 +63,7 @@ function buildInformasiPribadiItems(pegawai: Pegawai): InfoItem[] {
   ];
 }
 
-function buildInformasiKepegawaianItems(pegawai: Pegawai): InfoItem[] {
+function buildEmploymentInfoItems(pegawai: Pegawai): InfoItem[] {
   return [
     {
       icon: Briefcase,
@@ -102,18 +102,18 @@ function buildInformasiKepegawaianItems(pegawai: Pegawai): InfoItem[] {
     {
       icon: CalendarDays,
       label: "Tanggal Acuan Masa Kerja",
-      value: formatTanggal(pegawai.tanggalAcuanMasaKerja),
+      value: formatDate(pegawai.tanggalAcuanMasaKerja),
     },
     {
       icon: CalendarClock,
       label: "Tanggal Pensiun",
-      value: formatTanggal(pegawai.tanggalPensiun),
+      value: formatDate(pegawai.tanggalPensiun),
     },
   ];
 }
 
 export function DetailPegawai({ id }: DetailPegawaiProps) {
-  const query = useAsyncData((signal) => getPegawaiDetail(id, signal), { deps: [id] });
+  const query = useAsyncData((signal) => getEmployeeDetail(id, signal), { deps: [id] });
   const pegawai = query.data;
 
   if (!pegawai) {
@@ -121,7 +121,7 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
       <DetailPageState
         query={query}
         resource="pegawai"
-        backHref="/pegawai"
+        backHref="/dashboard/pegawai"
         backLabel="Kembali ke daftar Pegawai"
       />
     );
@@ -132,7 +132,7 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
       <Breadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Pegawai", href: "/pegawai" },
+          { label: "Pegawai", href: "/dashboard/pegawai" },
           { label: pegawai.nama },
         ]}
       />
@@ -143,13 +143,13 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
         jabatan={pegawai.jabatan}
         penempatanNama={pegawai.penempatanNama}
         penempatanInduk={pegawai.penempatanInduk}
-        backHref="/pegawai"
+        backHref="/dashboard/pegawai"
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           label="Masa Kerja"
-          value={formatMasaKerja(pegawai.tanggalAcuanMasaKerja)}
+          value={formatWorkingPeriod(pegawai.tanggalAcuanMasaKerja)}
           icon={Clock}
         />
         <MetricCard
@@ -175,11 +175,11 @@ export function DetailPegawai({ id }: DetailPegawaiProps) {
         <div className="space-y-5">
           <InfoListCard
             title="Informasi Pribadi"
-            items={buildInformasiPribadiItems(pegawai)}
+            items={buildPersonalInfoItems(pegawai)}
           />
           <InfoListCard
             title="Informasi Kepegawaian"
-            items={buildInformasiKepegawaianItems(pegawai)}
+            items={buildEmploymentInfoItems(pegawai)}
           />
         </div>
 

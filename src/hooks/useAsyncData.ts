@@ -37,7 +37,7 @@ const IDLE = {
  * const { data: summary } = useAsyncData(getRegionalSummary, { deps: [versi] });
  *
  * @example Menunggu id dari fetch lain
- * const { data } = useAsyncData((signal) => getDepartemenTree(entityId, signal), {
+ * const { data } = useAsyncData((signal) => getDepartmentTree(entityId, signal), {
  *   deps: [entityId],
  *   enabled: Boolean(entityId),
  * });

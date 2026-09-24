@@ -13,7 +13,7 @@ import {
   type TableConfig,
 } from "@/components/shared/data-table";
 import { Alert, Badge, Card, CardHeader } from "@/components/ui";
-import { getPegawaiList } from "@/features/pegawai/api/pegawai";
+import { getEmployeeList } from "@/features/pegawai/api/pegawai";
 import {
   levelBodLabel,
   statusTone,
@@ -73,7 +73,7 @@ export function createEntityEmployeeTableConfig(
         meta: { align: "right", nowrap: true },
         cell: ({ row }) => (
           <Link
-            href={`/pegawai/${row.original.id}`}
+            href={`/dashboard/pegawai/${row.original.id}`}
             className="text-xs font-medium text-slate-500 hover:text-slate-700 hover:underline"
           >
             Lihat
@@ -101,7 +101,7 @@ export function EntityEmployeeTable({
     useServerDataTable<Pegawai>({
       deps: [entityId],
       fetcher: ({ filters, page, perPage }, signal) =>
-        getPegawaiList(
+        getEmployeeList(
           {
             entityId,
             // backend mencari di nama maupun NIK lewat satu parameter `search`

@@ -6,12 +6,13 @@ import { FormPageLayout } from "@/components/shared/FormPageLayout";
 import { Field, Input, Select } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useFormSubmit } from "@/hooks/useFormSubmit";
+import { numberBetween, requireText, requireSelection } from "@/lib/validation";
 import { useFormValues } from "@/hooks/useFormValues";
 import {
-  createDepartemen,
-  getDepartemen,
-  getDepartemenOptions,
-  updateDepartemen,
+  createDepartment,
+  getDepartment,
+  getDepartmentOptions,
+  updateDepartment,
 } from "../../api/departemen";
 import { getJobFunctions, getOrganizationTypes } from "../../api/masterData";
 import { getEntityOptions } from "../../api/entityOptions";
@@ -74,7 +75,7 @@ export function StrukturDepartemenForm({
   const { data: functionOptions } = useAsyncData(getJobFunctions);
 
   const detail = useAsyncData(
-    (signal) => getDepartemen(departemenId as string, signal),
+    (signal) => getDepartment(departemenId as string, signal),
     { deps: [departemenId], enabled: isEdit && Boolean(departemenId) },
   );
 
@@ -99,27 +100,28 @@ export function StrukturDepartemenForm({
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
     validate: (form) => ({
-      entityId: entityId ? undefined : "Entity wajib dipilih",
-      kode: form.kode.trim() ? undefined : "Kode wajib diisi",
-      nama: form.nama.trim() ? undefined : "Nama Departemen wajib diisi",
-      tipeId: form.tipeId ? undefined : "Tipe wajib dipilih",
+      entityId: requireSelection(entityId, "Entity"),
+      kode: requireText(form.kode, "Kode"),
+      nama: requireText(form.nama, "Nama Departemen"),
+      tipeId: requireSelection(form.tipeId, "Tipe"),
+      level: requireText(form.level, "Level") ?? numberBetween(form.level, "Level", 1, 5),
     }),
     onSubmit: async (form) => {
       const input = toInput({ ...form, entityId });
 
       if (isEdit && departemenId) {
-        await updateDepartemen(departemenId, input);
+        await updateDepartment(departemenId, input);
       } else {
-        await createDepartemen(input);
+        await createDepartment(input);
       }
 
-      router.push("/organisasi/departemen");
+      router.push("/dashboard/organisasi/departemen");
     },
   });
 
   // Induk HARUS dari entity yang sama, jadi daftarnya ikut entity terpilih
   const { data: indukOptions } = useAsyncData(
-    (signal) => getDepartemenOptions(entityId, signal),
+    (signal) => getDepartmentOptions(entityId, signal),
     { deps: [entityId], enabled: Boolean(entityId) },
   );
 
@@ -136,13 +138,13 @@ export function StrukturDepartemenForm({
     <FormPageLayout
       breadcrumb={[
         { label: "Dashboard", href: "/dashboard" },
-        { label: "Organisasi", href: "/organisasi" },
-        { label: "Struktur Departemen", href: "/organisasi/departemen" },
+        { label: "Organisasi", href: "/dashboard/organisasi" },
+        { label: "Struktur Departemen", href: "/dashboard/organisasi/departemen" },
         { label: isEdit ? "Edit Departemen" : "Tambah Departemen" },
       ]}
       title={isEdit ? "Edit Departemen" : "Tambah Departemen"}
       description="Susunan departemen di dalam satu entity (Head Office, Regional, atau Unit)"
-      backHref="/organisasi/departemen"
+      backHref="/dashboard/organisasi/departemen"
       loading={detail.loading}
       loadingLabel="Memuat data departemen..."
       error={formError ?? detail.error}

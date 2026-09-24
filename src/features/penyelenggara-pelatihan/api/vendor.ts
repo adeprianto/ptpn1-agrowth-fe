@@ -1,8 +1,8 @@
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/http-client";
 import type { VendorResource, VendorType } from "@/types/api/vendor";
 import {
-  toPenyelenggara,
-  toPenyelenggaraPayload,
+  toVendor,
+  toVendorPayload,
   type Penyelenggara,
   type PenyelenggaraInput,
 } from "../model/penyelenggara";
@@ -25,7 +25,7 @@ export interface PenyelenggaraQuery {
 }
 
 /** GET /api/vendors */
-export async function getPenyelenggaraList(
+export async function getVendorList(
   query: PenyelenggaraQuery = {},
   signal?: AbortSignal,
 ) {
@@ -47,39 +47,39 @@ export async function getPenyelenggaraList(
     signal,
   );
 
-  return { rows: data.map(toPenyelenggara), meta };
+  return { rows: data.map(toVendor), meta };
 }
 
 /** GET /api/vendors/{id} */
-export async function getPenyelenggara(
+export async function getVendor(
   id: string,
   signal?: AbortSignal,
 ): Promise<Penyelenggara> {
   const { data } = await apiGet<VendorResource>(`/api/vendors/${id}`, undefined, signal);
-  return toPenyelenggara(data);
+  return toVendor(data);
 }
 
 /** POST /api/vendors */
-export async function createPenyelenggara(input: PenyelenggaraInput) {
+export async function createVendor(input: PenyelenggaraInput) {
   const { data } = await apiPost<VendorResource>(
     "/api/vendors",
-    toPenyelenggaraPayload(input),
+    toVendorPayload(input),
   );
 
-  return toPenyelenggara(data);
+  return toVendor(data);
 }
 
 /** PUT /api/vendors/{id} */
-export async function updatePenyelenggara(id: string, input: PenyelenggaraInput) {
+export async function updateVendor(id: string, input: PenyelenggaraInput) {
   const { data } = await apiPut<VendorResource>(
     `/api/vendors/${id}`,
-    toPenyelenggaraPayload(input),
+    toVendorPayload(input),
   );
 
-  return toPenyelenggara(data);
+  return toVendor(data);
 }
 
 /** DELETE /api/vendors/{id} */
-export async function deletePenyelenggara(id: string) {
+export async function deleteVendor(id: string) {
   await apiDelete(`/api/vendors/${id}`);
 }

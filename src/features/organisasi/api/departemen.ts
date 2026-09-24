@@ -4,16 +4,16 @@ import type {
   OrganizationTreeNode,
 } from "@/types/api/organization";
 import {
-  toDepartemen,
-  toDepartemenNode,
-  toDepartemenPayload,
+  toDepartment,
+  toDepartmentNode,
+  toDepartmentPayload,
   type Departemen,
   type DepartemenInput,
   type DepartemenNode,
 } from "../model/departemen";
 
 /** GET /api/organizations/tree?entity_id= */
-export async function getDepartemenTree(
+export async function getDepartmentTree(
   entityId: string,
   signal?: AbortSignal,
 ): Promise<DepartemenNode[]> {
@@ -23,11 +23,11 @@ export async function getDepartemenTree(
     signal,
   );
 
-  return data.map(toDepartemenNode);
+  return data.map(toDepartmentNode);
 }
 
 /** GET /api/organizations/{id} */
-export async function getDepartemen(
+export async function getDepartment(
   id: string,
   signal?: AbortSignal,
 ): Promise<Departemen> {
@@ -37,47 +37,47 @@ export async function getDepartemen(
     signal,
   );
 
-  return toDepartemen(data);
+  return toDepartment(data);
 }
 
 /** Daftar datar departemen dalam satu entity — untuk dropdown induk */
-export async function getDepartemenOptions(entityId: string, signal?: AbortSignal) {
+export async function getDepartmentOptions(entityId: string, signal?: AbortSignal) {
   const { data } = await apiGet<OrganizationResource[]>(
     "/api/organizations",
     { entity_id: entityId, per_page: 300 },
     signal,
   );
 
-  return data.map(toDepartemen);
+  return data.map(toDepartment);
 }
 
 /** Total departemen sesuai cakupan akun — untuk kartu di hub Organisasi */
-export async function getDepartemenCount(signal?: AbortSignal) {
+export async function getDepartmentCount(signal?: AbortSignal) {
   const { meta } = await apiGet<unknown[]>("/api/organizations", { per_page: 1 }, signal);
   return meta?.total ?? 0;
 }
 
 /** POST /api/organizations */
-export async function createDepartemen(input: DepartemenInput) {
+export async function createDepartment(input: DepartemenInput) {
   const { data } = await apiPost<OrganizationResource>(
     "/api/organizations",
-    toDepartemenPayload(input),
+    toDepartmentPayload(input),
   );
 
-  return toDepartemen(data);
+  return toDepartment(data);
 }
 
 /** PUT /api/organizations/{id} */
-export async function updateDepartemen(id: string, input: DepartemenInput) {
+export async function updateDepartment(id: string, input: DepartemenInput) {
   const { data } = await apiPut<OrganizationResource>(
     `/api/organizations/${id}`,
-    toDepartemenPayload(input),
+    toDepartmentPayload(input),
   );
 
-  return toDepartemen(data);
+  return toDepartment(data);
 }
 
 /** DELETE /api/organizations/{id} */
-export async function deleteDepartemen(id: string) {
+export async function deleteDepartment(id: string) {
   await apiDelete(`/api/organizations/${id}`);
 }

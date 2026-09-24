@@ -13,7 +13,7 @@ import {
   jabatanMasterRows,
   strukturDepartemen,
   getJobFamilyName,
-  getOrganisasiNode,
+  getOrganizationNode,
   getFunctionName,
   type JabatanMasterRow,
 } from "@/features/organisasi/components/departemen/masterJabatanDummyData";
@@ -48,7 +48,7 @@ function resolveEntityCode(value: PenempatanJabatanValue): string | null {
   return unit ? `UNIT-${unit.jenis.toUpperCase()}` : null;
 }
 
-function resolveJabatanOptions(value: PenempatanJabatanValue): JabatanMasterRow[] {
+function resolvePositionOptions(value: PenempatanJabatanValue): JabatanMasterRow[] {
   const entityCode = resolveEntityCode(value);
   if (!entityCode) return [];
 
@@ -63,9 +63,15 @@ function resolveJabatanOptions(value: PenempatanJabatanValue): JabatanMasterRow[
   );
 }
 
+/** Pesan error per isian, dari `validate` milik form induknya. */
+export type PenempatanJabatanErrors = Partial<
+  Record<"regionalId" | "unitId" | "jabatanId", string>
+>;
+
 interface PenempatanJabatanSectionProps {
   value: PenempatanJabatanValue;
   onChange: (value: PenempatanJabatanValue) => void;
+  errors?: PenempatanJabatanErrors;
 }
 
 /**
@@ -76,17 +82,18 @@ interface PenempatanJabatanSectionProps {
 export function PenempatanJabatanSection({
   value,
   onChange,
+  errors = {},
 }: PenempatanJabatanSectionProps) {
   const { levelPenempatan, regionalId, unitId, jabatanId } = value;
 
   const unitsInRegional = unitOptions.filter(
     (option) => option.regionalId === regionalId,
   );
-  const jabatanOptions = resolveJabatanOptions(value);
+  const jabatanOptions = resolvePositionOptions(value);
   const selectedJabatan = jabatanOptions.find((jabatan) => jabatan.id === jabatanId);
 
   const selectedOrganisasi = selectedJabatan
-    ? getOrganisasiNode(selectedJabatan.organisasiCode)
+    ? getOrganizationNode(selectedJabatan.organisasiCode)
     : undefined;
   const jobFunctionName = selectedOrganisasi
     ? getFunctionName(selectedOrganisasi.functionCode ?? "")
@@ -126,9 +133,10 @@ export function PenempatanJabatanSection({
       </Field>
 
       {(levelPenempatan === "Regional" || levelPenempatan === "Unit") && (
-        <Field label="Pilih Regional" required>
+        <Field label="Pilih Regional" required error={errors.regionalId}>
           <Select
             value={regionalId}
+            invalid={Boolean(errors.regionalId)}
             placeholder="Pilih Regional..."
             options={regionalRows.map((row) => ({
               value: row.id,
@@ -143,10 +151,12 @@ export function PenempatanJabatanSection({
         <Field
           label="Pilih Unit"
           required
+          error={errors.unitId}
           hint={!regionalId ? "Pilih Regional dahulu" : undefined}
         >
           <Select
             value={unitId}
+            invalid={Boolean(errors.unitId)}
             disabled={!regionalId}
             placeholder="Pilih Unit..."
             options={unitsInRegional.map((unit) => ({
@@ -163,6 +173,7 @@ export function PenempatanJabatanSection({
           className="sm:col-span-2"
           label="Posisi Jabatan"
           required
+          error={errors.jabatanId}
           hint={
             !jabatanDisabled && jabatanOptions.length === 0
               ? "Belum ada master jabatan untuk office ini"
@@ -170,8 +181,8 @@ export function PenempatanJabatanSection({
           }
         >
           <Select
-            required
             value={jabatanId}
+            invalid={Boolean(errors.jabatanId)}
             disabled={jabatanDisabled || jabatanOptions.length === 0}
             placeholder={jabatanPlaceholder}
             options={jabatanOptions.map((jabatan) => ({

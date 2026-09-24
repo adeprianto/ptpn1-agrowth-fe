@@ -12,7 +12,7 @@ import { capaian, isOverTarget } from "./overTarget";
 const COLORS = { target: "#A7D8DE", realisasi: "#1F6F78" };
 const TOP_N = 3;
 
-const formatJam = (value: number) => `${formatNumber(value)} Jam`;
+const formatHours = (value: number) => `${formatNumber(value)} Jam`;
 
 function CompetencyHourSummary() {
   const total = data.reduce((sum, row) => sum + row.realisasi, 0);
@@ -26,7 +26,7 @@ function CompetencyHourSummary() {
     return {
       name: `${index + 1}. ${row.bidang}`,
       color: COLORS.realisasi,
-      value: formatJam(row.realisasi),
+      value: formatHours(row.realisasi),
       note: `${formatPercent(share(row.realisasi))} dari total · capaian ${formatPercent(capaian(row.realisasi, row.target))}`,
       bar: share(row.realisasi),
       over,
@@ -37,7 +37,7 @@ function CompetencyHourSummary() {
     <ConsolidationPanel
       accent={COLORS.realisasi}
       title="Bidang Paling Dominan"
-      caption={`Dari ${data.length} bidang, total ${formatJam(total)}`}
+      caption={`Dari ${data.length} bidang, total ${formatHours(total)}`}
       headline={dominan.bidang}
       headlineUnit={`${formatPercent(share(dominan.realisasi))} dari total jam`}
       rows={rows}
@@ -56,7 +56,7 @@ export function CompetencyHourChart() {
     <TargetRealisasiChart
       data={data}
       categoryKey="bidang"
-      formatValue={formatJam}
+      formatValue={formatHours}
       colors={COLORS}
       subject="target jam"
       side={<CompetencyHourSummary />}

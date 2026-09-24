@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { cn } from "cn";
 import type { FilterOption } from "./ColumnHeader";
 
 // daftar dibatasi supaya kolom dengan ratusan nilai tetap ringan
@@ -86,7 +87,13 @@ export function FilterChecklist({
       </div>
 
       <div
-        className={`overflow-y-auto rounded-lg border border-slate-100 py-1 ${listClassName}`}
+        className={cn(
+          // tata letak
+          "overflow-y-auto",
+          // tampilan
+          "rounded-lg border border-slate-100 py-1",
+          listClassName,
+        )}
       >
         {visible.length === 0 && (
           <p className="px-3 py-4 text-center text-xs text-slate-400">

@@ -67,7 +67,7 @@ export function DepartemenTreeRow({
               {
                 label: "Edit",
                 icon: Pencil,
-                href: `/organisasi/departemen/${node.id}/edit`,
+                href: `/dashboard/organisasi/departemen/${node.id}/edit`,
               },
               {
                 label: "Hapus",

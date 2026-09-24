@@ -105,7 +105,12 @@ export interface PegawaiFilterOptions {
  * - pegawai Regional -> entity-nya sendiri sudah regional
  * - pegawai HO       -> tidak bernaung di regional mana pun
  */
-export function regionalPenempatan(entity: EmployeeEntity | null | undefined): string {
+export function getPlacementRegional(
+  entity:
+    | (Pick<EmployeeEntity, "type" | "name"> & { parent: { name: string } | null })
+    | null
+    | undefined,
+): string {
   if (!entity) return "-";
   if (entity.type === "HEAD_OFFICE") return "Head Office";
   if (entity.type === "REGIONAL") return entity.name;
@@ -113,7 +118,7 @@ export function regionalPenempatan(entity: EmployeeEntity | null | undefined): s
   return entity.parent?.name ?? "-";
 }
 
-export function toPegawai(resource: EmployeeResource): Pegawai {
+export function toEmployee(resource: EmployeeResource): Pegawai {
   return {
     id: String(resource.id),
     nama: resource.nama_lengkap || resource.name,
@@ -123,7 +128,7 @@ export function toPegawai(resource: EmployeeResource): Pegawai {
     penempatanTipe: resource.entity
       ? ENTITY_TIPE_BY_TYPE[resource.entity.type]
       : null,
-    regional: regionalPenempatan(resource.entity),
+    regional: getPlacementRegional(resource.entity),
     jabatan: resource.jabatan?.name ?? null,
     jobGroup: resource.jabatan?.job_group?.name ?? null,
     jobFunction: resource.jabatan?.job_function?.name ?? null,
@@ -138,7 +143,7 @@ export function toPegawai(resource: EmployeeResource): Pegawai {
   };
 }
 
-function toRiwayatPelatihan(row: EmployeeTrainingHistory): RiwayatPelatihan {
+function toTrainingHistory(row: EmployeeTrainingHistory): RiwayatPelatihan {
   return {
     id: String(row.id),
     nama: row.nama ?? "-",
@@ -150,9 +155,9 @@ function toRiwayatPelatihan(row: EmployeeTrainingHistory): RiwayatPelatihan {
   };
 }
 
-export function toPegawaiDetail(resource: EmployeeResource): PegawaiDetail {
+export function toEmployeeDetail(resource: EmployeeResource): PegawaiDetail {
   return {
-    ...toPegawai(resource),
+    ...toEmployee(resource),
     tempatLahir: resource.tempat_lahir,
     tanggalLahir: resource.tanggal_lahir,
     usia: resource.usia,
@@ -174,11 +179,11 @@ export function toPegawaiDetail(resource: EmployeeResource): PegawaiDetail {
     masaKerjaTahun: resource.masa_kerja_tahun,
     pelatihanDiikuti: resource.pelatihan?.total_diikuti ?? 0,
     totalJamPelatihan: resource.pelatihan?.total_jam ?? 0,
-    riwayatPelatihan: resource.pelatihan?.riwayat.map(toRiwayatPelatihan) ?? [],
+    riwayatPelatihan: resource.pelatihan?.riwayat.map(toTrainingHistory) ?? [],
   };
 }
 
-export function toPegawaiSummary(resource: EmployeeSummary): PegawaiSummary {
+export function toEmployeeSummary(resource: EmployeeSummary): PegawaiSummary {
   return {
     totalKaryawan: resource.total_karyawan,
     totalHo: resource.total_head_office,
@@ -193,7 +198,7 @@ const toEntityOption = (entity: { id: number; name: string; type: EntityType }) 
   tipe: ENTITY_TIPE_BY_TYPE[entity.type],
 });
 
-export function toPegawaiFilterOptions(
+export function toEmployeeFilterOptions(
   resource: EmployeeFilterOptions,
 ): PegawaiFilterOptions {
   return {
@@ -232,7 +237,7 @@ export function statusTone(status: string | null): BadgeTone {
 }
 
 /** Label "Kebun · Teh" untuk baris operasional seorang pegawai. */
-export function operasionalLabel(
+export function operationalLabel(
   jenis: { label: string } | null,
   komoditas: string | null,
 ): string {
