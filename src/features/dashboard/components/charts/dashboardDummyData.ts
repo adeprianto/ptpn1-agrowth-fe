@@ -414,7 +414,11 @@ export const kategoriLabel = (item: KategoriRkap) =>
   item.group ? `${item.group} - ${item.name}` : item.name;
 
 // ── Biaya per regional ───────────────────────────────────────────────────
-type BreakdownItem = { kategori: string; nilai: number };
+export type BreakdownItem = {
+  kategori: string;
+  anggaran: number;
+  realisasi: number;
+};
 
 export type BiayaRegionalDatum = {
   regional: Entity;
@@ -434,7 +438,8 @@ export const biayaPerRegional: BiayaRegionalDatum[] = ENTITIES.map(
       realisasi: kategori.reduce((sum, k) => sum + k.realisasi, 0),
       detail: kategori.map((k) => ({
         kategori: kategoriLabel(k),
-        nilai: k.realisasi,
+        anggaran: k.anggaran,
+        realisasi: k.realisasi,
       })),
     };
   },
@@ -453,7 +458,8 @@ export const ringkasanBiaya = {
   entityTertinggi: {
     regional: entityTertinggi.regional,
     realisasi: entityTertinggi.realisasi,
-    kategoriTerbesar: maxBy(entityTertinggi.detail, (d) => d.nilai).kategori,
+    kategoriTerbesar: maxBy(entityTertinggi.detail, (d) => d.realisasi)
+      .kategori,
   },
 };
 

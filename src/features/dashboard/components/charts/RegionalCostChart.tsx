@@ -17,8 +17,10 @@ import {
   formatCompact,
   formatEntityName,
   formatPercent,
+  type BiayaRegionalDatum,
 } from "./dashboardDummyData";
 import {
+  CapaianValue,
   ChartLegend,
   OVER_COLOR,
   OverBadge,
@@ -103,6 +105,153 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Rincian per kategori: anggaran vs realisasi, kategori yang lewat ditandai */
+function BreakdownPanel({
+  datum,
+  onClose,
+}: {
+  datum: BiayaRegionalDatum;
+  onClose: () => void;
+}) {
+  const overCount = datum.detail.filter((item) =>
+    isOverTarget(item.realisasi, item.anggaran),
+  ).length;
+
+  return (
+    <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-slate-800">
+            Rincian Anggaran & Realisasi — {formatEntityName(datum.regional)}
+          </h4>
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {datum.detail.length} kategori RKAP
+            {overCount > 0 && (
+              <span style={{ color: OVER_COLOR }}>
+                {" "}
+                · {overCount} kategori melebihi anggaran
+              </span>
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-xs text-slate-400 hover:text-slate-600"
+        >
+          Tutup
+        </button>
+      </div>
+
+      <OverTargetNotice
+        subject="anggaran"
+        hint="Baris oranye = kategori yang realisasinya di atas anggaran."
+        items={datum.detail.map((item) => ({
+          label: item.kategori,
+          realisasi: item.realisasi,
+          target: item.anggaran,
+        }))}
+      />
+
+      <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <table className="w-full min-w-[640px] border-collapse text-xs">
+          <thead className="bg-slate-50 text-slate-500">
+            <tr>
+              <th className="px-3 py-2 text-left font-semibold">Kategori</th>
+              <th className="px-3 py-2 text-right font-semibold">Anggaran</th>
+              <th className="px-3 py-2 text-right font-semibold">Realisasi</th>
+              <th className="px-3 py-2 text-right font-semibold">Serapan</th>
+              <th className="px-3 py-2 text-right font-semibold">
+                Sisa / Kelebihan
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {datum.detail.map((item) => {
+              const over = isOverTarget(item.realisasi, item.anggaran);
+              const sisa = item.anggaran - item.realisasi;
+              return (
+                <tr
+                  key={item.kategori}
+                  className="border-t border-slate-100 tabular-nums text-slate-700"
+                  style={
+                    over ? { backgroundColor: `${OVER_COLOR}0f` } : undefined
+                  }
+                >
+                  <td className="px-3 py-2">
+                    <span className="flex items-center gap-2">
+                      {item.kategori}
+                      {over && <OverBadge />}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {formatValue(item.anggaran)}
+                  </td>
+                  <td
+                    className="px-3 py-2 text-right font-medium"
+                    style={over ? { color: OVER_COLOR } : undefined}
+                  >
+                    {formatValue(item.realisasi)}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <CapaianValue
+                      percent={capaian(item.realisasi, item.anggaran)}
+                    />
+                  </td>
+                  <td
+                    className="px-3 py-2 text-right"
+                    style={over ? { color: OVER_COLOR } : undefined}
+                  >
+                    {over
+                      ? `+${formatValue(Math.abs(sisa))}`
+                      : formatValue(sisa)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot className="bg-slate-50 font-semibold text-slate-800">
+            <tr className="border-t border-slate-200 tabular-nums">
+              <td className="px-3 py-2">Total</td>
+              <td className="px-3 py-2 text-right">
+                {formatValue(datum.target)}
+              </td>
+              <td className="px-3 py-2 text-right">
+                {formatValue(datum.realisasi)}
+              </td>
+              <td className="px-3 py-2 text-right">
+                <CapaianValue
+                  percent={capaian(datum.realisasi, datum.target)}
+                />
+              </td>
+              <td
+                className="px-3 py-2 text-right"
+                style={
+                  isOverTarget(datum.realisasi, datum.target)
+                    ? { color: OVER_COLOR }
+                    : undefined
+                }
+              >
+                {isOverTarget(datum.realisasi, datum.target)
+                  ? `+${formatValue(datum.realisasi - datum.target)}`
+                  : formatValue(datum.target - datum.realisasi)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <p className="mt-2 text-[10px] text-slate-400">
+        <span className="font-semibold text-slate-500">Serapan</span>: realisasi
+        dibanding anggaran kategori itu sendiri (▲ = melebihi).{" "}
+        <span className="font-semibold text-slate-500">Sisa / Kelebihan</span>:
+        anggaran yang tersisa; tanda + oranye berarti realisasi sudah melewati
+        anggaran sebesar nilai tersebut.
+      </p>
     </div>
   );
 }
@@ -225,45 +374,10 @@ export function RegionalCostChart() {
 
       {/* Panel rincian, muncul kalau ada regional yang diklik */}
       {selectedData && (
-        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-slate-800">
-              Rincian Realisasi —{" "}
-              {selectedData.regional === "HO"
-                ? "Head Office"
-                : `Regional ${selectedData.regional}`}
-            </h4>
-
-            <button
-              type="button"
-              onClick={() => setSelectedRegional(null)}
-              className="text-xs text-slate-400 hover:text-slate-600"
-            >
-              Tutup
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            {selectedData.detail.map((item) => (
-              <div
-                key={item.kategori}
-                className="flex items-center justify-between text-xs"
-              >
-                <span className="text-slate-500">{item.kategori}</span>
-                <span className="font-medium text-slate-800">
-                  {formatValue(item.nilai)}
-                </span>
-              </div>
-            ))}
-
-            <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2 text-xs font-semibold">
-              <span className="text-slate-600">Total Realisasi</span>
-              <span className="text-slate-800">
-                {formatValue(selectedData.realisasi)}
-              </span>
-            </div>
-          </div>
-        </div>
+        <BreakdownPanel
+          datum={selectedData}
+          onClose={() => setSelectedRegional(null)}
+        />
       )}
     </div>
   );
