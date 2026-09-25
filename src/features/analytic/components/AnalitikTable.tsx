@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { cn } from "cn";
+import { ColumnHeader, type SortState } from "@/components/shared/data-table";
 import { formatPercent } from "@/features/dashboard/components/charts/dashboardDummyData";
 import {
   METRICS,
@@ -9,6 +11,26 @@ import {
   type MetricKey,
   type MetricValues,
 } from "../model/analitik";
+
+/** Kolom yang bisa diurutkan: label pengelompokan, tiap metrik, dan porsi. */
+type SortKey = "label" | MetricKey | "porsi";
+
+/**
+ * Urutkan baris sesuai kolom yang dipilih. Tanpa pilihan, urutan asli dipakai.
+ * Porsi sebanding dengan nilai metrik terpilih, jadi diurutkan lewat nilai itu.
+ */
+function sortRows(rows: AnalitikRow[], sort: SortState<SortKey> | null, metric: MetricKey) {
+  if (!sort) return rows;
+
+  const arah = sort.direction === "asc" ? 1 : -1;
+  const key = sort.key === "porsi" ? metric : sort.key;
+
+  return [...rows].sort((a, b) =>
+    key === "label"
+      ? arah * a.label.localeCompare(b.label, "id", { numeric: true })
+      : arah * (a[key] - b[key]),
+  );
+}
 
 interface AnalitikTableProps {
   rows: AnalitikRow[];
@@ -22,6 +44,9 @@ interface AnalitikTableProps {
 
 /** Rincian angka di balik chart: ketiga metrik plus porsi metrik terpilih. */
 export function AnalitikTable({ rows, total, metric, groupLabel, onRowClick }: AnalitikTableProps) {
+  const [sort, setSort] = useState<SortState<SortKey> | null>(null);
+  const sortedRows = sortRows(rows, sort, metric);
+
   const metricLabel = METRICS.find((m) => m.key === metric)?.label;
   const valueClass = (key: MetricKey) =>
     cn(
@@ -33,19 +58,30 @@ export function AnalitikTable({ rows, total, metric, groupLabel, onRowClick }: A
     <div className="overflow-x-auto">
       <table className="w-full min-w-160 text-sm">
         <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs text-slate-500">
-            <th className="px-4 py-3 font-medium">{groupLabel}</th>
+          <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium text-slate-500">
+            {/* klik judul kolom untuk mengurutkan: naik -> turun -> urutan asli */}
+            <ColumnHeader label={groupLabel} sortKey="label" sort={sort} onSortChange={setSort} />
             {METRICS.map((m) => (
-              <th key={m.key} className="px-4 py-3 text-right font-medium">
-                {m.label}
-              </th>
+              <ColumnHeader
+                key={m.key}
+                label={m.label}
+                align="right"
+                sortKey={m.key}
+                sort={sort}
+                onSortChange={setSort}
+              />
             ))}
-            <th className="px-4 py-3 font-medium">Porsi {metricLabel}</th>
+            <ColumnHeader
+              label={`Porsi ${metricLabel}`}
+              sortKey="porsi"
+              sort={sort}
+              onSortChange={setSort}
+            />
           </tr>
         </thead>
 
         <tbody>
-          {rows.map((row) => {
+          {sortedRows.map((row) => {
             const share = total[metric] > 0 ? (row[metric] / total[metric]) * 100 : 0;
 
             return (
