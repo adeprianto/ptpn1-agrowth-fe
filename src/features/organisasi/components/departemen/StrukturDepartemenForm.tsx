@@ -99,6 +99,11 @@ export function StrukturDepartemenForm({
 
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
+    successMessage: (form) =>
+      isEdit
+        ? `Perubahan departemen "${form.nama}" berhasil disimpan`
+        : `Departemen "${form.nama}" berhasil ditambahkan`,
+    errorMessage: isEdit ? "Perubahan departemen gagal disimpan" : "Departemen gagal ditambahkan",
     validate: (form) => ({
       entityId: requireSelection(entityId, "Entity"),
       kode: requireText(form.kode, "Kode"),

@@ -40,6 +40,11 @@ export function RegionalFormModal({
       kode: requireText(form.kode, "Kode Regional"),
     }),
     onSubmit,
+    successMessage: (form) =>
+      mode === "create"
+        ? `Regional "${form.nama}" berhasil ditambahkan`
+        : `Perubahan regional "${form.nama}" berhasil disimpan`,
+    errorMessage: mode === "create" ? "Regional gagal ditambahkan" : "Perubahan regional gagal disimpan",
   });
 
   function handleChange<K extends keyof RegionalFormValues>(

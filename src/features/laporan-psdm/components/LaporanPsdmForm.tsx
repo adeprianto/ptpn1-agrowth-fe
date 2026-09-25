@@ -107,6 +107,12 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
 
   const { submit, saving, errors, formError } = useFormSubmit<LaporanFormValues>({
     fieldMap: FIELD_MAP,
+    successMessage: isEdit
+      ? "Perubahan laporan realisasi berhasil disimpan"
+      : "Laporan realisasi berhasil disimpan",
+    errorMessage: isEdit
+      ? "Perubahan laporan realisasi gagal disimpan"
+      : "Laporan realisasi gagal disimpan",
     // Peserta tidak dicek di sini: tombol Simpan sudah mati selama belum ada
     // karyawan yang dipilih (lihat `alasanTidakBisaSimpan`).
     validate: (form) => ({
@@ -123,7 +129,8 @@ export default function LaporanPsdmForm({ trainingId, laporanId }: LaporanPsdmFo
       biayaPelatihan: requireText(form.biayaPelatihan, "Biaya Pelatihan"),
     }),
     onSubmit: async (form) => {
-      if (!idPelatihan) return;
+      // tanpa ini toast "berhasil" muncul padahal tidak ada yang dikirim
+      if (!idPelatihan) throw new Error("Data pelatihan belum selesai dimuat. Coba lagi.");
 
       if (laporanId) {
         await updateTrainingRealization(laporanId, idPelatihan, form);

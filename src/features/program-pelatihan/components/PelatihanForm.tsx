@@ -102,6 +102,11 @@ export function PelatihanForm({ mode, trainingId }: PelatihanFormProps) {
 
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
+    successMessage: (form) =>
+      isEdit
+        ? `Perubahan pelatihan "${form.nama}" berhasil disimpan`
+        : `Pelatihan "${form.nama}" berhasil ditambahkan`,
+    errorMessage: isEdit ? "Perubahan pelatihan gagal disimpan" : "Pelatihan gagal ditambahkan",
     validate: (form) => ({
       nama: requireText(form.nama, "Nama Pelatihan"),
       penyelenggaraId: requireSelection(form.penyelenggaraId, "Penyelenggara Pelatihan"),

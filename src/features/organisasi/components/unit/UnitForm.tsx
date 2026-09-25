@@ -110,6 +110,11 @@ export function UnitForm({ mode, unitId }: UnitFormProps) {
 
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
+    successMessage: (form) =>
+      isEdit
+        ? `Perubahan unit "${form.nama}" berhasil disimpan`
+        : `Unit "${form.nama}" berhasil ditambahkan`,
+    errorMessage: isEdit ? "Perubahan unit gagal disimpan" : "Unit gagal ditambahkan",
     validate: (form) => ({
       kode: requireText(form.kode, "Kode Unit"),
       nama: requireText(form.nama, "Nama Unit"),

@@ -85,13 +85,15 @@ export function UnitList() {
   const { data: options } = useAsyncData(getUnitFilterOptions);
 
   // Gagal menghapus (mis. 409 karena unit masih punya pegawai) tidak
-  // menyegarkan tabel maupun ringkasan — pesannya muncul di Alert di bawah.
+  // menyegarkan tabel maupun ringkasan — alasannya muncul sebagai toast gagal.
   const hapus = useDeleteConfirm<Unit>({
     onDelete: (row) => deleteUnit(row.id),
     onSuccess: () => {
       refresh();
       setDataVersion((version) => version + 1);
     },
+    successMessage: (row) => `Unit "${row.nama}" berhasil dihapus`,
+    errorMessage: (row) => `Unit "${row.nama}" gagal dihapus`,
   });
 
   return (
@@ -141,11 +143,6 @@ export function UnitList() {
 
       {error && <Alert tone="error">Gagal memuat data unit: {error}</Alert>}
 
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <UnitTable
         rows={rows}

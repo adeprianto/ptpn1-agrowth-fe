@@ -42,10 +42,12 @@ export default function PenyelenggaraPelatihanList() {
     });
 
   // Gagal menghapus (mis. 409 karena masih dipakai program pelatihan) tidak
-  // menyegarkan tabel — pesannya muncul di Alert di bawah.
+  // menyegarkan tabel — alasannya muncul sebagai toast gagal.
   const hapus = useDeleteConfirm<Penyelenggara>({
     onDelete: (row) => deleteVendor(row.id),
     onSuccess: refresh,
+    successMessage: (row) => `Penyelenggara "${row.nama}" berhasil dihapus`,
+    errorMessage: (row) => `Penyelenggara "${row.nama}" gagal dihapus`,
   });
 
   return (
@@ -69,11 +71,6 @@ export default function PenyelenggaraPelatihanList() {
 
       {error && <Alert tone="error">Gagal memuat data penyelenggara: {error}</Alert>}
 
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <PenyelenggaraTable
         rows={rows}

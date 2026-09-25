@@ -6,7 +6,7 @@ import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { TreeExplorer, TreeToolbar } from "@/components/shared/TreeExplorer";
-import { Alert, ButtonLink } from "@/components/ui";
+import { ButtonLink } from "@/components/ui";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useDeleteConfirm } from "@/hooks/useDeleteConfirm";
 import { useTreeExpansion } from "@/hooks/useTreeExpansion";
@@ -41,10 +41,12 @@ export function ListStrukturDepartemen() {
   const roots = nodes ?? [];
 
   // Gagal menghapus (mis. 409 karena masih punya sub-departemen) tidak
-  // memuat ulang pohonnya — pesannya muncul di Alert di bawah.
+  // memuat ulang pohonnya — alasannya muncul sebagai toast gagal.
   const hapus = useDeleteConfirm<DepartemenNode>({
     onDelete: (node) => deleteDepartment(node.id),
     onSuccess: refresh,
+    successMessage: (node) => `Departemen "${node.nama}" berhasil dihapus`,
+    errorMessage: (node) => `Departemen "${node.nama}" gagal dihapus`,
   });
 
   return (
@@ -86,11 +88,6 @@ export function ListStrukturDepartemen() {
         />
       </TreeToolbar>
 
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <TreeExplorer
         loading={loading || !entityId}

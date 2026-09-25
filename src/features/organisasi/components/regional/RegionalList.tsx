@@ -76,10 +76,12 @@ export function RegionalList() {
   }
 
   // Gagal menghapus (mis. 409 karena masih punya unit atau pegawai) tidak
-  // menyegarkan tabel maupun ringkasan — pesannya muncul di Alert di bawah.
+  // menyegarkan tabel maupun ringkasan — alasannya muncul sebagai toast gagal.
   const hapus = useDeleteConfirm<Regional>({
     onDelete: (row) => deleteRegional(row.id),
     onSuccess: reloadAll,
+    successMessage: (row) => `Regional "${row.nama}" berhasil dihapus`,
+    errorMessage: (row) => `Regional "${row.nama}" gagal dihapus`,
   });
 
   return (
@@ -124,11 +126,6 @@ export function RegionalList() {
 
       {error && <Alert tone="error">Gagal memuat data regional: {error}</Alert>}
 
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <RegionalTable
         rows={rows}

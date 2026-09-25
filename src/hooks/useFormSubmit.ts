@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/components/ui";
 import { ApiError } from "@/lib/http-client";
 
 export type FieldErrors<TValues> = Partial<Record<keyof TValues, string>>;
+
+const CHECK_FIELDS = "Periksa kembali isian yang ditandai merah.";
 
 /**
  * Gulir ke isian pertama yang sedang menampilkan pesan error, lalu taruh
@@ -30,6 +33,14 @@ interface UseFormSubmitOptions<TValues> {
    * Contoh: `{ parent_id: "regionalId" }`.
    */
   fieldMap?: Record<string, keyof TValues>;
+  /**
+   * Isi untuk memunculkan toast setelah simpan — berhasil maupun gagal.
+   * Dikosongkan untuk form yang belum benar-benar menyimpan (dummy) atau
+   * yang tidak perlu toast, mis. login.
+   */
+  successMessage?: string | ((values: TValues) => string);
+  /** Judul toast kalau gagal; default "Data gagal disimpan" */
+  errorMessage?: string;
 }
 
 export interface UseFormSubmitReturn<TValues> {
@@ -54,13 +65,18 @@ export interface UseFormSubmitReturn<TValues> {
  *   }),
  *   fieldMap: { name: "nama", code: "kode" },
  *   onSubmit: (v) => simpanRegional(v),
+ *   successMessage: (v) => `Regional "${v.nama}" berhasil disimpan`,
  * });
  */
 export function useFormSubmit<TValues extends object>({
   validate,
   onSubmit,
   fieldMap,
+  successMessage,
+  errorMessage = "Data gagal disimpan",
 }: UseFormSubmitOptions<TValues>): UseFormSubmitReturn<TValues> {
+  const toast = useToast();
+  const notify = successMessage !== undefined;
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<FieldErrors<TValues>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -87,6 +103,7 @@ export function useFormSubmit<TValues extends object>({
       if (Object.keys(localErrors).length > 0) {
         setErrors(localErrors);
         setFormError(null);
+        if (notify) toast.error(errorMessage, CHECK_FIELDS);
         return;
       }
 
@@ -96,7 +113,16 @@ export function useFormSubmit<TValues extends object>({
 
       try {
         await onSubmit(values);
+        // toast dipasang di root layout, jadi tetap muncul walau onSubmit
+        // sudah memindahkan halaman kembali ke daftar
+        if (notify) {
+          toast.success(
+            typeof successMessage === "function" ? successMessage(values) : successMessage,
+          );
+        }
       } catch (caught) {
+        let message = (caught as Error).message;
+
         if (caught instanceof ApiError && caught.errors) {
           const fieldErrors: FieldErrors<TValues> = {};
 
@@ -108,14 +134,17 @@ export function useFormSubmit<TValues extends object>({
           setErrors(fieldErrors);
           // 422 yang tidak cocok ke field mana pun tetap perlu terlihat
           if (Object.keys(fieldErrors).length === 0) setFormError(caught.message);
+          else message = CHECK_FIELDS;
         } else {
-          setFormError((caught as Error).message);
+          setFormError(message);
         }
+
+        if (notify) toast.error(errorMessage, message);
       } finally {
         setSaving(false);
       }
     },
-    [validate, onSubmit, fieldMap],
+    [validate, onSubmit, fieldMap, notify, successMessage, errorMessage, toast],
   );
 
   return { submit, saving, errors, formError, setErrors, clearErrors };

@@ -63,7 +63,7 @@ export default function PelatihanList() {
   const tags = useAsyncData(getTrainingTags);
 
   // Gagal menghapus (mis. 409 karena pelatihan sudah punya data realisasi)
-  // tidak menyegarkan tabel — pesannya muncul di Alert di bawah.
+  // tidak menyegarkan tabel — alasannya muncul sebagai toast gagal.
   const hapus = useDeleteConfirm<Pelatihan>({
     onDelete: (row) => deleteTraining(row.id),
     onSuccess: () => {
@@ -71,6 +71,8 @@ export default function PelatihanList() {
       // tag milik pelatihan itu ikut terhapus, jadi pilihannya ikut disegarkan
       tags.refresh();
     },
+    successMessage: (row) => `Pelatihan "${row.nama}" berhasil dihapus`,
+    errorMessage: (row) => `Pelatihan "${row.nama}" gagal dihapus`,
   });
 
   return (
@@ -94,11 +96,6 @@ export default function PelatihanList() {
 
       {error && <Alert tone="error">Gagal memuat data pelatihan: {error}</Alert>}
 
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <PelatihanTable
         rows={rows}

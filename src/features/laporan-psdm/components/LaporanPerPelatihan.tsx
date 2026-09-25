@@ -115,6 +115,8 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
   const hapus = useDeleteConfirm<Laporan>({
     onDelete: (row) => deleteTrainingRealization(row.id),
     onSuccess: refresh,
+    successMessage: () => "Laporan realisasi berhasil dihapus",
+    errorMessage: () => "Laporan realisasi gagal dihapus",
   });
 
   // Selama data pelatihan belum dimuat, anggap terkunci supaya tombol tidak
@@ -169,11 +171,6 @@ export function LaporanPerPelatihan({ trainingId }: { trainingId: string }) {
         <Alert tone="error">Gagal memuat data pelatihan: {pelatihan.error}</Alert>
       )}
       {error && <Alert tone="error">Gagal memuat laporan: {error}</Alert>}
-      {hapus.error && (
-        <Alert tone="error" onDismiss={hapus.dismissError}>
-          {hapus.error}
-        </Alert>
-      )}
 
       <DataTable
         config={config}

@@ -82,6 +82,11 @@ export function PenyelenggaraForm({ mode, vendorId }: PenyelenggaraFormProps) {
 
   const { submit, saving, errors, formError } = useFormSubmit<FormValues>({
     fieldMap: FIELD_MAP,
+    successMessage: (form) =>
+      isEdit
+        ? `Perubahan penyelenggara "${form.nama}" berhasil disimpan`
+        : `Penyelenggara "${form.nama}" berhasil ditambahkan`,
+    errorMessage: isEdit ? "Perubahan penyelenggara gagal disimpan" : "Penyelenggara gagal ditambahkan",
     validate: (form) => ({
       nama: requireText(form.nama, "Nama Penyelenggara"),
       tipe: requireSelection(form.tipe, "Jenis Penyelenggara"),

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import {useRouter, useSearchParams} from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import Image from "next/image";
@@ -31,7 +31,9 @@ export function LoginPage() {
     password: string;
   }>({
     validate: (form) => ({
-      email: requireText(form.email, "Email Akun") ?? mustBeEmail(form.email, "Email Akun"),
+      email:
+        requireText(form.email, "Email Akun") ??
+        mustBeEmail(form.email, "Email Akun"),
       password: requireText(form.password, "Kata Sandi"),
     }),
     onSubmit: async (form) => {
@@ -60,7 +62,7 @@ export function LoginPage() {
         {/* Dekorasi garis abstrak (SVG asli, bukan foto) */}
         <Image
           src="/images/panel-login.webp"
-          alt=""
+          alt="PTPN 1"
           fill
           priority
           className="object-cover"
@@ -131,7 +133,12 @@ export function LoginPage() {
 
           {/* noValidate: pengecekan lewat `validate` supaya pesannya seragam */}
           <form noValidate onSubmit={handleSubmit} className="mt-8 space-y-5">
-            <Field label="Email Akun" required htmlFor="login-email" error={errors.email}>
+            <Field
+              label="Email Akun"
+              required
+              htmlFor="login-email"
+              error={errors.email}
+            >
               <Input
                 id="login-email"
                 type="email"

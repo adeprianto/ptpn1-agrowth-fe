@@ -27,6 +27,7 @@ export { Spinner } from "./Spinner";
 export { StaticValue } from "./StaticValue";
 export { TagChip, TagChipList, tagToneClass } from "./TagChip";
 export { TagInput } from "./TagInput";
+export { ToastProvider, useToast, type ToastApi, type ToastTone } from "./Toast";
 export { Textarea, type TextareaProps } from "./Textarea";
 export { TabBar, type TabItem } from "./TabBar";
 export { CurrencyInput } from "./CurrencyInput";
