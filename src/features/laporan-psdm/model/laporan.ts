@@ -34,17 +34,19 @@ export const METODE_OPTIONS: SelectOption[] = [
 // Backend menyimpan kategori & alokasi sebagai teks biasa, jadi nilai yang
 // disimpan sama dengan labelnya. Tambah/ubah pilihannya cukup di sini.
 export const KATEGORI_BIAYA_OPTIONS: SelectOption[] = [
-  "PSDM - Agro Wallet",
   "PSDM - Pengembangan BOD & BOC",
+  "PSDM - Agro Wallet",
   "PSDM - In House Training",
   "PSDM - Public Training",
+  "PSDM - Kursus Jabatan",
   "PSDM - Sertifikasi",
+  "PSDM - Program Study Banding",
+  "PSDM - Program Pendidikan Lanjut",
 ].map((value) => ({ value, label: value }));
 
 export const ALOKASI_BIAYA_OPTIONS: SelectOption[] = [
   "Head Office",
   "Regional",
-  "Unit",
 ].map((value) => ({ value, label: value }));
 
 /** Label metode untuk tabel, mis. "offline" -> "Tatap Muka / Luring (Offline)". */
