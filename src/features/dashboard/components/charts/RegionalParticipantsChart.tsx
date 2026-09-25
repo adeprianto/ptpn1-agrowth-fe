@@ -12,6 +12,7 @@ import {
   XAxis,
   YAxis,
   type BarShapeProps,
+  type LabelProps,
 } from "recharts";
 import { ConsolidationPanel } from "./ConsolidationPanel";
 import { SerapanBadge, capaianTone } from "./overTarget";
@@ -29,6 +30,7 @@ import {
   levelLabel,
   pesertaPerRegional as data,
   type Entity,
+  type Level,
   type LevelKey,
   type PesertaDatum as ParticipantDatum,
 } from "./dashboardDummyData";
@@ -88,6 +90,20 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 }
 
 const ACCENT = "#334155";
+
+/** Warna teks label di dalam segmen: putih di segmen gelap, gelap di segmen terang. */
+const LEVEL_LABEL_TEXT: Record<Level, string> = {
+  1: "#ffffff",
+  2: "#ffffff",
+  3: "#1e293b",
+  4: "#1e293b",
+  5: "#1e293b",
+  6: "#ffffff",
+};
+
+/** Label hanya ditulis kalau segmennya cukup besar untuk memuat angkanya. */
+const MIN_LABEL_HEIGHT = 16;
+const MIN_LABEL_WIDTH = 24;
 
 function ParticipantLevelSummary() {
   const perLevel = LEVELS.map((level) => ({
@@ -309,22 +325,47 @@ export function RegionalParticipantsChart() {
   const [selected, setSelected] = useState<Entity | null>(null);
   const selectedDatum = data.find((row) => row.regional === selected);
 
-  // Saat ada entity dipilih, bar entity lain dipudarkan
+  // Saat ada entity dipilih, bar entity lain (beserta labelnya) dipudarkan
+  const isDimmed = (regional?: string) => selected !== null && regional !== selected;
+
+  /** Jumlah peserta level itu di tengah segmen, mis. "150"; disembunyikan kalau segmen terlalu kecil. */
+  const renderSegmentLabel = (level: Level, props: LabelProps) => {
+    const x = Number(props.x);
+    const y = Number(props.y);
+    const width = Number(props.width);
+    const height = Number(props.height);
+    if (height < MIN_LABEL_HEIGHT || width < MIN_LABEL_WIDTH) return null;
+
+    const regional = data[Number(props.index)]?.regional;
+    return (
+      <text
+        x={x + width / 2}
+        y={y + height / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={10}
+        fontWeight={600}
+        fill={LEVEL_LABEL_TEXT[level]}
+        opacity={isDimmed(regional) ? DIMMED_OPACITY : 1}
+        pointerEvents="none"
+      >
+        {formatNumber(Number(props.value))}
+      </text>
+    );
+  };
+
   const renderSegment = (props: BarShapeProps) => (
     <Rectangle
       {...props}
-      fillOpacity={
-        selected === null || props.payload?.regional === selected
-          ? 1
-          : DIMMED_OPACITY
-      }
+      fillOpacity={isDimmed(props.payload?.regional) ? DIMMED_OPACITY : 1}
     />
   );
 
   return (
     <div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="h-80 w-full lg:col-span-2">
+        {/* min-h: di layar lebar chart memanjang mengikuti tinggi panel di kanannya */}
+        <div className="min-h-80 w-full lg:col-span-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -371,6 +412,7 @@ export function RegionalParticipantsChart() {
                   fill={LEVEL_COLORS[level]}
                   shape={renderSegment}
                 >
+                  <LabelList dataKey={levelKey(level)} content={(props) => renderSegmentLabel(level, props)} />
                   {/* Total per entity ditaruh di atas segmen paling atas */}
                   {index === LEVELS.length - 1 && (
                     <LabelList

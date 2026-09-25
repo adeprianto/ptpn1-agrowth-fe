@@ -125,7 +125,9 @@ export function TargetRealisasiChart<T extends Datum>({
 }: TargetRealisasiChartProps<T>) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <div className="lg:col-span-2">
+      {/* flex-col + flex-1: chart mengisi sisa tinggi setelah catatan & legenda,
+          sehingga di layar lebar ikut sepanjang panel di kanannya */}
+      <div className="flex flex-col lg:col-span-2">
         <OverTargetNotice
           subject={subject}
           hint="Bar oranye = realisasi di atas RKAP."
@@ -144,7 +146,7 @@ export function TargetRealisasiChart<T extends Datum>({
           ]}
         />
 
-        <div className="h-72 w-full">
+        <div className="min-h-72 w-full flex-1">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
