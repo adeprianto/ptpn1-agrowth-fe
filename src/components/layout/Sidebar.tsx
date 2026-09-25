@@ -95,7 +95,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
         </div>
 
         {/* Nav, sekarang dikelompokkan per grup */}
-        <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2">
+        <nav className="scrollbar-dark flex-1 space-y-4 overflow-y-auto px-3 py-2">
           {groups.map((group) => (
             <div key={group.label}>
               {/* Label grup, misal "Overview", "SDM", "Kompetensi" */}

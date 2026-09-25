@@ -17,7 +17,11 @@ export async function downloadFile(path: string, fileName: string): Promise<void
   }
 
   // Simpan file: buat URL sementara dari isi file, klik tautan unduh, lalu bersihkan.
-  const blob = await response.blob();
+  saveBlob(await response.blob(), fileName);
+}
+
+/** Simpan isi file yang sudah ada di browser, mis. Excel yang dibuat di sisi klien. */
+export function saveBlob(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement("a");

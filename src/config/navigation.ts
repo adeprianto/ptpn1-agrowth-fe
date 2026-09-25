@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   LayoutDashboard,
   Network,
   Users,
@@ -48,6 +49,13 @@ export const navigationConfig: NavGroup[] = [
         icon: Network,
         // semua tier bisa membuka Organisasi; isinya otomatis dibatasi backend
         // sesuai cakupan akun (akun Unit hanya melihat unitnya sendiri)
+        roles: ["HO", "REGIONAL", "UNIT"],
+      },
+      {
+        label: "Analitik Pengembangan",
+        href: "/dashboard/analitik",
+        icon: BarChart3,
+        // DUMMY — datanya belum dibatasi cakupan akun; lihat features/analytic/api
         roles: ["HO", "REGIONAL", "UNIT"],
       },
     ],

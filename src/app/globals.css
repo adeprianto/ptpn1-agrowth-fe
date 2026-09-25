@@ -3,6 +3,10 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* scrollbar (lihat bagian "Scrollbar" di bawah) */
+  --scrollbar-track: #f1f5f9; /* slate-100 */
+  --scrollbar-thumb: rgb(5 150 105 / 0.45); /* emerald-600 */
+  --scrollbar-thumb-hover: rgb(5 150 105 / 0.75);
 }
 
 @theme inline {
@@ -58,4 +62,54 @@ textarea {
       transform: translateX(0);
     }
   }
+}
+
+/*
+ * Scrollbar tipis bertema emerald untuk seluruh aplikasi.
+ *
+ * Chrome/Edge/Safari memakai ::-webkit-scrollbar supaya bentuknya bisa diatur
+ * (tipis & membulat). Aturan standar `scrollbar-width` hanya dipasang untuk
+ * browser yang tidak mengenal ::-webkit-scrollbar (Firefox), karena di
+ * Chrome 121+ aturan standar itu justru menimpa seluruh gaya ::-webkit-*.
+ *
+ * Warnanya diambil dari variabel --scrollbar-*, jadi area berlatar gelap
+ * cukup menimpa variabelnya — lihat utilitas `scrollbar-dark`.
+ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  /* border transparan = jarak di kiri-kanan, jadi batang terlihat 6px */
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-color: var(--scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+}
+
+/* Scrollbar untuk area berlatar gelap, mis. sidebar emerald-950 */
+@utility scrollbar-dark {
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgb(167 243 208 / 0.25); /* emerald-200 */
+  --scrollbar-thumb-hover: rgb(167 243 208 / 0.45);
 }
