@@ -97,7 +97,7 @@ export function DashboardOverview() {
           title="Matrix Capaian per Level BOD & Regional"
           subtitle="Jumlah peserta per level BOD di tiap regional"
         >
-          <LevelMatrixTable data={pesertaPerRegional} unit="orang" />
+          <LevelMatrixTable data={pesertaPerRegional} measure="peserta" unit="orang" />
         </DashboardCard>
       </DashboardSection>
 
@@ -122,6 +122,7 @@ export function DashboardOverview() {
         >
           <LevelMatrixTable
             data={jamPerRegional}
+            measure="jam pembelajaran"
             unit="jam"
             heatRgb="59, 130, 246"
           />

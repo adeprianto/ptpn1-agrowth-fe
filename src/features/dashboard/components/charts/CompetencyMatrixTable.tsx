@@ -41,10 +41,11 @@ export function CompetencyMatrixTable() {
       valueOf={(rowKey, columnKey) =>
         source[rowKey as Bidang][columnKey as LevelKey]
       }
+      measure="jam pembelajaran"
       unit="jam"
+      rowNoun="bidang"
       columnNoun="level BOD"
       heatRgb="31, 111, 120"
-      showRowTotal
       controls={
         <label className="flex items-center gap-2 text-xs text-slate-500">
           Entitas

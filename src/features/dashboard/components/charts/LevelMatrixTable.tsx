@@ -14,7 +14,9 @@ type MatrixRow = { regional: Entity } & Record<LevelKey, number>;
 
 interface LevelMatrixTableProps {
   data: MatrixRow[];
-  /** Satuan nilai, mis. "orang" atau "jam" — dipakai di keterangan */
+  /** Apa yang dihitung, mis. "peserta" atau "jam pembelajaran" — dipakai di keterangan */
+  measure: string;
+  /** Satuan nilai, mis. "orang" atau "jam" */
   unit: string;
   /** Warna dasar (rgb "r, g, b") untuk arsiran sel, makin besar makin pekat */
   heatRgb?: string;
@@ -33,6 +35,7 @@ const COLUMNS = ENTITIES.map((entity) => ({
 /** Matriks baris = level BOD-1..6, kolom = HO & regional */
 export function LevelMatrixTable({
   data,
+  measure,
   unit,
   heatRgb,
 }: LevelMatrixTableProps) {
@@ -46,7 +49,9 @@ export function LevelMatrixTable({
       valueOf={(rowKey, columnKey) =>
         byEntity.get(columnKey as Entity)?.[rowKey as LevelKey] ?? 0
       }
+      measure={measure}
       unit={unit}
+      rowNoun="level BOD"
       columnNoun="HO/regional"
       heatRgb={heatRgb}
     />
